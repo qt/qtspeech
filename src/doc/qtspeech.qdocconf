@@ -1,0 +1,42 @@
+include($QT_INSTALL_DOCS/global/qt-module-defaults.qdocconf)
+
+project = QtSpeech
+description = Qt Text-To-Speech library
+url = http://qt-project.org/doc/qt-$QT_VER/qtspeech-index.html
+version = $QT_VERSION
+
+sourcedirs += ..
+headerdirs += ..
+
+imagedirs += images
+
+exampledirs += \
+               ../examples/widgets \
+               snippets \
+               ../tests/auto \
+
+depends += qtcore
+
+qhp.projects            = QtSpeech
+
+qhp.QtSpeech.file                = qtspeech.qhp
+qhp.QtSpeech.namespace           = org.qt-project.qtspeech.$QT_VERSION_TAG
+qhp.QtSpeech.virtualFolder       = qtspeech
+qhp.QtSpeech.indexTitle          = Qt Speech
+qhp.QtSpeech.indexRoot           =
+
+qhp.QtSpeech.filterAttributes    = qtspeech 1.0.0
+qhp.QtSpeech.customFilters.Qt.name = QtSpeech 1.0.0
+qhp.QtSpeech.customFilters.Qt.filterAttributes = qtspeech 1.0.0
+
+qhp.QtSpeech.subprojects         = classes qmltypes examples
+
+qhp.QtSpeech.subprojects.classes.title = C++ Classes
+qhp.QtSpeech.subprojects.classes.indexTitle = Qt Speech C++ Classes
+qhp.QtSpeech.subprojects.classes.selectors = class
+qhp.QtSpeech.subprojects.classes.sortPages = true
+
+qhp.QtSpeech.subprojects.examples.title = Examples
+qhp.QtSpeech.subprojects.examples.indexTitle = Qt Speech Examples
+qhp.QtSpeech.subprojects.examples.selectors = fake:example
+qhp.QtSpeech.subprojects.examples.sortPages = true
