@@ -45,10 +45,14 @@
 
 #include <QtCore/qglobal.h>
 
+QT_BEGIN_NAMESPACE
+
 #if defined(QSPEECH_LIBRARY)
 #  define QSPEECH_EXPORT Q_DECL_EXPORT
 #else
 #  define QSPEECH_EXPORT Q_DECL_IMPORT
 #endif
+
+QT_END_NAMESPACE
 
 #endif
