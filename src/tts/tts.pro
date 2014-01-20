@@ -21,7 +21,7 @@ win32 {
     OBJECTIVE_SOURCES += qspeech_mac.mm
     LIBS *= -framework Cocoa
 } else:android {
-    QT += core-private
+    SUBDIRS += android
     SOURCES += qspeech_android.cpp
 } else:unix {
     SOURCES += qspeech_unix.cpp
