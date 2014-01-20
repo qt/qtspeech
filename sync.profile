@@ -1,5 +1,5 @@
 %modules = ( # path to module name map
-    "QtSpeech" => "$basedir/src/speech"
+    "QtSpeech" => "$basedir/src/tts"
 );
 %moduleheaders = ( # restrict the module headers to those found in relative path
 );
