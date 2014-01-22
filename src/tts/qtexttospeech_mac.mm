@@ -41,8 +41,8 @@
 
 
 
-#include "qspeech.h"
-#include "qspeech_p.h"
+#include "qtexttospeech.h"
+#include "qtexttospeech_p.h"
 
 #import <Cocoa/Cocoa.h>
 #include <qdebug.h>
@@ -50,19 +50,19 @@
 
 QT_BEGIN_NAMESPACE
 
-class QSpeechPrivateMac;
+class QTextToSpeechPrivateMac;
 
 @interface StateDelegate : NSObject <NSSpeechSynthesizerDelegate>
 {
-    QSpeechPrivateMac *speechPrivate;
+    QTextToSpeechPrivateMac *speechPrivate;
 }
 @end
 
-class QSpeechPrivateMac : public QSpeechPrivate
+class QTextToSpeechPrivateMac : public QTextToSpeechPrivate
 {
 public:
-    QSpeechPrivateMac(QSpeech *speech);
-    ~QSpeechPrivateMac();
+    QTextToSpeechPrivateMac(QTextToSpeech *speech);
+    ~QTextToSpeechPrivateMac();
 
     void say(const QString &text);
     void stop();
@@ -72,7 +72,7 @@ public:
     void setRate(double rate);
     void setPitch(double pitch);
     void setVolume(double volume);
-    QSpeech::State state() const;
+    QTextToSpeech::State state() const;
 
     bool isPaused() const { return false; }
     bool isSpeaking() const;
@@ -85,7 +85,7 @@ private:
 };
 
 @implementation StateDelegate
-- (id)initWithSpeechPrivate:(QSpeechPrivateMac *) priv {
+- (id)initWithSpeechPrivate:(QTextToSpeechPrivateMac *) priv {
     self = [super init];
     speechPrivate = priv;
     return self;
@@ -96,14 +96,14 @@ private:
 }
 @end
 
-QSpeech::QSpeech(QObject *parent)
-    : QObject(*new QSpeechPrivateMac(this), parent)
+QTextToSpeech::QTextToSpeech(QObject *parent)
+    : QObject(*new QTextToSpeechPrivateMac(this), parent)
 {
-    qRegisterMetaType<QSpeech::State>();
+    qRegisterMetaType<QTextToSpeech::State>();
 }
 
-QSpeechPrivateMac::QSpeechPrivateMac(QSpeech *speech)
-    : QSpeechPrivate(speech)
+QTextToSpeechPrivateMac::QTextToSpeechPrivateMac(QTextToSpeech *speech)
+    : QTextToSpeechPrivate(speech)
 {
     stateDelegate = [[StateDelegate alloc] initWithSpeechPrivate:this];
 
@@ -111,38 +111,38 @@ QSpeechPrivateMac::QSpeechPrivateMac(QSpeech *speech)
     [speechSynthesizer setDelegate: stateDelegate];
 }
 
-QSpeechPrivateMac::~QSpeechPrivateMac()
+QTextToSpeechPrivateMac::~QTextToSpeechPrivateMac()
 {
     [speechSynthesizer release];
     [stateDelegate release];
 }
 
 
-QSpeech::State QSpeechPrivate::state() const
+QTextToSpeech::State QTextToSpeechPrivate::state() const
 {
     return m_state;
 }
 
-bool QSpeechPrivateMac::isSpeaking() const
+bool QTextToSpeechPrivateMac::isSpeaking() const
 {
     return [speechSynthesizer isSpeaking];
 }
 
-void QSpeechPrivateMac::speechStopped(bool success)
+void QTextToSpeechPrivateMac::speechStopped(bool success)
 {
     Q_UNUSED(success);
-    if (m_state != QSpeech::Ready) {
-        m_state = QSpeech::Ready;
+    if (m_state != QTextToSpeech::Ready) {
+        m_state = QTextToSpeech::Ready;
         emitStateChanged(m_state);
     }
 }
 
-void QSpeechPrivateMac::say(const QString &text)
+void QTextToSpeechPrivateMac::say(const QString &text)
 {
     if (text.isEmpty())
         return;
 
-    if (m_state != QSpeech::Ready)
+    if (m_state != QTextToSpeech::Ready)
         stop();
 
     if([speechSynthesizer isSpeaking]) {
@@ -152,39 +152,39 @@ void QSpeechPrivateMac::say(const QString &text)
     NSString *ntext = text.toNSString();
     [speechSynthesizer startSpeakingString:ntext];
 
-    if ([speechSynthesizer isSpeaking] && m_state != QSpeech::Speaking) {
-        m_state = QSpeech::Speaking;
+    if ([speechSynthesizer isSpeaking] && m_state != QTextToSpeech::Speaking) {
+        m_state = QTextToSpeech::Speaking;
         emitStateChanged(m_state);
     }
 }
 
-void QSpeechPrivateMac::stop()
+void QTextToSpeechPrivateMac::stop()
 {
     if([speechSynthesizer isSpeaking])
         [speechSynthesizer stopSpeaking];
 }
 
-void QSpeechPrivateMac::pause()
+void QTextToSpeechPrivateMac::pause()
 {
 }
 
-void QSpeechPrivateMac::resume()
+void QTextToSpeechPrivateMac::resume()
 {
 }
 
-void QSpeechPrivateMac::setPitch(double pitch)
+void QTextToSpeechPrivateMac::setPitch(double pitch)
 {
 }
 
-void QSpeechPrivateMac::setRate(double rate)
+void QTextToSpeechPrivateMac::setRate(double rate)
 {
 }
 
-void QSpeechPrivateMac::setVolume(double volume)
+void QTextToSpeechPrivateMac::setVolume(double volume)
 {
 }
 
-QSpeech::State QSpeechPrivateMac::state() const
+QTextToSpeech::State QTextToSpeechPrivateMac::state() const
 {
     return m_state;
 }

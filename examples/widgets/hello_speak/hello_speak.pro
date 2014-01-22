@@ -1,6 +1,6 @@
 TEMPLATE = app
 
-QT += widgets speech
+QT += widgets texttospeech
 
 SOURCES = main.cpp \
           mainwindow.cpp

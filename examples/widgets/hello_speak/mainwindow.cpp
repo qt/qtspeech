@@ -47,20 +47,20 @@ MainWindow::MainWindow(QWidget *parent)
     ui.setupUi(this);
 
     connect(ui.speakButton, &QPushButton::clicked, this, &MainWindow::speak);
-    connect(ui.stopButton, &QPushButton::clicked, &m_speech, &QSpeech::stop);
-    connect(ui.pauseButton, &QPushButton::clicked, &m_speech, &QSpeech::pause);
-    connect(ui.resumeButton, &QPushButton::clicked, &m_speech, &QSpeech::resume);
+    connect(ui.stopButton, &QPushButton::clicked, &m_speech, &QTextToSpeech::stop);
+    connect(ui.pauseButton, &QPushButton::clicked, &m_speech, &QTextToSpeech::pause);
+    connect(ui.resumeButton, &QPushButton::clicked, &m_speech, &QTextToSpeech::resume);
 
     connect(ui.pitch, SIGNAL(valueChanged(double)), &m_speech, SLOT(setPitch(double)));
     connect(ui.rate, SIGNAL(valueChanged(double)), &m_speech, SLOT(setRate(double)));
     connect(ui.volume, SIGNAL(valueChanged(double)), &m_speech, SLOT(setVolume(double)));
 
-    connect(&m_speech, &QSpeech::stateChanged, this, &MainWindow::stateChanged);
+    connect(&m_speech, &QTextToSpeech::stateChanged, this, &MainWindow::stateChanged);
     connect(ui.language, SIGNAL(currentIndexChanged(int)), this, SLOT(languageSelected(int)));
 //    connect(ui.voiceType, SIGNAL(currentIndexChanged(QString)), &m_speech, SLOT(setVoiceType(QString)));
 
 //    QStringList voices;
-//    foreach (const QSpeechVoice &voice, m_speech.availableVoices()) {
+//    foreach (const QTextToSpeechVoice &voice, m_speech.availableVoices()) {
 
 //        voices.append(voice.locale().name() + " (" + voice.name() + ")");
 //    }
@@ -81,24 +81,24 @@ void MainWindow::stop()
     m_speech.stop();
 }
 
-void MainWindow::stateChanged(QSpeech::State state)
+void MainWindow::stateChanged(QTextToSpeech::State state)
 {
-    if (state == QSpeech::Speaking) {
+    if (state == QTextToSpeech::Speaking) {
         ui.statusbar->showMessage("Speech started...");
-    } else if (state == QSpeech::Ready)
+    } else if (state == QTextToSpeech::Ready)
         ui.statusbar->showMessage("Speech stopped...", 2000);
-    else if (state == QSpeech::Paused)
+    else if (state == QTextToSpeech::Paused)
         ui.statusbar->showMessage("Speech paused...");
     else
         ui.statusbar->showMessage("Speech error!");
 
-    ui.pauseButton->setEnabled(state == QSpeech::Speaking);
-    ui.resumeButton->setEnabled(state == QSpeech::Paused);
-    ui.stopButton->setEnabled(state == QSpeech::Speaking || QSpeech::Paused);
+    ui.pauseButton->setEnabled(state == QTextToSpeech::Speaking);
+    ui.resumeButton->setEnabled(state == QTextToSpeech::Paused);
+    ui.stopButton->setEnabled(state == QTextToSpeech::Speaking || QTextToSpeech::Paused);
 }
 
 void MainWindow::languageSelected(int language)
 {
-//    QSpeechVoice voice = m_speech.availableVoices()[language];
+//    QTextToSpeechVoice voice = m_speech.availableVoices()[language];
 //    m_speech.setVoice(voice);
 }

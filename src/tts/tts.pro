@@ -1,37 +1,41 @@
-TARGET = QtSpeech
+TARGET = QtTextToSpeech
 QT = core-private
-DEFINES += QSPEECH_LIBRARY
-MODULE = speech
+DEFINES += QTEXTTOSPEECH_LIBRARY
+MODULE = texttospeech
 
 load(qt_module)
 
 
 HEADERS = \
-    qspeech.h \
-    qspeech_p.h \
-    qspeech_global.h \
+    qtexttospeech.h \
+    qtexttospeech_p.h \
+    qtexttospeech_global.h \
 
 SOURCES = \
-    qspeech.cpp \
+    qtexttospeech.cpp \
 
 win32 {
-    SOURCES += qspeech_win.cpp
+    SOURCES += qtexttospeech_win.cpp
     LIBS *= -lole32 -lsapi
 } else:mac {
-    OBJECTIVE_SOURCES += qspeech_mac.mm
+    OBJECTIVE_SOURCES += qtexttospeech_mac.mm
     LIBS *= -framework Cocoa
 } else:android {
     SUBDIRS += android
-    SOURCES += qspeech_android.cpp
+    SOURCES += qtexttospeech_android.cpp
 } else:unix {
-    SOURCES += qspeech_unix.cpp
+    SOURCES += qtexttospeech_unix.cpp
     LIBS += -lspeechd
 }
 
 
 ANDROID_BUNDLED_JAR_DEPENDENCIES = \
-    jar/QtSpeech-bundled.jar:org.qtproject.qt5.android.speech.QtSpeech
+    jar/QtTextToSpeech-bundled.jar:org.qtproject.qt5.android.speech.QtTextToSpeech
 ANDROID_JAR_DEPENDENCIES = \
-    jar/QtSpeech.jar:org.qtproject.qt5.android.speech.QtSpeech
+    jar/QtTextToSpeech.jar:org.qtproject.qt5.android.speech.QtTextToSpeech
 
-OTHER_FILES +=
+SUBDIRS += \
+    android/android.pro
+
+OTHER_FILES += \
+    android/jar/src/org/qtproject/qt5/android/speech/QtTextToSpeech.java

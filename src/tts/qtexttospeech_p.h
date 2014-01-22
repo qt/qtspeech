@@ -40,19 +40,63 @@
 ****************************************************************************/
 
 
-#ifndef QSPEECH_GLOBAL_H
-#define QSPEECH_GLOBAL_H
+#ifndef QTEXTTOSPEECH_P_H
+#define QTEXTTOSPEECH_P_H
 
-#include <QtCore/qglobal.h>
+#include <qtexttospeech.h>
+#include <QtCore/private/qobject_p.h>
 
-QT_BEGIN_NAMESPACE
-
-#if defined(QSPEECH_LIBRARY)
-#  define QSPEECH_EXPORT Q_DECL_EXPORT
-#else
-#  define QSPEECH_EXPORT Q_DECL_IMPORT
+#if defined(Q_OS_ANDROID)
+#elif defined(Q_OS_OSX)
+#elif defined(Q_OS_UNIX)
+#include <libspeechd.h>
 #endif
 
-QT_END_NAMESPACE
+class QTextToSpeechBackend;
+
+//class QTextToSpeechVoicePrivate : public QSharedData
+//{
+//public:
+//    QTextToSpeechVoicePrivate()
+//    {}
+//    virtual ~QTextToSpeechVoicePrivate() {}
+//    virtual QString name() const = 0;
+//    virtual QLocale locale() const = 0;
+//};
+
+class QTextToSpeech;
+class QTextToSpeechPrivate : public QObjectPrivate
+{
+public:
+    QTextToSpeechPrivate(QTextToSpeech *speech);
+
+    // system specific initialization, sets up a backend
+
+//    QTextToSpeechVoice currentVoice() const;
+//    void setVoice(const QTextToSpeechVoice &voice);
+//    QVector<QTextToSpeechVoice> availableVoices() const;
+
+//    QVector<QString> availableVoiceTypes() const;
+//    void setVoiceType(const QString& type);
+//    QString currentVoiceType() const;
+
+    virtual void say(const QString &text) = 0;
+    virtual void stop() = 0;
+    virtual void pause() = 0;
+    virtual void resume() = 0;
+
+    virtual void setRate(double rate) = 0;
+    virtual void setPitch(double pitch) = 0;
+    virtual void setVolume(double volume) = 0;
+    virtual QTextToSpeech::State state() const = 0;
+
+protected:
+    void emitStateChanged(QTextToSpeech::State s)
+    {
+        emit m_speech->stateChanged(s);
+    }
+    QTextToSpeech *m_speech;
+    QTextToSpeech::State m_state;
+};
 
 #endif

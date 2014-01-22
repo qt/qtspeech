@@ -1,2 +1,2 @@
-TARGET = QtSpeech
+TARGET = QtTextToSpeech
 include(jar.pri)

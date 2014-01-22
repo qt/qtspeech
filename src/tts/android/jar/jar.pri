@@ -7,7 +7,7 @@ API_VERSION = android-10
 PATHPREFIX = $$PWD/src/org/qtproject/qt5/android/speech
 
 JAVACLASSPATH += $$PWD/src
-JAVASOURCES += $$PATHPREFIX/QtSpeech.java
+JAVASOURCES += $$PATHPREFIX/QtTextToSpeech.java
 
 # install
 target.path = $$[QT_INSTALL_PREFIX]/jar

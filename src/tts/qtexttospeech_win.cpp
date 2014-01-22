@@ -40,7 +40,7 @@
 ****************************************************************************/
 
 
-#include "qspeech_p.h"
+#include "qtexttospeech_p.h"
 
 #include <windows.h>
 #include <sapi.h>
@@ -49,11 +49,11 @@
 QT_BEGIN_NAMESPACE
 
 
-class QSpeechPrivateWindows : public QSpeechPrivate, public ISpNotifyCallback
+class QTextToSpeechPrivateWindows : public QTextToSpeechPrivate, public ISpNotifyCallback
 {
 public:
-    QSpeechPrivateWindows(QSpeech *speech);
-    ~QSpeechPrivateWindows();
+    QTextToSpeechPrivateWindows(QTextToSpeech *speech);
+    ~QTextToSpeechPrivateWindows();
 
     void say(const QString &text);
     void stop();
@@ -63,7 +63,7 @@ public:
     void setRate(double rate);
     void setPitch(double pitch);
     void setVolume(double volume);
-    QSpeech::State state() const;
+    QTextToSpeech::State state() const;
 
     bool isPaused() const { return m_pauseCount; }
     bool isSpeaking() const;
@@ -77,14 +77,14 @@ private:
 };
 
 
-QSpeech::QSpeech(QObject *parent)
-    : QObject(*new QSpeechPrivateWindows(this), parent)
+QTextToSpeech::QTextToSpeech(QObject *parent)
+    : QObject(*new QTextToSpeechPrivateWindows(this), parent)
 {
-    qRegisterMetaType<QSpeech::State>();
+    qRegisterMetaType<QTextToSpeech::State>();
 }
 
-QSpeechPrivateWindows::QSpeechPrivateWindows(QSpeech *speech)
-    : QSpeechPrivate(speech), m_pitch(0.0), m_pauseCount(0) //, m_voices(0)
+QTextToSpeechPrivateWindows::QTextToSpeechPrivateWindows(QTextToSpeech *speech)
+    : QTextToSpeechPrivate(speech), m_pitch(0.0), m_pauseCount(0) //, m_voices(0)
 {
     if (FAILED(::CoInitialize(NULL)))
         qWarning() << "Init of COM failed";
@@ -97,28 +97,28 @@ QSpeechPrivateWindows::QSpeechPrivateWindows(QSpeech *speech)
     voice->SetNotifyCallbackInterface(this, 0, 0);
 }
 
-QSpeechPrivateWindows::~QSpeechPrivateWindows()
+QTextToSpeechPrivateWindows::~QTextToSpeechPrivateWindows()
 {
 }
 
-QSpeech::State QSpeechPrivate::state() const
+QTextToSpeech::State QTextToSpeechPrivate::state() const
 {
     return m_state;
 }
 
-bool QSpeechPrivateWindows::isSpeaking() const
+bool QTextToSpeechPrivateWindows::isSpeaking() const
 {
     SPVOICESTATUS eventStatus;
     voice->GetStatus(&eventStatus, NULL);
     return eventStatus.dwRunningState == SPRS_IS_SPEAKING;
 }
 
-void QSpeechPrivateWindows::say(const QString &text)
+void QTextToSpeechPrivateWindows::say(const QString &text)
 {
     if (text.isEmpty())
         return;
 
-    if (m_state != QSpeech::Ready)
+    if (m_state != QTextToSpeech::Ready)
         stop();
     qDebug() << "say: " << text;
 
@@ -131,14 +131,14 @@ void QSpeechPrivateWindows::say(const QString &text)
     voice->Speak(wtext.data(), SPF_ASYNC, NULL);
 }
 
-void QSpeechPrivateWindows::stop()
+void QTextToSpeechPrivateWindows::stop()
 {
     if (isPaused())
         resume();
     voice->Speak(NULL, SPF_PURGEBEFORESPEAK, 0);
 }
 
-void QSpeechPrivateWindows::pause()
+void QTextToSpeechPrivateWindows::pause()
 {
     if (!isSpeaking())
         return;
@@ -146,56 +146,56 @@ void QSpeechPrivateWindows::pause()
     if (m_pauseCount == 0) {
         ++m_pauseCount;
         voice->Pause();
-        m_state = QSpeech::Paused;
+        m_state = QTextToSpeech::Paused;
         emitStateChanged(m_state);
     }
 }
 
-void QSpeechPrivateWindows::resume()
+void QTextToSpeechPrivateWindows::resume()
 {
     if (m_pauseCount > 0) {
         --m_pauseCount;
         voice->Resume();
         if (isSpeaking()) {
-            m_state = QSpeech::Speaking;
+            m_state = QTextToSpeech::Speaking;
         } else {
-            m_state = QSpeech::Ready;
+            m_state = QTextToSpeech::Ready;
         }
         emitStateChanged(m_state);
     }
 }
 
-void QSpeechPrivateWindows::setPitch(double pitch)
+void QTextToSpeechPrivateWindows::setPitch(double pitch)
 {
     m_pitch = pitch;
 }
 
-void QSpeechPrivateWindows::setRate(double rate)
+void QTextToSpeechPrivateWindows::setRate(double rate)
 {
     // -10 to 10
     voice->SetRate(long(rate*10));
 }
 
-void QSpeechPrivateWindows::setVolume(double volume)
+void QTextToSpeechPrivateWindows::setVolume(double volume)
 {
     // 0 to 100
     voice->SetVolume(USHORT((volume + 1) * 50));
 }
 
-QSpeech::State QSpeechPrivateWindows::state() const
+QTextToSpeech::State QTextToSpeechPrivateWindows::state() const
 {
     return m_state;
 }
 
-HRESULT QSpeechPrivateWindows::NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/)
+HRESULT QTextToSpeechPrivateWindows::NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/)
 {
-    QSpeech::State newState = QSpeech::Ready;
+    QTextToSpeech::State newState = QTextToSpeech::Ready;
     if (isPaused()) {
-        newState = QSpeech::Paused;
+        newState = QTextToSpeech::Paused;
     } else if (isSpeaking()) {
-        newState = QSpeech::Speaking;
+        newState = QTextToSpeech::Speaking;
     } else {
-        newState = QSpeech::Ready;
+        newState = QTextToSpeech::Ready;
     }
 
     if (m_state != newState) {

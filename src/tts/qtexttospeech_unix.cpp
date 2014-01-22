@@ -40,17 +40,17 @@
 ****************************************************************************/
 
 
-#include "qspeech_p.h"
+#include "qtexttospeech_p.h"
 
 #include <qdebug.h>
 #include <libspeechd.h>
 
 QT_BEGIN_NAMESPACE
 
-//class QSpeechVoicePrivateUnix : public QSpeechVoicePrivate
+//class QTextToSpeechVoicePrivateUnix : public QTextToSpeechVoicePrivate
 //{
 //public:
-//    QSpeechVoicePrivateUnix()
+//    QTextToSpeechVoicePrivateUnix()
 //        : voice(0)
 //    {}
 //    QString name() const;
@@ -60,15 +60,15 @@ QT_BEGIN_NAMESPACE
 //    SPDVoice *voice;
 //};
 
-//QString QSpeechVoicePrivateUnix::name() const
+//QString QTextToSpeechVoicePrivateUnix::name() const
 //{
 //    if (voice)
 //        return QString::fromUtf8(voice->name);
 //    return QStringLiteral("default");
 //}
 
-//QSpeechVoice::QSpeechVoice()
-//    : d(new QSpeechVoicePrivateUnix)
+//QTextToSpeechVoice::QTextToSpeechVoice()
+//    : d(new QTextToSpeechVoicePrivateUnix)
 //{}
 
 
@@ -80,21 +80,21 @@ struct VoiceTypeMapping {
 };
 
 static VoiceTypeMapping map[] = {
-    { QT_TRANSLATE_NOOP("QSpeech", "Male Voice 1"), SPD_MALE1 },
-    { QT_TRANSLATE_NOOP("QSpeech", "Male Voice 2"), SPD_MALE2 },
-    { QT_TRANSLATE_NOOP("QSpeech", "Male Voice 3"), SPD_MALE3 },
-    { QT_TRANSLATE_NOOP("QSpeech", "Female Voice 1"), SPD_FEMALE1 },
-    { QT_TRANSLATE_NOOP("QSpeech", "Female Voice 2"), SPD_FEMALE2},
-    { QT_TRANSLATE_NOOP("QSpeech", "Female Voice 3"), SPD_FEMALE3 },
-    { QT_TRANSLATE_NOOP("QSpeech", "Male Child Voice"), SPD_CHILD_MALE },
-    { QT_TRANSLATE_NOOP("QSpeech", "Female Child Voice"), SPD_CHILD_FEMALE },
+    { QT_TRANSLATE_NOOP("QTextToSpeech", "Male Voice 1"), SPD_MALE1 },
+    { QT_TRANSLATE_NOOP("QTextToSpeech", "Male Voice 2"), SPD_MALE2 },
+    { QT_TRANSLATE_NOOP("QTextToSpeech", "Male Voice 3"), SPD_MALE3 },
+    { QT_TRANSLATE_NOOP("QTextToSpeech", "Female Voice 1"), SPD_FEMALE1 },
+    { QT_TRANSLATE_NOOP("QTextToSpeech", "Female Voice 2"), SPD_FEMALE2},
+    { QT_TRANSLATE_NOOP("QTextToSpeech", "Female Voice 3"), SPD_FEMALE3 },
+    { QT_TRANSLATE_NOOP("QTextToSpeech", "Male Child Voice"), SPD_CHILD_MALE },
+    { QT_TRANSLATE_NOOP("QTextToSpeech", "Female Child Voice"), SPD_CHILD_FEMALE },
 };
 
-class QSpeechPrivateSpeechDispatcher : public QSpeechPrivate
+class QTextToSpeechPrivateSpeechDispatcher : public QTextToSpeechPrivate
 {
 public:
-    QSpeechPrivateSpeechDispatcher(QSpeech *speech);
-    ~QSpeechPrivateSpeechDispatcher();
+    QTextToSpeechPrivateSpeechDispatcher(QTextToSpeech *speech);
+    ~QTextToSpeechPrivateSpeechDispatcher();
 
     void say(const QString &text);
     void stop();
@@ -104,7 +104,7 @@ public:
     void setRate(double rate);
     void setPitch(double pitch);
     void setVolume(double volume);
-    QSpeech::State state() const;
+    QTextToSpeech::State state() const;
 
     void spdStateChanged(SPDNotificationType state);
 private:
@@ -112,18 +112,18 @@ private:
     // speech dispatcher doesn't allow us to sensibly delete the voices
     // so at least cache them
     mutable SPDVoice **m_voices;
-//    QSpeechVoice m_currentVoice;
+//    QTextToSpeechVoice m_currentVoice;
 //    QString m_voiceType;
 };
 
 
-QSpeech::QSpeech(QObject *parent)
-    : QObject(*new QSpeechPrivateSpeechDispatcher(this), parent)
+QTextToSpeech::QTextToSpeech(QObject *parent)
+    : QObject(*new QTextToSpeechPrivateSpeechDispatcher(this), parent)
 {
-    qRegisterMetaType<QSpeech::State>();
+    qRegisterMetaType<QTextToSpeech::State>();
 }
 
-//QLocale QSpeechVoicePrivateUnix::locale() const
+//QLocale QTextToSpeechVoicePrivateUnix::locale() const
 //{
 //    QString lang_var = QString::fromLatin1(voice->language);
 //    if (qstrcmp(voice->variant, "none") != 0) {
@@ -134,18 +134,18 @@ QSpeech::QSpeech(QObject *parent)
 //}
 
 
-class QSpeechPrivate;
-typedef QList<QSpeechPrivateSpeechDispatcher*> QSpeechSpeechDispatcherBackendList;
-Q_GLOBAL_STATIC(QSpeechSpeechDispatcherBackendList, backends)
+class QTextToSpeechPrivate;
+typedef QList<QTextToSpeechPrivateSpeechDispatcher*> QTextToSpeechSpeechDispatcherBackendList;
+Q_GLOBAL_STATIC(QTextToSpeechSpeechDispatcherBackendList, backends)
 
 void speech_finished_callback(size_t msg_id, size_t client_id, SPDNotificationType state);
 
 
-QSpeechPrivateSpeechDispatcher::QSpeechPrivateSpeechDispatcher(QSpeech *speech)
-    : QSpeechPrivate(speech), m_voices(0)
+QTextToSpeechPrivateSpeechDispatcher::QTextToSpeechPrivateSpeechDispatcher(QTextToSpeech *speech)
+    : QTextToSpeechPrivate(speech), m_voices(0)
 {
     backends->append(this);
-    speechDispatcher = spd_open("QSpeech", "main", 0, SPD_MODE_THREADED);
+    speechDispatcher = spd_open("QTextToSpeech", "main", 0, SPD_MODE_THREADED);
     speechDispatcher->callback_begin = speech_finished_callback;
     spd_set_notification_on(speechDispatcher, SPD_BEGIN);
     speechDispatcher->callback_end = speech_finished_callback;
@@ -170,40 +170,40 @@ QSpeechPrivateSpeechDispatcher::QSpeechPrivateSpeechDispatcher(QSpeech *speech)
     } else if (availableModules.length() == 1 && availableModules.at(0) == dummyModule) {
         qWarning() << "Found only the dummy module in speech-dispatcher. No text to speech possible. Install a tts module (e.g. espeak).";
     } else {
-        m_state = QSpeech::Ready;
+        m_state = QTextToSpeech::Ready;
     }
 }
 
-QSpeechPrivateSpeechDispatcher::~QSpeechPrivateSpeechDispatcher()
+QTextToSpeechPrivateSpeechDispatcher::~QTextToSpeechPrivateSpeechDispatcher()
 {
-    if ((m_state != QSpeech::BackendError) && (m_state != QSpeech::Ready))
+    if ((m_state != QTextToSpeech::BackendError) && (m_state != QTextToSpeech::Ready))
         spd_cancel_all(speechDispatcher);
     spd_close(speechDispatcher);
 }
 
-//QSpeechVoice QSpeechPrivate::currentVoice() const
+//QTextToSpeechVoice QTextToSpeechPrivate::currentVoice() const
 //{
 //    return m_currentVoice;
 //}
 
-//void QSpeechPrivate::setVoice(const QSpeechVoice &voice)
+//void QTextToSpeechPrivate::setVoice(const QTextToSpeechVoice &voice)
 //{
 //    m_currentVoice = voice;
-//    const QSpeechVoicePrivateUnix *voicePrivate = static_cast<const QSpeechVoicePrivateUnix *>(voice.d.data());
+//    const QTextToSpeechVoicePrivateUnix *voicePrivate = static_cast<const QTextToSpeechVoicePrivateUnix *>(voice.d.data());
 //    int ret = spd_set_synthesis_voice(speechDispatcher, voicePrivate->voice->name);
 //    qDebug() << "Set voice: " << ret;
 //}
 
-//QVector<QSpeechVoice> QSpeechPrivate::availableVoices() const
+//QVector<QTextToSpeechVoice> QTextToSpeechPrivate::availableVoices() const
 //{
-//    QVector<QSpeechVoice> voiceList;
+//    QVector<QTextToSpeechVoice> voiceList;
 //    if (!m_voices)
 //        m_voices = spd_list_synthesis_voices(speechDispatcher);
 //    int k = 0;
 //    while (m_voices && m_voices[k]) {
-//        QSpeechVoice voice;
-////        QSpeechVoicePrivateUnix *voicePrivate = voice.d;
-//        QSpeechVoicePrivateUnix *voicePrivate = static_cast<QSpeechVoicePrivateUnix *>(voice.d.data());
+//        QTextToSpeechVoice voice;
+////        QTextToSpeechVoicePrivateUnix *voicePrivate = voice.d;
+//        QTextToSpeechVoicePrivateUnix *voicePrivate = static_cast<QTextToSpeechVoicePrivateUnix *>(voice.d.data());
 //        voicePrivate->voice = m_voices[k];
 //        voiceList.append(voice);
 //        ++k;
@@ -211,41 +211,41 @@ QSpeechPrivateSpeechDispatcher::~QSpeechPrivateSpeechDispatcher()
 //    return voiceList;
 //}
 
-//QVector<QString> QSpeechPrivate::availableVoiceTypes() const
+//QVector<QString> QTextToSpeechPrivate::availableVoiceTypes() const
 //{
 //    QVector<QString> voiceTypes;
 //    for (uint i = 0; i < sizeof(map) / sizeof(VoiceTypeMapping); ++i)
-//        voiceTypes.append(QSpeech::tr(map[i].name));
+//        voiceTypes.append(QTextToSpeech::tr(map[i].name));
 //    return voiceTypes;
 //}
 
-//void QSpeechPrivate::setVoiceType(const QString& type)
+//void QTextToSpeechPrivate::setVoiceType(const QString& type)
 //{
 //    for (uint i = 0; i < sizeof(map) / sizeof(VoiceTypeMapping); ++i) {
-//        if (QSpeech::tr(map[i].name) == type) {
+//        if (QTextToSpeech::tr(map[i].name) == type) {
 //            spd_set_voice_type_all(speechDispatcher, map[i].type);
 //            break;
 //        }
 //    }
 //}
 
-//QString QSpeechPrivate::currentVoiceType() const
+//QString QTextToSpeechPrivate::currentVoiceType() const
 //{
 //    return m_voiceType;
 //}
 
 // hack to get state notifications
-void QSpeechPrivateSpeechDispatcher::spdStateChanged(SPDNotificationType state)
+void QTextToSpeechPrivateSpeechDispatcher::spdStateChanged(SPDNotificationType state)
 {
     qDebug() << "SPD state changed: " << state;
 
-    QSpeech::State s = QSpeech::BackendError;
+    QTextToSpeech::State s = QTextToSpeech::BackendError;
     if (state == SPD_EVENT_PAUSE)
-        s = QSpeech::Paused;
+        s = QTextToSpeech::Paused;
     else if ((state == SPD_EVENT_BEGIN) || (state == SPD_EVENT_RESUME))
-        s = QSpeech::Speaking;
+        s = QTextToSpeech::Speaking;
     else if ((state == SPD_EVENT_CANCEL) || (state == SPD_EVENT_END))
-        s = QSpeech::Ready;
+        s = QTextToSpeech::Ready;
 
     if (m_state != s) {
         m_state = s;
@@ -253,63 +253,63 @@ void QSpeechPrivateSpeechDispatcher::spdStateChanged(SPDNotificationType state)
     }
 }
 
-QSpeech::State QSpeechPrivate::state() const
+QTextToSpeech::State QTextToSpeechPrivate::state() const
 {
     return m_state;
 }
 
-void QSpeechPrivateSpeechDispatcher::say(const QString &text)
+void QTextToSpeechPrivateSpeechDispatcher::say(const QString &text)
 {
     if (text.isEmpty())
         return;
 
-    if (m_state != QSpeech::Ready)
+    if (m_state != QTextToSpeech::Ready)
         stop();
     int ret = spd_say(speechDispatcher, SPD_MESSAGE, text.toUtf8().constData());
     qDebug() << "say: " << ret;
 }
 
-void QSpeechPrivateSpeechDispatcher::stop()
+void QTextToSpeechPrivateSpeechDispatcher::stop()
 {
     int r1 = -77;
-    if (m_state == QSpeech::Paused)
+    if (m_state == QTextToSpeech::Paused)
         r1 = spd_resume_all(speechDispatcher);
     int ret = spd_cancel_all(speechDispatcher);
     qDebug() << "stop: " << r1 << ", " << ret;
 }
 
-void QSpeechPrivateSpeechDispatcher::pause()
+void QTextToSpeechPrivateSpeechDispatcher::pause()
 {
-    if (m_state == QSpeech::Speaking) {
+    if (m_state == QTextToSpeech::Speaking) {
         int ret = spd_pause_all(speechDispatcher);
         qDebug() << "pause: " << ret;
     }
 }
 
-void QSpeechPrivateSpeechDispatcher::resume()
+void QTextToSpeechPrivateSpeechDispatcher::resume()
 {
-    if (m_state == QSpeech::Paused) {
+    if (m_state == QTextToSpeech::Paused) {
         int ret = spd_resume_all(speechDispatcher);
         qDebug() << "resume: " << ret;
     }
 }
 
-void QSpeechPrivateSpeechDispatcher::setPitch(double pitch)
+void QTextToSpeechPrivateSpeechDispatcher::setPitch(double pitch)
 {
     spd_set_voice_pitch(speechDispatcher, static_cast<int>(pitch * 100));
 }
 
-void QSpeechPrivateSpeechDispatcher::setRate(double rate)
+void QTextToSpeechPrivateSpeechDispatcher::setRate(double rate)
 {
     spd_set_voice_rate(speechDispatcher, static_cast<int>(rate * 100));
 }
 
-void QSpeechPrivateSpeechDispatcher::setVolume(double volume)
+void QTextToSpeechPrivateSpeechDispatcher::setVolume(double volume)
 {
     spd_set_volume(speechDispatcher, static_cast<int>(volume * 100));
 }
 
-QSpeech::State QSpeechPrivateSpeechDispatcher::state() const
+QTextToSpeech::State QTextToSpeechPrivateSpeechDispatcher::state() const
 {
     return m_state;
 }
@@ -318,7 +318,7 @@ QSpeech::State QSpeechPrivateSpeechDispatcher::state() const
 // (history functions are just stubs)
 void speech_finished_callback(size_t /*msg_id*/, size_t /*client_id*/, SPDNotificationType state)
 {
-    Q_FOREACH(QSpeechPrivateSpeechDispatcher *backend, *backends)
+    Q_FOREACH (QTextToSpeechPrivateSpeechDispatcher *backend, *backends)
         backend->spdStateChanged(state);
 }
 

@@ -40,83 +40,18 @@
 ****************************************************************************/
 
 
+#ifndef QTEXTTOSPEECH_GLOBAL_H
+#define QTEXTTOSPEECH_GLOBAL_H
 
-#ifndef QSPEECH_H
-#define QSPEECH_H
-
-#include <QtSpeech/qspeech_global.h>
-#include <QtCore/qobject.h>
-#include <QtCore/qshareddata.h>
-#include <QtCore/QSharedDataPointer>
-#include <QtCore/qlocale.h>
+#include <QtCore/qglobal.h>
 
 QT_BEGIN_NAMESPACE
 
-
-//class QSpeechVoicePrivate;
-//class QSPEECH_EXPORT QSpeechVoice
-//{
-//public:
-//    ~QSpeechVoice();
-//    QString name() const;
-//    QLocale locale() const;
-
-//    QSpeechVoice();
-//    QSpeechVoice(const QSpeechVoice &other);
-//private:
-//    QSharedDataPointer<QSpeechVoicePrivate> d;
-//    friend class QSpeechVoicePrivate;
-//    friend class QSpeechPrivate;
-//};
-//Q_DECLARE_TYPEINFO(QSpeechVoice, Q_MOVABLE_TYPE);
-
-class QSpeechPrivate;
-class QSPEECH_EXPORT QSpeech : public QObject
-{
-    Q_OBJECT
-    Q_ENUMS(QSpeech::State)
-    Q_PROPERTY(State state READ state NOTIFY stateChanged)
-    Q_DECLARE_PRIVATE(QSpeech)
-public:
-    enum State {
-        Ready,
-        Speaking,
-        Paused,
-        BackendError
-    };
-
-    QSpeech(QObject *parent = 0);
-    State state() const;
-
-public Q_SLOTS:
-    void say(const QString &text);
-    void stop();
-    void pause();
-    void resume();
-
-    void setRate(double rate);
-    void setPitch(double pitch);
-    void setVolume(double volume);
-
-//    QSpeechVoice currentVoice() const;
-//    void setVoice(const QSpeechVoice &locale);
-//    QVector<QSpeechVoice> availableVoices() const;
-
-    // FIXME is qstring really good enough here?
-    // also it uses localized strings... uhm???
-//    QVector<QString> availableVoiceTypes() const;
-//    void setVoiceType(const QString &type);
-//    QString currentVoiceType() const;
-
-Q_SIGNALS:
-    void stateChanged(QSpeech::State state);
-
-private:
-    Q_DISABLE_COPY(QSpeech)
-};
-
-Q_DECLARE_TYPEINFO(QSpeech::State, Q_PRIMITIVE_TYPE);
-Q_DECLARE_METATYPE(QSpeech::State)
+#if defined(QTEXTTOSPEECH_LIBRARY)
+#  define QTEXTTOSPEECH_EXPORT Q_DECL_EXPORT
+#else
+#  define QTEXTTOSPEECH_EXPORT Q_DECL_IMPORT
+#endif
 
 QT_END_NAMESPACE
 

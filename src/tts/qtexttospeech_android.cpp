@@ -40,7 +40,7 @@
 ****************************************************************************/
 
 
-#include "qspeech_p.h"
+#include "qtexttospeech_p.h"
 #include <jni.h>
 
 #include <QtCore/private/qjni_p.h>
@@ -68,7 +68,7 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
         return JNI_ERR;
 
     JNIEnv *jniEnv = uenv.nativeEnvironment;
-    jclass clazz = jniEnv->FindClass("org/qtproject/qt5/android/speech/QtSpeech");
+    jclass clazz = jniEnv->FindClass("org/qtproject/qt5/android/speech/QtTextToSpeech");
 
     if (clazz) {
         g_qtSpeechClass = static_cast<jclass>(jniEnv->NewGlobalRef(clazz));
@@ -90,20 +90,20 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
     return JNI_VERSION_1_4;
 }
 
-//class QSpeechVoicePrivateAndroid : public QSpeechVoicePrivate
+//class QTextToSpeechVoicePrivateAndroid : public QTextToSpeechVoicePrivate
 //{
 //public:
-//    QSpeechVoicePrivateAndroid();
+//    QTextToSpeechVoicePrivateAndroid();
 //    QString name() const;
 //    QLocale locale() const;
 //};
 
 
-class QSpeechPrivateAndroid : public QSpeechPrivate
+class QTextToSpeechPrivateAndroid : public QTextToSpeechPrivate
 {
 public:
-    QSpeechPrivateAndroid(QSpeech *speech);
-    ~QSpeechPrivateAndroid();
+    QTextToSpeechPrivateAndroid(QTextToSpeech *speech);
+    ~QTextToSpeechPrivateAndroid();
 
     void say(const QString &text);
     void stop();
@@ -113,83 +113,83 @@ public:
     void setRate(double rate);
     void setPitch(double pitch);
     void setVolume(double volume);
-    QSpeech::State state() const;
+    QTextToSpeech::State state() const;
 
 private:
     QJNIObjectPrivate m_speech;
 };
 
 
-QSpeechPrivateAndroid::QSpeechPrivateAndroid(QSpeech *speech)
-    : QSpeechPrivate(speech)
+QTextToSpeechPrivateAndroid::QTextToSpeechPrivateAndroid(QTextToSpeech *speech)
+    : QTextToSpeechPrivate(speech)
 {
     Q_ASSERT(g_qtSpeechClass);
 
     jobject activity = QtAndroidPrivate::activity();
     m_speech = QJNIObjectPrivate::callStaticObjectMethod(g_qtSpeechClass,
                                                            "open",
-                                                           "(Landroid/content/Context;)Lorg/qtproject/qt5/android/speech/QtSpeech;",
+                                                           "(Landroid/content/Context;)Lorg/qtproject/qt5/android/speech/QtTextToSpeech;",
                                                            activity);
 }
 
-QSpeechPrivateAndroid::~QSpeechPrivateAndroid()
+QTextToSpeechPrivateAndroid::~QTextToSpeechPrivateAndroid()
 {
 }
 
-QSpeech::QSpeech(QObject *parent)
-    : QObject(*new QSpeechPrivateAndroid(this), parent)
+QTextToSpeech::QTextToSpeech(QObject *parent)
+    : QObject(*new QTextToSpeechPrivateAndroid(this), parent)
 {
-    qRegisterMetaType<QSpeech::State>();
+    qRegisterMetaType<QTextToSpeech::State>();
 }
-//QSpeechVoice::QSpeechVoice()
-//    : d(new QSpeechVoicePrivateAndroid)
+//QTextToSpeechVoice::QTextToSpeechVoice()
+//    : d(new QTextToSpeechVoicePrivateAndroid)
 //{}
 
-//QString QSpeechVoicePrivateAndroid::name() const {
+//QString QTextToSpeechVoicePrivateAndroid::name() const {
 //    return QStringLiteral("default");
 //}
-//QLocale QSpeechVoicePrivateAndroid::locale() const
+//QLocale QTextToSpeechVoicePrivateAndroid::locale() const
 //{
 //    return QLocale();
 //}
 
-//QSpeechVoicePrivateAndroid::QSpeechVoicePrivateAndroid()
-//    : QSpeechVoicePrivate()
+//QTextToSpeechVoicePrivateAndroid::QTextToSpeechVoicePrivateAndroid()
+//    : QTextToSpeechVoicePrivate()
 //{
 //}
 
-//QSpeechVoice QSpeechPrivate::currentVoice() const
+//QTextToSpeechVoice QTextToSpeechPrivate::currentVoice() const
 //{
-//    return QSpeechVoice();
+//    return QTextToSpeechVoice();
 //}
 
-//void QSpeechPrivate::setVoice(const QSpeechVoice &voice)
+//void QTextToSpeechPrivate::setVoice(const QTextToSpeechVoice &voice)
 //{
 ////    m_currentVoice = voice;
 //}
 
-//QVector<QSpeechVoice> QSpeechPrivate::availableVoices() const
+//QVector<QTextToSpeechVoice> QTextToSpeechPrivate::availableVoices() const
 //{
-//    QVector<QSpeechVoice> voiceList;
+//    QVector<QTextToSpeechVoice> voiceList;
 //    return voiceList;
 //}
 
-//QVector<QString> QSpeechPrivate::availableVoiceTypes() const
+//QVector<QString> QTextToSpeechPrivate::availableVoiceTypes() const
 //{
 //    QVector<QString> voiceTypes;
 //    return voiceTypes;
 //}
 
-//void QSpeechPrivate::setVoiceType(const QString& type)
+//void QTextToSpeechPrivate::setVoiceType(const QString& type)
 //{
 //}
 
-//QString QSpeechPrivate::currentVoiceType() const
+//QString QTextToSpeechPrivate::currentVoiceType() const
 //{
 //    return QString();
 //}
 
-void QSpeechPrivateAndroid::say(const QString &text)
+void QTextToSpeechPrivateAndroid::say(const QString &text)
 {
     QJNIEnvironmentPrivate env;
     jstring jstr = env->NewString(reinterpret_cast<const jchar*>(text.constData()),
@@ -197,34 +197,34 @@ void QSpeechPrivateAndroid::say(const QString &text)
     m_speech.callMethod<void>("say", "(Ljava/lang/String;)V", jstr);
 }
 
-QSpeech::State QSpeechPrivateAndroid::state() const
+QTextToSpeech::State QTextToSpeechPrivateAndroid::state() const
 {
     return m_state;
 }
 
-void QSpeechPrivateAndroid::stop()
+void QTextToSpeechPrivateAndroid::stop()
 {
 //    QJNIEnvironmentPrivate env;
     m_speech.callMethod<void>("stop", "()V");
 }
 
-void QSpeechPrivateAndroid::pause()
+void QTextToSpeechPrivateAndroid::pause()
 {
 }
 
-void QSpeechPrivateAndroid::resume()
+void QTextToSpeechPrivateAndroid::resume()
 {
 }
 
-void QSpeechPrivateAndroid::setPitch(double /*pitch*/)
+void QTextToSpeechPrivateAndroid::setPitch(double /*pitch*/)
 {
 }
 
-void QSpeechPrivateAndroid::setRate(double /*rate*/)
+void QTextToSpeechPrivateAndroid::setRate(double /*rate*/)
 {
 }
 
-void QSpeechPrivateAndroid::setVolume(double /*volume*/)
+void QTextToSpeechPrivateAndroid::setVolume(double /*volume*/)
 {
 }
 

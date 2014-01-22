@@ -46,7 +46,7 @@
 
 #include "ui_mainwindow.h"
 
-#include <QSpeech>
+#include <QTextToSpeech>
 
 class MainWindow : public QMainWindow
 {
@@ -58,12 +58,12 @@ public slots:
     void speak();
     void stop();
 
-    void stateChanged(QSpeech::State state);
+    void stateChanged(QTextToSpeech::State state);
     void languageSelected(int language);
 
 private:
     Ui::MainWindow ui;
-    QSpeech m_speech;
+    QTextToSpeech m_speech;
 };
 
 #endif

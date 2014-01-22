@@ -53,7 +53,7 @@ import android.content.Context;
 
 import java.util.HashMap;
 
-public class QtSpeech
+public class QtTextToSpeech
 {
 
     private TextToSpeech mTts;
@@ -63,32 +63,32 @@ public class QtSpeech
     private final OnInitListener mTtsChangeListener = new OnInitListener() {
         @Override
         public void onInit(int status) {
-            Log.w("QtSpeech", "tts initialized");
+            Log.w("QtTextToSpeech", "tts initialized");
             // FIXME make sure to only do something when initialized, not before
         }
     };
 
-    public static QtSpeech open(Context context)
+    public static QtTextToSpeech open(Context context)
     {
-        return new QtSpeech(context);
+        return new QtTextToSpeech(context);
     }
 
-    QtSpeech(Context context) {
+    QtTextToSpeech(Context context) {
         mTts = new TextToSpeech(context, mTtsChangeListener);
     }
 
     public void say(String text)
     {
-        Log.w("QtSpeech", text);
+        Log.w("QtTextToSpeech", text);
 
         mTts.stop();
         HashMap<String, String> params = null;
         final int result = mTts.speak(text, SPEECH_FLUSH_ALL, params);
-        Log.w("QtSpeech", "RESULT: " + Integer.toString(result));
+        Log.w("QtTextToSpeech", "RESULT: " + Integer.toString(result));
     }
     public void stop()
     {
-        Log.w("QtSpeech", "STOP");
+        Log.w("QtTextToSpeech", "STOP");
         mTts.stop();
     }
 }

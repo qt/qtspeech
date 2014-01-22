@@ -40,8 +40,8 @@
 ****************************************************************************/
 
 
-#include "qspeech.h"
-#include "qspeech_p.h"
+#include "qtexttospeech.h"
+#include "qtexttospeech_p.h"
 
 #include <qdebug.h>
 
@@ -53,60 +53,60 @@ QT_BEGIN_NAMESPACE
 
 
 // /*!
-//  \class QSpeechVoice
-//  \brief The QSpeechVoice class represents a voice in QSpeech.
+//  \class QTextToSpeechVoice
+//  \brief The QTextToSpeechVoice class represents a voice in QTextToSpeech.
 
 //  A voice is bound to a language.
 //*/
 
-//QSpeechVoice::QSpeechVoice(const QSpeechVoice &other)
+//QTextToSpeechVoice::QTextToSpeechVoice(const QTextToSpeechVoice &other)
 //    : d(other.d)
 //{
 //}
 
-//QSpeechVoice::~QSpeechVoice()
+//QTextToSpeechVoice::~QTextToSpeechVoice()
 //{}
 
-//QString QSpeechVoice::name() const
+//QString QTextToSpeechVoice::name() const
 //{
 //    return d->name();
 //}
 
-//QLocale QSpeechVoice::locale() const
+//QLocale QTextToSpeechVoice::locale() const
 //{
 //    return d->locale();
 //}
 
 
-QSpeechPrivate::QSpeechPrivate(QSpeech *speech)
-    : m_speech(speech), m_state(QSpeech::Ready)
+QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech)
+    : m_speech(speech), m_state(QTextToSpeech::Ready)
 {
 }
 
 /*!
-  \class QSpeech
-  \brief The QSpeech class provides a convenient access to text-to-speech engines
+  \class QTextToSpeech
+  \brief The QTextToSpeech class provides a convenient access to text-to-speech engines
 
   On Linux by default speech-dispatcher is used.
 */
 
 
 
-QSpeech::State QSpeech::state() const
+QTextToSpeech::State QTextToSpeech::state() const
 {
-    Q_D(const QSpeech);
+    Q_D(const QTextToSpeech);
     return d->state();
 }
 
-void QSpeech::say(const QString &text)
+void QTextToSpeech::say(const QString &text)
 {
-    Q_D(QSpeech);
+    Q_D(QTextToSpeech);
     d->say(text);
 }
 
-void QSpeech::stop()
+void QTextToSpeech::stop()
 {
-    Q_D(QSpeech);
+    Q_D(QTextToSpeech);
     d->stop();
 }
 
@@ -117,50 +117,50 @@ void QSpeech::stop()
   Some synthesizers will look for a break that they can later resume from, such as
   a sentence end.
  */
-void QSpeech::pause()
+void QTextToSpeech::pause()
 {
-    Q_D(QSpeech);
+    Q_D(QTextToSpeech);
     d->pause();
 }
 
-void QSpeech::resume()
+void QTextToSpeech::resume()
 {
-    Q_D(QSpeech);
+    Q_D(QTextToSpeech);
     d->resume();
 }
 
-//QSpeechVoice QSpeech::currentVoice() const
+//QTextToSpeechVoice QTextToSpeech::currentVoice() const
 //{
-//    Q_D(const QSpeech);
+//    Q_D(const QTextToSpeech);
 //    return d->currentVoice();
 //}
 
-//void QSpeech::setVoice(const QSpeechVoice &voice)
+//void QTextToSpeech::setVoice(const QTextToSpeechVoice &voice)
 //{
-//    Q_D(QSpeech);
+//    Q_D(QTextToSpeech);
 //    d->setVoice(voice);
 //}
 
-//QVector<QSpeechVoice> QSpeech::availableVoices() const
+//QVector<QTextToSpeechVoice> QTextToSpeech::availableVoices() const
 //{
-//    Q_D(const QSpeech);
+//    Q_D(const QTextToSpeech);
 //    return d->availableVoices();
 //}
 
-//QVector<QString> QSpeech::availableVoiceTypes() const
+//QVector<QString> QTextToSpeech::availableVoiceTypes() const
 //{
-//    Q_D(const QSpeech);
+//    Q_D(const QTextToSpeech);
 //    return d->availableVoiceTypes();
 //}
 
-//void QSpeech::setVoiceType(const QString& type)
+//void QTextToSpeech::setVoiceType(const QString& type)
 //{
-//    Q_D(QSpeech);
+//    Q_D(QTextToSpeech);
 //    d->setVoiceType(type);
 //}
-//QString QSpeech::currentVoiceType() const
+//QString QTextToSpeech::currentVoiceType() const
 //{
-//    Q_D(const QSpeech);
+//    Q_D(const QTextToSpeech);
 //    return d->currentVoiceType();
 //}
 
@@ -169,9 +169,9 @@ void QSpeech::resume()
  Sets the voice \a pitch to a value between -1.0 and 1.0.
  The default of 0.0 is normal speech.
 */
-void QSpeech::setPitch(double pitch)
+void QTextToSpeech::setPitch(double pitch)
 {
-    Q_D(QSpeech);
+    Q_D(QTextToSpeech);
     d->setPitch(pitch);
 }
 
@@ -179,9 +179,9 @@ void QSpeech::setPitch(double pitch)
  Sets the voice \a rate to a value between -1.0 and 1.0.
  The default of 0.0 is normal speech flow.
 */
-void QSpeech::setRate(double rate)
+void QTextToSpeech::setRate(double rate)
 {
-    Q_D(QSpeech);
+    Q_D(QTextToSpeech);
     d->setRate(rate);
 }
 
@@ -189,12 +189,10 @@ void QSpeech::setRate(double rate)
  Sets the \a volume to a value between -1.0 and 1.0.
  The default is 0.0.
 */
-void QSpeech::setVolume(double volume)
+void QTextToSpeech::setVolume(double volume)
 {
-    Q_D(QSpeech);
+    Q_D(QTextToSpeech);
     d->setVolume(volume);
 }
 
 QT_END_NAMESPACE
-
-#include "moc_qspeech.cpp"
