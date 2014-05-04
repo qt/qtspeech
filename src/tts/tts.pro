@@ -24,8 +24,10 @@ win32 {
     SUBDIRS += android
     SOURCES += qtexttospeech_android.cpp
 } else:unix {
+    CONFIG += link_pkgconfig
     SOURCES += qtexttospeech_unix.cpp
     LIBS += -lspeechd
+    PKGCONFIG = speech-dispatcher
 }
 
 

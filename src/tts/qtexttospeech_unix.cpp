@@ -43,7 +43,7 @@
 #include "qtexttospeech_p.h"
 
 #include <qdebug.h>
-#include <libspeechd.h>
+#include <speech-dispatcher/libspeechd.h>
 
 QT_BEGIN_NAMESPACE
 

@@ -49,7 +49,7 @@
 #if defined(Q_OS_ANDROID)
 #elif defined(Q_OS_OSX)
 #elif defined(Q_OS_UNIX)
-#include <libspeechd.h>
+#include <speech-dispatcher/libspeechd.h>
 #endif
 
 class QTextToSpeechBackend;
