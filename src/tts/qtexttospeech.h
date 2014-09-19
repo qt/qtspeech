@@ -85,7 +85,7 @@ public:
         BackendError
     };
 
-    QTextToSpeech(QObject *parent = 0);
+    explicit QTextToSpeech(QObject *parent = 0);
     State state() const;
 
 public Q_SLOTS:
