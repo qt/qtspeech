@@ -279,17 +279,23 @@ void QTextToSpeechPrivateSpeechDispatcher::resume()
 
 void QTextToSpeechPrivateSpeechDispatcher::setPitch(double pitch)
 {
-    spd_set_voice_pitch(speechDispatcher, static_cast<int>(pitch * 100));
+    int result = spd_set_voice_pitch(speechDispatcher, static_cast<int>(pitch * 100));
+    if (result == 0)
+        emitPitchChanged(pitch);
 }
 
 void QTextToSpeechPrivateSpeechDispatcher::setRate(double rate)
 {
-    spd_set_voice_rate(speechDispatcher, static_cast<int>(rate * 100));
+    int result = spd_set_voice_rate(speechDispatcher, static_cast<int>(rate * 100));
+    if (result == 0)
+        emitRateChanged(rate);
 }
 
 void QTextToSpeechPrivateSpeechDispatcher::setVolume(int volume)
 {
-    spd_set_volume(speechDispatcher, ( -100 + volume * 2) );
+    int result = spd_set_volume(speechDispatcher, ( -100 + volume * 2) );
+    if (result == 0)
+        emitVolumeChanged(volume);
 }
 
 void QTextToSpeechPrivateSpeechDispatcher::setLocale(const QLocale &locale)

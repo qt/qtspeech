@@ -86,6 +86,21 @@ protected:
         emit m_speech->stateChanged(s);
     }
 
+    void emitRateChanged(double rate)
+    {
+        emit m_speech->rateChanged(rate);
+    }
+
+    void emitPitchChanged(double pitch)
+    {
+        emit m_speech->pitchChanged(pitch);
+    }
+
+    void emitVolumeChanged(double volume)
+    {
+        emit m_speech->volumeChanged(volume);
+    }
+
     void emitLocaleChanged(const QLocale &locale)
     {
         emit m_speech->localeChanged(locale);

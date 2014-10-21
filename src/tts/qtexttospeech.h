@@ -95,6 +95,9 @@ public Q_SLOTS:
 Q_SIGNALS:
     void stateChanged(QTextToSpeech::State state);
     void localeChanged(const QLocale &locale);
+    void rateChanged(double rate);
+    void pitchChanged(double pitch);
+    void volumeChanged(double volume);
 
 private:
     Q_DISABLE_COPY(QTextToSpeech)
