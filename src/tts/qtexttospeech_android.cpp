@@ -105,6 +105,8 @@ public:
     QTextToSpeechPrivateAndroid(QTextToSpeech *speech);
     ~QTextToSpeechPrivateAndroid();
 
+    QVector<QLocale> availableLocales() const;
+
     void say(const QString &text);
     void stop();
     void pause();
@@ -113,6 +115,8 @@ public:
     void setRate(double rate);
     void setPitch(double pitch);
     void setVolume(double volume);
+    void setLocale(const QLocale &locale);
+    QLocale currentLocale() const;
     QTextToSpeech::State state() const;
 
 private:
@@ -141,38 +145,6 @@ QTextToSpeech::QTextToSpeech(QObject *parent)
 {
     qRegisterMetaType<QTextToSpeech::State>();
 }
-//QTextToSpeechVoice::QTextToSpeechVoice()
-//    : d(new QTextToSpeechVoicePrivateAndroid)
-//{}
-
-//QString QTextToSpeechVoicePrivateAndroid::name() const {
-//    return QStringLiteral("default");
-//}
-//QLocale QTextToSpeechVoicePrivateAndroid::locale() const
-//{
-//    return QLocale();
-//}
-
-//QTextToSpeechVoicePrivateAndroid::QTextToSpeechVoicePrivateAndroid()
-//    : QTextToSpeechVoicePrivate()
-//{
-//}
-
-//QTextToSpeechVoice QTextToSpeechPrivate::currentVoice() const
-//{
-//    return QTextToSpeechVoice();
-//}
-
-//void QTextToSpeechPrivate::setVoice(const QTextToSpeechVoice &voice)
-//{
-////    m_currentVoice = voice;
-//}
-
-//QVector<QTextToSpeechVoice> QTextToSpeechPrivate::availableVoices() const
-//{
-//    QVector<QTextToSpeechVoice> voiceList;
-//    return voiceList;
-//}
 
 //QVector<QString> QTextToSpeechPrivate::availableVoiceTypes() const
 //{
@@ -226,6 +198,20 @@ void QTextToSpeechPrivateAndroid::setRate(double /*rate*/)
 
 void QTextToSpeechPrivateAndroid::setVolume(double /*volume*/)
 {
+}
+
+QVector<QLocale> QTextToSpeechPrivateAndroid::availableLocales() const
+{
+    return QVector<QLocale>();
+}
+
+void QTextToSpeechPrivateAndroid::setLocale(const QLocale & /* locale */)
+{
+}
+
+QLocale QTextToSpeechPrivateAndroid::currentLocale() const
+{
+    return QLocale();
 }
 
 QT_END_NAMESPACE

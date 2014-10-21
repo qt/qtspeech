@@ -53,23 +53,6 @@
 QT_BEGIN_NAMESPACE
 
 
-//class QTextToSpeechVoicePrivate;
-//class QTEXTTOSPEECH_EXPORT QTextToSpeechVoice
-//{
-//public:
-//    ~QTextToSpeechVoice();
-//    QString name() const;
-//    QLocale locale() const;
-
-//    QTextToSpeechVoice();
-//    QTextToSpeechVoice(const QTextToSpeechVoice &other);
-//private:
-//    QSharedDataPointer<QTextToSpeechVoicePrivate> d;
-//    friend class QTextToSpeechVoicePrivate;
-//    friend class QTextToSpeechPrivate;
-//};
-//Q_DECLARE_TYPEINFO(QTextToSpeechVoice, Q_MOVABLE_TYPE);
-
 class QTextToSpeechPrivate;
 class QTEXTTOSPEECH_EXPORT QTextToSpeech : public QObject
 {
@@ -88,19 +71,20 @@ public:
     explicit QTextToSpeech(QObject *parent = 0);
     State state() const;
 
+    QVector<QLocale> availableLocales() const;
+
 public Q_SLOTS:
     void say(const QString &text);
     void stop();
     void pause();
     void resume();
 
+    void setLocale(const QLocale &locale);
+    QLocale currentLocale() const;
+
     void setRate(double rate);
     void setPitch(double pitch);
     void setVolume(double volume);
-
-//    QTextToSpeechVoice currentVoice() const;
-//    void setVoice(const QTextToSpeechVoice &locale);
-//    QVector<QTextToSpeechVoice> availableVoices() const;
 
     // FIXME is qstring really good enough here?
     // also it uses localized strings... uhm???
@@ -110,6 +94,7 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void stateChanged(QTextToSpeech::State state);
+    void localeChanged(const QLocale &locale);
 
 private:
     Q_DISABLE_COPY(QTextToSpeech)

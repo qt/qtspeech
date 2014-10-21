@@ -64,6 +64,7 @@ public:
     QTextToSpeechPrivateMac(QTextToSpeech *speech);
     ~QTextToSpeechPrivateMac();
 
+    QVector<QLocale> availableLocales() const;
     void say(const QString &text);
     void stop();
     void pause();
@@ -72,6 +73,8 @@ public:
     void setRate(double rate);
     void setPitch(double pitch);
     void setVolume(double volume);
+    void setLocale(const QLocale &locale);
+    QLocale currentLocale() const;
     QTextToSpeech::State state() const;
 
     bool isPaused() const { return false; }
@@ -182,6 +185,20 @@ void QTextToSpeechPrivateMac::setRate(double rate)
 
 void QTextToSpeechPrivateMac::setVolume(double volume)
 {
+}
+
+QVector<QLocale> QTextToSpeechPrivateMac::availableLocales() const
+{
+    return QVector<QLocale>();
+}
+
+void QTextToSpeechPrivateMac::setLocale(const QLocale &locale)
+{
+}
+
+QLocale QTextToSpeechPrivateMac::currentLocale() const
+{
+    return QLocale();
 }
 
 QTextToSpeech::State QTextToSpeechPrivateMac::state() const

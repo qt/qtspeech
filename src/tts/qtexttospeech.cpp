@@ -52,32 +52,6 @@ QT_BEGIN_NAMESPACE
 // FIXME: disentangle SPD from the generic stuff
 
 
-// /*!
-//  \class QTextToSpeechVoice
-//  \brief The QTextToSpeechVoice class represents a voice in QTextToSpeech.
-
-//  A voice is bound to a language.
-//*/
-
-//QTextToSpeechVoice::QTextToSpeechVoice(const QTextToSpeechVoice &other)
-//    : d(other.d)
-//{
-//}
-
-//QTextToSpeechVoice::~QTextToSpeechVoice()
-//{}
-
-//QString QTextToSpeechVoice::name() const
-//{
-//    return d->name();
-//}
-
-//QLocale QTextToSpeechVoice::locale() const
-//{
-//    return d->locale();
-//}
-
-
 QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech)
     : m_speech(speech), m_state(QTextToSpeech::Ready)
 {
@@ -129,24 +103,6 @@ void QTextToSpeech::resume()
     d->resume();
 }
 
-//QTextToSpeechVoice QTextToSpeech::currentVoice() const
-//{
-//    Q_D(const QTextToSpeech);
-//    return d->currentVoice();
-//}
-
-//void QTextToSpeech::setVoice(const QTextToSpeechVoice &voice)
-//{
-//    Q_D(QTextToSpeech);
-//    d->setVoice(voice);
-//}
-
-//QVector<QTextToSpeechVoice> QTextToSpeech::availableVoices() const
-//{
-//    Q_D(const QTextToSpeech);
-//    return d->availableVoices();
-//}
-
 //QVector<QString> QTextToSpeech::availableVoiceTypes() const
 //{
 //    Q_D(const QTextToSpeech);
@@ -193,6 +149,35 @@ void QTextToSpeech::setVolume(double volume)
 {
     Q_D(QTextToSpeech);
     d->setVolume(volume);
+}
+
+/*!
+ Sets the \a locale to a given locale if possible.
+ The default is the system locale.
+*/
+void QTextToSpeech::setLocale(const QLocale &locale)
+{
+    Q_D(QTextToSpeech);
+    d->setLocale(locale);
+}
+
+/*!
+ Gets the current locale.
+*/
+QLocale QTextToSpeech::currentLocale() const
+{
+    Q_D(const QTextToSpeech);
+    return d->currentLocale();
+}
+
+/*!
+ Gets a vector of locales that are currently supported. Note on some platforms
+ these can change when the backend changes synthesizers for example.
+*/
+QVector<QLocale> QTextToSpeech::availableLocales() const
+{
+    Q_D(const QTextToSpeech);
+    return d->availableLocales();
 }
 
 QT_END_NAMESPACE

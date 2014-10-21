@@ -54,16 +54,6 @@
 
 class QTextToSpeechBackend;
 
-//class QTextToSpeechVoicePrivate : public QSharedData
-//{
-//public:
-//    QTextToSpeechVoicePrivate()
-//    {}
-//    virtual ~QTextToSpeechVoicePrivate() {}
-//    virtual QString name() const = 0;
-//    virtual QLocale locale() const = 0;
-//};
-
 class QTextToSpeech;
 class QTextToSpeechPrivate : public QObjectPrivate
 {
@@ -72,13 +62,11 @@ public:
 
     // system specific initialization, sets up a backend
 
-//    QTextToSpeechVoice currentVoice() const;
-//    void setVoice(const QTextToSpeechVoice &voice);
-//    QVector<QTextToSpeechVoice> availableVoices() const;
-
 //    QVector<QString> availableVoiceTypes() const;
 //    void setVoiceType(const QString& type);
 //    QString currentVoiceType() const;
+
+    virtual QVector<QLocale> availableLocales() const = 0;
 
     virtual void say(const QString &text) = 0;
     virtual void stop() = 0;
@@ -88,6 +76,8 @@ public:
     virtual void setRate(double rate) = 0;
     virtual void setPitch(double pitch) = 0;
     virtual void setVolume(double volume) = 0;
+    virtual void setLocale(const QLocale &locale) = 0;
+    virtual QLocale currentLocale() const = 0;
     virtual QTextToSpeech::State state() const = 0;
 
 protected:
@@ -95,6 +85,12 @@ protected:
     {
         emit m_speech->stateChanged(s);
     }
+
+    void emitLocaleChanged(const QLocale &locale)
+    {
+        emit m_speech->localeChanged(locale);
+    }
+
     QTextToSpeech *m_speech;
     QTextToSpeech::State m_state;
 };

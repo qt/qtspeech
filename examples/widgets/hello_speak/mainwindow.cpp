@@ -46,6 +46,16 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui.setupUi(this);
 
+    // Populate the languages combobox before connecting its signal.
+    QVector<QLocale> locales = m_speech.availableLocales();
+    QLocale current = m_speech.currentLocale();
+    foreach (const QLocale &locale, locales) {
+        QVariant localeVariant(locale);
+        ui.language->addItem(QLocale::languageToString(locale.language()), localeVariant);
+        if (locale.name() == current.name())
+            ui.language->setCurrentIndex(ui.language->count() - 1);
+    }
+
     connect(ui.speakButton, &QPushButton::clicked, this, &MainWindow::speak);
     connect(ui.stopButton, &QPushButton::clicked, &m_speech, &QTextToSpeech::stop);
     connect(ui.pauseButton, &QPushButton::clicked, &m_speech, &QTextToSpeech::pause);
@@ -66,7 +76,6 @@ MainWindow::MainWindow(QWidget *parent)
 //    }
 
 //    qDebug() << voices;
-//    ui.language->addItems(voices);
 //    ui.voiceType->addItems(m_speech.availableVoiceTypes().toList());
 
 //    m_speech.voiceTypes();
@@ -99,6 +108,6 @@ void MainWindow::stateChanged(QTextToSpeech::State state)
 
 void MainWindow::languageSelected(int language)
 {
-//    QTextToSpeechVoice voice = m_speech.availableVoices()[language];
-//    m_speech.setVoice(voice);
+    QLocale locale = ui.language->itemData(language).toLocale();
+    m_speech.setLocale(locale);
 }
