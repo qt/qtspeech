@@ -1,3 +1,5 @@
 TEMPLATE = subdirs
 
-SUBDIRS += cmake
+SUBDIRS += \
+    cmake \
+    texttospeech
