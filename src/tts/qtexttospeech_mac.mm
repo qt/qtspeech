@@ -181,10 +181,14 @@ void QTextToSpeechPrivateMac::setPitch(double pitch)
 
 void QTextToSpeechPrivateMac::setRate(double rate)
 {
+    // NSSpeechSynthesizer supports words per minute,
+    // human speech is 180 to 220 - use 0 to 400 as range here
+    [speechSynthesizer setRate: 200 + (rate * 200)];
 }
 
 void QTextToSpeechPrivateMac::setVolume(double volume)
 {
+    [speechSynthesizer setVolume: (volume + 1.0) / 2.0];
 }
 
 QVector<QLocale> QTextToSpeechPrivateMac::availableLocales() const
