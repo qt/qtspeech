@@ -114,9 +114,9 @@ public:
 
     void setRate(double rate);
     void setPitch(double pitch);
-    void setVolume(double volume);
     void setLocale(const QLocale &locale);
     QLocale currentLocale() const;
+    void setVolume(int volume);
     QTextToSpeech::State state() const;
 
 private:
@@ -196,7 +196,7 @@ void QTextToSpeechPrivateAndroid::setRate(double /*rate*/)
 {
 }
 
-void QTextToSpeechPrivateAndroid::setVolume(double /*volume*/)
+void QTextToSpeechPrivateAndroid::setVolume(int /*volume*/)
 {
 }
 

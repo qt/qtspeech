@@ -109,6 +109,7 @@ public:
     void setLocale(const QLocale &locale);
     QLocale currentLocale() const;
     QTextToSpeech::State state() const;
+    void setVolume(int volume);
 
     void spdStateChanged(SPDNotificationType state);
 private:
@@ -287,9 +288,9 @@ void QTextToSpeechPrivateSpeechDispatcher::setRate(double rate)
     spd_set_voice_rate(speechDispatcher, static_cast<int>(rate * 100));
 }
 
-void QTextToSpeechPrivateSpeechDispatcher::setVolume(double volume)
+void QTextToSpeechPrivateSpeechDispatcher::setVolume(int volume)
 {
-    spd_set_volume(speechDispatcher, static_cast<int>(volume * 100));
+    spd_set_volume(speechDispatcher, ( -100 + volume * 2) );
 }
 
 void QTextToSpeechPrivateSpeechDispatcher::setLocale(const QLocale &locale)

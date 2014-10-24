@@ -75,9 +75,9 @@ public:
 
     virtual void setRate(double rate) = 0;
     virtual void setPitch(double pitch) = 0;
-    virtual void setVolume(double volume) = 0;
     virtual void setLocale(const QLocale &locale) = 0;
     virtual QLocale currentLocale() const = 0;
+    virtual void setVolume(int volume) = 0;
     virtual QTextToSpeech::State state() const = 0;
 
 protected:

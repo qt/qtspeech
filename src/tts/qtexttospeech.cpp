@@ -142,10 +142,10 @@ void QTextToSpeech::setRate(double rate)
 }
 
 /*!
- Sets the \a volume to a value between -1.0 and 1.0.
- The default is 0.0.
+ Sets the \a volume to a value between 0 and 100.
+ The default is 50.
 */
-void QTextToSpeech::setVolume(double volume)
+void QTextToSpeech::setVolume(int volume)
 {
     Q_D(QTextToSpeech);
     d->setVolume(volume);

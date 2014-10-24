@@ -64,9 +64,9 @@ public:
 
     void setRate(double rate);
     void setPitch(double pitch);
-    void setVolume(double volume);
     void setLocale(const QLocale &locale);
     QLocale currentLocale() const;
+    void setVolume(int volume);
     QTextToSpeech::State state() const;
 
     bool isPaused() const { return m_pauseCount; }
@@ -180,10 +180,10 @@ void QTextToSpeechPrivateWindows::setRate(double rate)
     voice->SetRate(long(rate*10));
 }
 
-void QTextToSpeechPrivateWindows::setVolume(double volume)
+void QTextToSpeechPrivateWindows::setVolume(int volume)
 {
     // 0 to 100
-    voice->SetVolume(USHORT((volume + 1) * 50));
+    voice->SetVolume(volume);
 }
 
 QVector<QLocale> QTextToSpeechPrivateWindows::availableLocales() const

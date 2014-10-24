@@ -84,7 +84,7 @@ public Q_SLOTS:
 
     void setRate(double rate);
     void setPitch(double pitch);
-    void setVolume(double volume);
+    void setVolume(int volume);
 
     // FIXME is qstring really good enough here?
     // also it uses localized strings... uhm???

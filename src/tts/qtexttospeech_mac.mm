@@ -72,9 +72,9 @@ public:
 
     void setRate(double rate);
     void setPitch(double pitch);
-    void setVolume(double volume);
     void setLocale(const QLocale &locale);
     QLocale currentLocale() const;
+    void setVolume(int volume);
     QTextToSpeech::State state() const;
 
     bool isPaused() const { return false; }
@@ -186,7 +186,7 @@ void QTextToSpeechPrivateMac::setRate(double rate)
     [speechSynthesizer setRate: 200 + (rate * 200)];
 }
 
-void QTextToSpeechPrivateMac::setVolume(double volume)
+void QTextToSpeechPrivateMac::setVolume(int volume)
 {
     [speechSynthesizer setVolume: (volume + 1.0) / 2.0];
 }
