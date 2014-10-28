@@ -74,22 +74,6 @@ QT_BEGIN_NAMESPACE
 
 QString dummyModule = QStringLiteral("dummy");
 
-struct VoiceTypeMapping {
-    const char *name;
-    SPDVoiceType type;
-};
-
-static VoiceTypeMapping map[] = {
-    { QT_TRANSLATE_NOOP("QTextToSpeech", "Male Voice 1"), SPD_MALE1 },
-    { QT_TRANSLATE_NOOP("QTextToSpeech", "Male Voice 2"), SPD_MALE2 },
-    { QT_TRANSLATE_NOOP("QTextToSpeech", "Male Voice 3"), SPD_MALE3 },
-    { QT_TRANSLATE_NOOP("QTextToSpeech", "Female Voice 1"), SPD_FEMALE1 },
-    { QT_TRANSLATE_NOOP("QTextToSpeech", "Female Voice 2"), SPD_FEMALE2},
-    { QT_TRANSLATE_NOOP("QTextToSpeech", "Female Voice 3"), SPD_FEMALE3 },
-    { QT_TRANSLATE_NOOP("QTextToSpeech", "Male Child Voice"), SPD_CHILD_MALE },
-    { QT_TRANSLATE_NOOP("QTextToSpeech", "Female Child Voice"), SPD_CHILD_FEMALE },
-};
-
 class QTextToSpeechPrivateSpeechDispatcher : public QTextToSpeechPrivate
 {
 public:
