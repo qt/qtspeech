@@ -61,10 +61,28 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech)
   \class QTextToSpeech
   \brief The QTextToSpeech class provides a convenient access to text-to-speech engines
 
+  Use \l say() to start synthesizing text.
+  It is possible to specify the language with \l language().
+  To select between the available voices use \l voiceName().
+  The languages and voices depend on the available synthesizers on each platform.
   On Linux by default speech-dispatcher is used.
 */
 
+/*!
+  \enum QTextToSpeech::State
+  \value Ready          The synthesizer is ready to start a new text. This is
+                        also the state after a text was finished.
+  \value Speaking       The current text is being spoken.
+  \value Paused         The sythetization was paused and can be resumed with \l resume().
+  \value BackendError   The backend was unable to synthesize the current string.
+*/
 
+/*!
+  \property QTextToSpeech::state
+  The current state of the speech synthesizer.
+  Use \l say() to start synthesizing text with the current voice and locale.
+
+*/
 
 QTextToSpeech::State QTextToSpeech::state() const
 {
@@ -72,12 +90,22 @@ QTextToSpeech::State QTextToSpeech::state() const
     return d->state();
 }
 
+/*!
+  Start synthesizing the \a text.
+  This function will start the asynchronous speaking of the text.
+  The current state is available using the \l state property. Once the
+  synthetization is done, a \l stateChanged() signal with the \l Ready state
+  will be emitted.
+*/
 void QTextToSpeech::say(const QString &text)
 {
     Q_D(QTextToSpeech);
     d->say(text);
 }
 
+/*!
+  Stop the currently speaking text.
+*/
 void QTextToSpeech::stop()
 {
     Q_D(QTextToSpeech);
@@ -90,13 +118,18 @@ void QTextToSpeech::stop()
   take several seconds until it takes effect or may pause instantly.
   Some synthesizers will look for a break that they can later resume from, such as
   a sentence end.
- */
+  \sa resume()
+*/
 void QTextToSpeech::pause()
 {
     Q_D(QTextToSpeech);
     d->pause();
 }
 
+/*!
+  Resume speaking after \l pause() has been called.
+  \sa pause()
+*/
 void QTextToSpeech::resume()
 {
     Q_D(QTextToSpeech);
