@@ -10,9 +10,12 @@ HEADERS = \
     qtexttospeech.h \
     qtexttospeech_p.h \
     qtexttospeech_global.h \
+    qvoice.h \
+    qvoice_p.h \
 
 SOURCES = \
     qtexttospeech.cpp \
+    qvoice.cpp \
 
 win32 {
     SOURCES += qtexttospeech_win.cpp

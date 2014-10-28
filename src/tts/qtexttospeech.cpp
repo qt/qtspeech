@@ -237,4 +237,35 @@ QVector<QLocale> QTextToSpeech::availableLocales() const
     return d->availableLocales();
 }
 
+/*!
+ Sets the voice to use.
+ \note on some platforms setting the voice changes other voice attributes
+ such as locale, pitch, etc. in which case signals for these will be
+ emitted also.
+*/
+void QTextToSpeech::setVoice(const QVoice &voice)
+{
+    Q_D(QTextToSpeech);
+    d->setVoice(voice);
+}
+
+/*!
+ Gets the current voice.
+*/
+QVoice QTextToSpeech::voice() const
+{
+    Q_D(const QTextToSpeech);
+    return d->voice();
+}
+
+/*!
+ Gets a vector of voices available for the current locale.
+ \note if no locale has been set, the system locale is used.
+*/
+QVector<QVoice> QTextToSpeech::availableVoices() const
+{
+    Q_D(const QTextToSpeech);
+    return d->availableVoices();
+}
+
 QT_END_NAMESPACE

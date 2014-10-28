@@ -63,10 +63,14 @@ public slots:
 
     void stateChanged(QTextToSpeech::State state);
     void languageSelected(int language);
+    void voiceSelected(int index);
+
+    void localeChanged(const QLocale &locale);
 
 private:
     Ui::MainWindow ui;
     QTextToSpeech m_speech;
+    QVector<QVoice> m_voices;
 };
 
 #endif

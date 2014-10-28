@@ -40,79 +40,70 @@
 ****************************************************************************/
 
 
-#ifndef QTEXTTOSPEECH_P_H
-#define QTEXTTOSPEECH_P_H
+#include "qvoice.h"
+#include "qvoice_p.h"
 
-#include <qtexttospeech.h>
-#include <QtCore/private/qobject_p.h>
+QT_BEGIN_NAMESPACE
 
-#if defined(Q_OS_ANDROID)
-#elif defined(Q_OS_OSX)
-#elif defined(Q_OS_UNIX)
-#include <speech-dispatcher/libspeechd.h>
-#endif
-
-class QTextToSpeechBackend;
-
-class QTextToSpeech;
-class QTextToSpeechPrivate : public QObjectPrivate
+QVoice::QVoice()
 {
-public:
-    QTextToSpeechPrivate(QTextToSpeech *speech);
+    d = new QVoicePrivate();
+}
 
-    virtual QVector<QLocale> availableLocales() const = 0;
-    virtual QVector<QVoice> availableVoices() const = 0;
+QVoice::QVoice(const QVoice &other)
+    :d(other.d)
+{
+}
 
-    virtual void say(const QString &text) = 0;
-    virtual void stop() = 0;
-    virtual void pause() = 0;
-    virtual void resume() = 0;
+QVoice::QVoice(const QString &name, Gender gender, Age age)
+    :d(new QVoicePrivate(name, gender, age))
+{
+}
 
-    virtual double rate() const = 0;
-    virtual void setRate(double rate) = 0;
-    virtual double pitch() const = 0;
-    virtual void setPitch(double pitch) = 0;
-    virtual void setLocale(const QLocale &locale) = 0;
-    virtual QLocale locale() const = 0;
-    virtual int volume() const = 0;
-    virtual void setVolume(int volume) = 0;
-    virtual void setVoice(const QVoice &voiceName) = 0;
-    virtual QVoice voice() const = 0;
-    virtual QTextToSpeech::State state() const = 0;
+QVoice::~QVoice()
+{
+}
 
-protected:
-    void emitStateChanged(QTextToSpeech::State s)
-    {
-        emit m_speech->stateChanged(s);
-    }
+void QVoice::operator=(const QVoice&other)
+{
+    d->name = other.d->name;
+    d->gender = other.d->gender;
+    d->age = other.d->age;
+}
 
-    void emitRateChanged(double rate)
-    {
-        emit m_speech->rateChanged(rate);
-    }
+bool QVoice::operator<(const QVoice &other) const
+{
+    return d->name < other.d->name || d->gender < other.d->gender || d->age < other.d->age;
+}
 
-    void emitPitchChanged(double pitch)
-    {
-        emit m_speech->pitchChanged(pitch);
-    }
+void QVoice::setName(const QString &name)
+{
+    d->name = name;
+}
 
-    void emitVolumeChanged(int volume)
-    {
-        emit m_speech->volumeChanged(volume);
-    }
+void QVoice::setGender(Gender gender)
+{
+    d->gender = gender;
+}
 
-    void emitLocaleChanged(const QLocale &locale)
-    {
-        emit m_speech->localeChanged(locale);
-    }
+void QVoice::setAge(Age age)
+{
+    d->age = age;
+}
 
-    void emitVoiceChanged(const QVoice &voice)
-    {
-        emit m_speech->voiceChanged(voice);
-    }
+QString QVoice::name() const
+{
+    return d->name;
+}
 
-    QTextToSpeech *m_speech;
-    QTextToSpeech::State m_state;
-};
+QVoice::Age QVoice::age() const
+{
+    return d->age;
+}
 
-#endif
+QVoice::Gender QVoice::gender() const
+{
+    return d->gender;
+}
+
+QT_END_NAMESPACE

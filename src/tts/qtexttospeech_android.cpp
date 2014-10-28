@@ -90,15 +90,6 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
     return JNI_VERSION_1_4;
 }
 
-//class QTextToSpeechVoicePrivateAndroid : public QTextToSpeechVoicePrivate
-//{
-//public:
-//    QTextToSpeechVoicePrivateAndroid();
-//    QString name() const;
-//    QLocale locale() const;
-//};
-
-
 class QTextToSpeechPrivateAndroid : public QTextToSpeechPrivate
 {
 public:
@@ -106,6 +97,7 @@ public:
     ~QTextToSpeechPrivateAndroid();
 
     QVector<QLocale> availableLocales() const Q_DECL_OVERRIDE;
+    QVector<QVoice> availableVoices() const Q_DECL_OVERRIDE;
 
     void say(const QString &text) Q_DECL_OVERRIDE;
     void stop() Q_DECL_OVERRIDE;
@@ -117,6 +109,8 @@ public:
     void setVolume(int volume) Q_DECL_OVERRIDE;
     void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
     QLocale locale() const Q_DECL_OVERRIDE;
+    void setVoice(const QVoice &voice) Q_DECL_OVERRIDE;
+    QVoice voice() const Q_DECL_OVERRIDE;
     QTextToSpeech::State state() const Q_DECL_OVERRIDE;
 
 private:
@@ -145,21 +139,6 @@ QTextToSpeech::QTextToSpeech(QObject *parent)
 {
     qRegisterMetaType<QTextToSpeech::State>();
 }
-
-//QVector<QString> QTextToSpeechPrivate::availableVoiceTypes() const
-//{
-//    QVector<QString> voiceTypes;
-//    return voiceTypes;
-//}
-
-//void QTextToSpeechPrivate::setVoiceType(const QString& type)
-//{
-//}
-
-//QString QTextToSpeechPrivate::currentVoiceType() const
-//{
-//    return QString();
-//}
 
 void QTextToSpeechPrivateAndroid::say(const QString &text)
 {
@@ -227,6 +206,20 @@ void QTextToSpeechPrivateAndroid::setLocale(const QLocale & /* locale */)
 QLocale QTextToSpeechPrivateAndroid::locale() const
 {
     return QLocale();
+}
+
+QVector<QVoice> QTextToSpeechPrivateAndroid::availableVoices() const
+{
+    return QVector<QVoice>();
+}
+
+void QTextTospeechPrivateAndroid::setVoice(const QVoice & /* voice */)
+{
+}
+
+QVoice QTextToSpeechPrivateAndroid::voice() const
+{
+    return QVoice();
 }
 
 QT_END_NAMESPACE

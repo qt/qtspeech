@@ -55,6 +55,7 @@ MainWindow::MainWindow(QWidget *parent)
         if (locale.name() == current.name())
             ui.language->setCurrentIndex(ui.language->count() - 1);
     }
+    localeChanged(current);
 
     connect(ui.speakButton, &QPushButton::clicked, this, &MainWindow::speak);
     connect(ui.stopButton, &QPushButton::clicked, &m_speech, &QTextToSpeech::stop);
@@ -66,19 +67,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui.volume, &QSlider::valueChanged, &m_speech, &QTextToSpeech::setVolume);
 
     connect(&m_speech, &QTextToSpeech::stateChanged, this, &MainWindow::stateChanged);
+    connect(&m_speech, &QTextToSpeech::localeChanged, this, &MainWindow::localeChanged);
     connect(ui.language, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::languageSelected);
-//    connect(ui.voiceType, SIGNAL(currentIndexChanged(QString)), &m_speech, SLOT(setVoiceType(QString)));
-
-//    QStringList voices;
-//    foreach (const QTextToSpeechVoice &voice, m_speech.availableVoices()) {
-
-//        voices.append(voice.locale().name() + " (" + voice.name() + ")");
-//    }
-
-//    qDebug() << voices;
-//    ui.voiceType->addItems(m_speech.availableVoiceTypes().toList());
-
-//    m_speech.voiceTypes();
+    connect(ui.voice, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::voiceSelected);
 }
 
 void MainWindow::speak()
@@ -120,4 +111,27 @@ void MainWindow::languageSelected(int language)
 {
     QLocale locale = ui.language->itemData(language).toLocale();
     m_speech.setLocale(locale);
+}
+
+void MainWindow::voiceSelected(int index)
+{
+    m_speech.setVoice(m_voices.at(index));
+}
+
+void MainWindow::localeChanged(const QLocale &locale)
+{
+    QVariant localeVariant(locale);
+    ui.language->setCurrentIndex(ui.language->findData(localeVariant));
+
+    disconnect(ui.voice, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::voiceSelected);
+    ui.voice->clear();
+
+    m_voices = m_speech.availableVoices();
+    QVoice currentVoice = m_speech.voice();
+    foreach (const QVoice &voice, m_voices) {
+        ui.voice->addItem(voice.name());
+        if (voice.name() == currentVoice.name())
+            ui.voice->setCurrentIndex(ui.voice->count() - 1);
+    }
+    connect(ui.voice, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::voiceSelected);
 }

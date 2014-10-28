@@ -47,31 +47,6 @@
 
 QT_BEGIN_NAMESPACE
 
-//class QTextToSpeechVoicePrivateUnix : public QTextToSpeechVoicePrivate
-//{
-//public:
-//    QTextToSpeechVoicePrivateUnix()
-//        : voice(0)
-//    {}
-//    QString name() const;
-
-//    QLocale locale() const;
-
-//    SPDVoice *voice;
-//};
-
-//QString QTextToSpeechVoicePrivateUnix::name() const
-//{
-//    if (voice)
-//        return QString::fromUtf8(voice->name);
-//    return QStringLiteral("default");
-//}
-
-//QTextToSpeechVoice::QTextToSpeechVoice()
-//    : d(new QTextToSpeechVoicePrivateUnix)
-//{}
-
-
 QString dummyModule = QStringLiteral("dummy");
 
 class QTextToSpeechPrivateSpeechDispatcher : public QTextToSpeechPrivate
@@ -81,6 +56,7 @@ public:
     ~QTextToSpeechPrivateSpeechDispatcher();
 
     QVector<QLocale> availableLocales() const Q_DECL_OVERRIDE;
+    QVector<QVoice> availableVoices() const;
 
     void say(const QString &text) Q_DECL_OVERRIDE;
     void stop() Q_DECL_OVERRIDE;
@@ -96,22 +72,23 @@ public:
     QTextToSpeech::State state() const Q_DECL_OVERRIDE;
     void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
     QLocale locale() const Q_DECL_OVERRIDE;
+    void setVoice(const QVoice &voice) Q_DECL_OVERRIDE;
+    QVoice voice() const Q_DECL_OVERRIDE;
 
     void spdStateChanged(SPDNotificationType state);
 private:
     QLocale localeForVoice(SPDVoice *voice) const;
-    void updateLocales();
+    void updateVoices();
 
     SPDConnection *speechDispatcher;
-    // speech dispatcher doesn't allow us to sensibly delete the voices
-    // so at least cache them
-    mutable SPDVoice **m_voices;
-//    QString m_voiceType;
     // The current output module. Whenever this changes, we need to recheck
     // which locales are supported, as each spd module supports different
     // locales.
     QLocale m_currentLocale;
     QVector<QLocale> m_locales;
+    QVoice m_currentVoice;
+    // Voices mapped by their locale name.
+    QMultiMap<QString, QVoice> m_voices;
 };
 
 
@@ -138,7 +115,7 @@ QLocale QTextToSpeechPrivateSpeechDispatcher::localeForVoice(SPDVoice *voice) co
 }
 
 QTextToSpeechPrivateSpeechDispatcher::QTextToSpeechPrivateSpeechDispatcher(QTextToSpeech *speech)
-    : QTextToSpeechPrivate(speech), m_voices(0)
+    : QTextToSpeechPrivate(speech)
 {
     backends->append(this);
     speechDispatcher = spd_open("QTextToSpeech", "main", 0, SPD_MODE_THREADED);
@@ -169,9 +146,11 @@ QTextToSpeechPrivateSpeechDispatcher::QTextToSpeechPrivateSpeechDispatcher(QText
         m_state = QTextToSpeech::Ready;
     }
 
-    updateLocales();
+    updateVoices();
     // Default to system locale, since there's no api to get this from spd yet.
     m_currentLocale = QLocale::system();
+    // TODO: Set m_currentVoice from spd once there's api to get it
+    m_currentVoice = QVoice();
 }
 
 QTextToSpeechPrivateSpeechDispatcher::~QTextToSpeechPrivateSpeechDispatcher()
@@ -180,29 +159,6 @@ QTextToSpeechPrivateSpeechDispatcher::~QTextToSpeechPrivateSpeechDispatcher()
         spd_cancel_all(speechDispatcher);
     spd_close(speechDispatcher);
 }
-
-//QVector<QString> QTextToSpeechPrivate::availableVoiceTypes() const
-//{
-//    QVector<QString> voiceTypes;
-//    for (uint i = 0; i < sizeof(map) / sizeof(VoiceTypeMapping); ++i)
-//        voiceTypes.append(QTextToSpeech::tr(map[i].name));
-//    return voiceTypes;
-//}
-
-//void QTextToSpeechPrivate::setVoiceType(const QString& type)
-//{
-//    for (uint i = 0; i < sizeof(map) / sizeof(VoiceTypeMapping); ++i) {
-//        if (QTextToSpeech::tr(map[i].name) == type) {
-//            spd_set_voice_type_all(speechDispatcher, map[i].type);
-//            break;
-//        }
-//    }
-//}
-
-//QString QTextToSpeechPrivate::currentVoiceType() const
-//{
-//    return m_voiceType;
-//}
 
 // hack to get state notifications
 void QTextToSpeechPrivateSpeechDispatcher::spdStateChanged(SPDNotificationType state)
@@ -314,12 +270,26 @@ QLocale QTextToSpeechPrivateSpeechDispatcher::locale() const
     return m_currentLocale;
 }
 
+void QTextToSpeechPrivateSpeechDispatcher::setVoice(const QVoice &voice)
+{
+    const int result = spd_set_synthesis_voice(speechDispatcher, voice.name().toUtf8().data());
+    if (result == 0) {
+        m_currentVoice = voice;
+        emitVoiceChanged(voice);
+    }
+}
+
+QVoice QTextToSpeechPrivateSpeechDispatcher::voice() const
+{
+    return m_currentVoice;
+}
+
 QTextToSpeech::State QTextToSpeechPrivateSpeechDispatcher::state() const
 {
     return m_state;
 }
 
-void QTextToSpeechPrivateSpeechDispatcher::updateLocales()
+void QTextToSpeechPrivateSpeechDispatcher::updateVoices()
 {
     SPDVoice **voices = spd_list_synthesis_voices(speechDispatcher);
     int i = 0;
@@ -327,6 +297,11 @@ void QTextToSpeechPrivateSpeechDispatcher::updateLocales()
         QLocale locale = localeForVoice(voices[i]);
         if (!m_locales.contains(locale))
             m_locales.append(locale);
+        const QString name = QString::fromUtf8(voices[i]->name);
+        // iterate over genders and ages, creating a voice for each one
+        QVoice voice;
+        voice.setName(name);
+        m_voices.insert(locale.name(), voice);
         ++i;
     }
 
@@ -336,6 +311,11 @@ void QTextToSpeechPrivateSpeechDispatcher::updateLocales()
 QVector<QLocale> QTextToSpeechPrivateSpeechDispatcher::availableLocales() const
 {
     return m_locales;
+}
+
+QVector<QVoice> QTextToSpeechPrivateSpeechDispatcher::availableVoices() const
+{
+    return m_voices.values(m_currentLocale.name()).toVector();
 }
 
 // We have no way of knowing our own client_id since speech-dispatcher seems to be incomplete

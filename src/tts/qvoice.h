@@ -1,9 +1,9 @@
 /****************************************************************************
 **
-** Copyright (C) 2014 Digia Plc and/or its subsidiary(-ies).
+** Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
 ** Contact: http://www.qt-project.org/legal
 **
-** This file is part of the QtSpeech module of the Qt Toolkit.
+** This file is part of the QtWidgets module of the Qt Toolkit.
 **
 ** $QT_BEGIN_LICENSE:LGPL$
 ** Commercial License Usage
@@ -41,79 +41,56 @@
 
 
 
-#ifndef QTEXTTOSPEECH_H
-#define QTEXTTOSPEECH_H
+#ifndef QVOICE_H
+#define QVOICE_H
 
 #include <QtTextToSpeech/qtexttospeech_global.h>
-#include <QtCore/qobject.h>
 #include <QtCore/qshareddata.h>
-#include <QtCore/QSharedDataPointer>
-#include <QtCore/qlocale.h>
-
-#include <QtTextToSpeech/qvoice.h>
 
 QT_BEGIN_NAMESPACE
 
-class QTextToSpeechPrivate;
-class QTEXTTOSPEECH_EXPORT QTextToSpeech : public QObject
+class QVoicePrivate;
+
+class QTEXTTOSPEECH_EXPORT QVoice
 {
-    Q_OBJECT
-    Q_ENUMS(QTextToSpeech::State)
-    Q_PROPERTY(State state READ state NOTIFY stateChanged)
-    Q_PROPERTY(int volume READ volume WRITE setVolume NOTIFY volumeChanged)
-    Q_PROPERTY(double rate READ rate WRITE setRate NOTIFY rateChanged)
-    Q_PROPERTY(double pitch READ pitch WRITE setPitch NOTIFY pitchChanged)
-    Q_PROPERTY(QLocale locale READ locale WRITE setLocale NOTIFY localeChanged)
-    Q_PROPERTY(QVoice voice READ voice WRITE setVoice NOTIFY voiceChanged)
-    Q_DECLARE_PRIVATE(QTextToSpeech)
 public:
-    enum State {
-        Ready,
-        Speaking,
-        Paused,
-        BackendError
+    enum Gender {
+        Male,
+        Female,
+        Unknown
     };
 
-    explicit QTextToSpeech(QObject *parent = 0);
-    State state() const;
+    enum Age {
+        Child,
+        Teenager,
+        Adult,
+        Senior,
+        Other
+    };
 
-    QVector<QLocale> availableLocales() const;
-    QLocale locale() const;
+    QVoice();
+    QVoice(const QVoice &other);
+    ~QVoice();
 
-    QVoice voice() const;
-    QVector<QVoice> availableVoices() const;
+    void operator=(const QVoice &other);
+    bool operator<(const QVoice &other) const;
 
-public Q_SLOTS:
-    void say(const QString &text);
-    void stop();
-    void pause();
-    void resume();
-
-    void setLocale(const QLocale &locale);
-
-    double rate() const;
-    void setRate(double rate);
-    double pitch() const;
-    void setPitch(double pitch);
-    int volume() const;
-    void setVolume(int volume);
-    void setVoice(const QVoice &voice);
-
-Q_SIGNALS:
-    void stateChanged(QTextToSpeech::State state);
-    void localeChanged(const QLocale &locale);
-    void rateChanged(double rate);
-    void pitchChanged(double pitch);
-    void volumeChanged(int volume);
-    void voiceChanged(const QVoice &voice);
+    QString name() const;
+    Gender gender() const;
+    Age age() const;
 
 private:
-    Q_DISABLE_COPY(QTextToSpeech)
-};
+    QVoice(const QString &name, Gender gender, Age age);
 
-Q_DECLARE_TYPEINFO(QTextToSpeech::State, Q_PRIMITIVE_TYPE);
-Q_DECLARE_METATYPE(QTextToSpeech::State)
+    void setName(const QString &name);
+    void setGender(Gender gender);
+    void setAge(Age age);
+    QSharedDataPointer<QVoicePrivate> d;
+
+    friend class QTextToSpeechPrivateSpeechDispatcher;
+};
 
 QT_END_NAMESPACE
 
 #endif
+

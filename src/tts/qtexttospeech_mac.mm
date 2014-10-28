@@ -65,6 +65,7 @@ public:
     ~QTextToSpeechPrivateMac();
 
     QVector<QLocale> availableLocales() const Q_DECL_OVERRIDE;
+    QVector<QVoice> availableVoices() const Q_DECL_OVERRIDE;
     void say(const QString &text) Q_DECL_OVERRIDE;
     void stop() Q_DECL_OVERRIDE;
     void pause() Q_DECL_OVERRIDE;
@@ -78,6 +79,8 @@ public:
     void setVolume(int volume) Q_DECL_OVERRIDE;
     void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
     QLocale locale() const Q_DECL_OVERRIDE;
+    void setVoice(const QVoice &voice) Q_DECL_OVERRIDE;
+    QVoice voice() const Q_DECL_OVERRIDE;
     QTextToSpeech::State state() const Q_DECL_OVERRIDE;
 
     bool isPaused() const { return false; }
@@ -223,7 +226,7 @@ QVector<QLocale> QTextToSpeechPrivateMac::availableLocales() const
     return QVector<QLocale>();
 }
 
-void QTextToSpeechPrivateMac::setLocale(const QLocale &locale)
+void QTextToSpeechPrivateMac::setLocale(const QLocale & /* locale */)
 {
 }
 
@@ -237,5 +240,18 @@ QTextToSpeech::State QTextToSpeechPrivateMac::state() const
     return m_state;
 }
 
+QVector<QVoice> QTextToSpeechPrivateMac::availableVoices() const
+{
+    return QVector<QVoice>();
+}
+
+void QTextToSpeechPrivateMac::setVoice(const QVoice & /* voice */)
+{
+}
+
+QVoice QTextToSpeechPrivateMac::voice() const
+{
+    return QVoice();
+}
 
 QT_END_NAMESPACE

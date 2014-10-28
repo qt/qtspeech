@@ -56,6 +56,7 @@ public:
     ~QTextToSpeechPrivateWindows();
 
     QVector<QLocale> availableLocales() const Q_DECL_OVERRIDE;
+    QVector<QVoice> availableVoices() const Q_DECL_OVERRIDE;
 
     void say(const QString &text) Q_DECL_OVERRIDE;
     void stop() Q_DECL_OVERRIDE;
@@ -71,6 +72,8 @@ public:
     void setVolume(int volume) Q_DECL_OVERRIDE;
     void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
     QLocale locale() const Q_DECL_OVERRIDE;
+    void setVoice(const QVoice &voiceName) Q_DECL_OVERRIDE;
+    QVoice voice() const Q_DECL_OVERRIDE;
     QTextToSpeech::State state() const Q_DECL_OVERRIDE;
 
     bool isPaused() const { return m_pauseCount; }
@@ -220,6 +223,23 @@ QLocale QTextToSpeechPrivateWindows::locale() const
 {
     // FIXME: Implement this method.
     return QLocale::system();
+}
+
+QVector<QVoice> QTextToSpeechPrivateWindows::availableVoices() const
+{
+    // FIXME: Implement this method.
+    return QVector<QVoice>();
+}
+
+void QTextToSpeechPrivateWindows::setVoice(const QVoice &voice)
+{
+    // FIXME: Implement this method.
+}
+
+QVoice QTextToSpeechPrivateWindows::voice() const
+{
+    // FIXME: Implement this method.
+    return QVoice();
 }
 
 QTextToSpeech::State QTextToSpeechPrivateWindows::state() const
