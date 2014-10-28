@@ -188,7 +188,7 @@ void QTextToSpeechPrivateMac::setRate(double rate)
 
 void QTextToSpeechPrivateMac::setVolume(int volume)
 {
-    [speechSynthesizer setVolume: (volume + 1.0) / 2.0];
+    [speechSynthesizer setVolume: volume / 100.0];
 }
 
 QVector<QLocale> QTextToSpeechPrivateMac::availableLocales() const

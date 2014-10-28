@@ -63,7 +63,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui.pitch, SIGNAL(valueChanged(double)), &m_speech, SLOT(setPitch(double)));
     connect(ui.rate, SIGNAL(valueChanged(double)), &m_speech, SLOT(setRate(double)));
-    connect(ui.volume, SIGNAL(valueChanged(double)), &m_speech, SLOT(setVolume(double)));
+    connect(ui.volume, SIGNAL(valueChanged(int)), &m_speech, SLOT(setVolume(int)));
 
     connect(&m_speech, &QTextToSpeech::stateChanged, this, &MainWindow::stateChanged);
     connect(ui.language, SIGNAL(currentIndexChanged(int)), this, SLOT(languageSelected(int)));

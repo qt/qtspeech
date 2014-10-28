@@ -103,13 +103,12 @@ public:
     void pause();
     void resume();
 
-    void setRate(double rate);
-    void setPitch(double pitch);
-    void setVolume(double volume);
-    void setLocale(const QLocale &locale);
-    QLocale currentLocale() const;
-    QTextToSpeech::State state() const;
-    void setVolume(int volume);
+    void setRate(double rate) Q_DECL_OVERRIDE;
+    void setPitch(double pitch) Q_DECL_OVERRIDE;
+    void setVolume(int volume) Q_DECL_OVERRIDE;
+    QTextToSpeech::State state() const Q_DECL_OVERRIDE;
+    void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
+    QLocale currentLocale() const Q_DECL_OVERRIDE;
 
     void spdStateChanged(SPDNotificationType state);
 private:
