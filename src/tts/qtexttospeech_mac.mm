@@ -169,10 +169,18 @@ void QTextToSpeechPrivateMac::stop()
 
 void QTextToSpeechPrivateMac::pause()
 {
+    if ([speechSynthesizer isSpeaking]) {
+        [speechSynthesizer pauseSpeakingAtBoundary: NSSpeechWordBoundary];
+        m_state = QTextToSpeech::Paused;
+        emitStateChanged(m_state);
+    }
 }
 
 void QTextToSpeechPrivateMac::resume()
 {
+    m_state = QTextToSpeech::Speaking;
+    emitStateChanged(m_state);
+    [speechSynthesizer continueSpeaking];
 }
 
 void QTextToSpeechPrivateMac::setPitch(double pitch)
