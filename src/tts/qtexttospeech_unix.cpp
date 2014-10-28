@@ -95,7 +95,7 @@ public:
     void setVolume(int volume) Q_DECL_OVERRIDE;
     QTextToSpeech::State state() const Q_DECL_OVERRIDE;
     void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
-    QLocale currentLocale() const Q_DECL_OVERRIDE;
+    QLocale locale() const Q_DECL_OVERRIDE;
 
     void spdStateChanged(SPDNotificationType state);
 private:
@@ -309,7 +309,7 @@ void QTextToSpeechPrivateSpeechDispatcher::setLocale(const QLocale &locale)
     }
 }
 
-QLocale QTextToSpeechPrivateSpeechDispatcher::currentLocale() const
+QLocale QTextToSpeechPrivateSpeechDispatcher::locale() const
 {
     return m_currentLocale;
 }

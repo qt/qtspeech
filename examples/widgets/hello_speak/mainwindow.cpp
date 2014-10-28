@@ -48,7 +48,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Populate the languages combobox before connecting its signal.
     QVector<QLocale> locales = m_speech.availableLocales();
-    QLocale current = m_speech.currentLocale();
+    QLocale current = m_speech.locale();
     foreach (const QLocale &locale, locales) {
         QVariant localeVariant(locale);
         ui.language->addItem(QLocale::languageToString(locale.language()), localeVariant);

@@ -188,10 +188,10 @@ void QTextToSpeech::setLocale(const QLocale &locale)
 /*!
  Gets the current locale.
 */
-QLocale QTextToSpeech::currentLocale() const
+QLocale QTextToSpeech::locale() const
 {
     Q_D(const QTextToSpeech);
-    return d->currentLocale();
+    return d->locale();
 }
 
 /*!

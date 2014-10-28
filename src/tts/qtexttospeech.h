@@ -62,6 +62,7 @@ class QTEXTTOSPEECH_EXPORT QTextToSpeech : public QObject
     Q_PROPERTY(int volume READ volume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(double rate READ rate WRITE setRate NOTIFY rateChanged)
     Q_PROPERTY(double pitch READ pitch WRITE setPitch NOTIFY pitchChanged)
+    Q_PROPERTY(QLocale locale READ locale WRITE setLocale NOTIFY localeChanged)
     Q_DECLARE_PRIVATE(QTextToSpeech)
 public:
     enum State {
@@ -75,7 +76,7 @@ public:
     State state() const;
 
     QVector<QLocale> availableLocales() const;
-    QLocale currentLocale() const;
+    QLocale locale() const;
 
 public Q_SLOTS:
     void say(const QString &text);

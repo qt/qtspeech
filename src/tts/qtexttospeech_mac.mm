@@ -77,7 +77,7 @@ public:
     int volume() const Q_DECL_OVERRIDE;
     void setVolume(int volume) Q_DECL_OVERRIDE;
     void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
-    QLocale currentLocale() const Q_DECL_OVERRIDE;
+    QLocale locale() const Q_DECL_OVERRIDE;
     QTextToSpeech::State state() const Q_DECL_OVERRIDE;
 
     bool isPaused() const { return false; }
@@ -227,7 +227,7 @@ void QTextToSpeechPrivateMac::setLocale(const QLocale &locale)
 {
 }
 
-QLocale QTextToSpeechPrivateMac::currentLocale() const
+QLocale QTextToSpeechPrivateMac::locale() const
 {
     return QLocale();
 }

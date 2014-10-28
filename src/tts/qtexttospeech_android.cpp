@@ -116,7 +116,7 @@ public:
     void setPitch(double pitch) Q_DECL_OVERRIDE;
     void setVolume(int volume) Q_DECL_OVERRIDE;
     void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
-    QLocale currentLocale() const Q_DECL_OVERRIDE;
+    QLocale locale() const Q_DECL_OVERRIDE;
     QTextToSpeech::State state() const Q_DECL_OVERRIDE;
 
 private:
@@ -224,7 +224,7 @@ void QTextToSpeechPrivateAndroid::setLocale(const QLocale & /* locale */)
 {
 }
 
-QLocale QTextToSpeechPrivateAndroid::currentLocale() const
+QLocale QTextToSpeechPrivateAndroid::locale() const
 {
     return QLocale();
 }
