@@ -62,8 +62,12 @@ public:
     void pause() Q_DECL_OVERRIDE;
     void resume() Q_DECL_OVERRIDE;
 
+
+    double rate() const Q_DECL_OVERRIDE;
     void setRate(double rate) Q_DECL_OVERRIDE;
+    double pitch() const Q_DECL_OVERRIDE;
     void setPitch(double pitch) Q_DECL_OVERRIDE;
+    int volume() const Q_DECL_OVERRIDE;
     void setVolume(int volume) Q_DECL_OVERRIDE;
     void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
     QLocale currentLocale() const Q_DECL_OVERRIDE;
@@ -174,16 +178,31 @@ void QTextToSpeechPrivateWindows::setPitch(double pitch)
     m_pitch = pitch;
 }
 
+double QTextToSpeechPrivateWindows::pitch() const
+{
+    return m_pitch;
+}
+
 void QTextToSpeechPrivateWindows::setRate(double rate)
 {
     // -10 to 10
     voice->SetRate(long(rate*10));
 }
 
+double QTextToSpeechPrivateWindows::rate() const
+{
+    return voice->GetRate() / 10.0;
+}
+
 void QTextToSpeechPrivateWindows::setVolume(int volume)
 {
     // 0 to 100
     voice->SetVolume(volume);
+}
+
+int QTextToSpeechPrivateWindows::volume() const
+{
+    return voice->GetVolume();
 }
 
 QVector<QLocale> QTextToSpeechPrivateWindows::availableLocales() const

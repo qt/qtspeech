@@ -122,17 +122,26 @@ void QTextToSpeech::resume()
 
 
 /*!
- Sets the voice \a pitch to a value between -1.0 and 1.0.
- The default of 0.0 is normal speech.
+ \property QTextToSpeech::pitch
+ The voice \a pitch to a value between -1.0 and 1.0.
+ The default of 0.0 is normal speech pitch.
 */
+
 void QTextToSpeech::setPitch(double pitch)
 {
     Q_D(QTextToSpeech);
     d->setPitch(pitch);
 }
 
+double QTextToSpeech::pitch() const
+{
+    Q_D(const QTextToSpeech);
+    return d->pitch();
+}
+
 /*!
- Sets the voice \a rate to a value between -1.0 and 1.0.
+ \property QTextToSpeech::rate
+ The voice \a rate between -1.0 and 1.0.
  The default of 0.0 is normal speech flow.
 */
 void QTextToSpeech::setRate(double rate)
@@ -141,15 +150,29 @@ void QTextToSpeech::setRate(double rate)
     d->setRate(rate);
 }
 
+double QTextToSpeech::rate() const
+{
+    Q_D(const QTextToSpeech);
+    return d->rate();
+}
+
 /*!
- Sets the \a volume to a value between 0 and 100.
+ \property QTextToSpeech::volume
+ The voice \a volume between 0 and 100.
  The default depends on the platform's default volume.
 */
+
 void QTextToSpeech::setVolume(int volume)
 {
     Q_D(QTextToSpeech);
     volume = qMin(qMax(volume, 0), 100);
     d->setVolume(volume);
+}
+
+int QTextToSpeech::volume() const
+{
+    Q_D(const QTextToSpeech);
+    return d->volume();
 }
 
 /*!

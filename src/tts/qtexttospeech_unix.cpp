@@ -87,8 +87,11 @@ public:
     void pause() Q_DECL_OVERRIDE;
     void resume() Q_DECL_OVERRIDE;
 
+    double rate() const Q_DECL_OVERRIDE;
     void setRate(double rate) Q_DECL_OVERRIDE;
+    double pitch() const Q_DECL_OVERRIDE;
     void setPitch(double pitch) Q_DECL_OVERRIDE;
+    int volume() const Q_DECL_OVERRIDE;
     void setVolume(int volume) Q_DECL_OVERRIDE;
     QTextToSpeech::State state() const Q_DECL_OVERRIDE;
     void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
@@ -268,6 +271,11 @@ void QTextToSpeechPrivateSpeechDispatcher::setPitch(double pitch)
         emitPitchChanged(pitch);
 }
 
+double QTextToSpeechPrivateSpeechDispatcher::pitch() const
+{
+    return 0.0; // FIXME
+}
+
 void QTextToSpeechPrivateSpeechDispatcher::setRate(double rate)
 {
     int result = spd_set_voice_rate(speechDispatcher, static_cast<int>(rate * 100));
@@ -275,11 +283,21 @@ void QTextToSpeechPrivateSpeechDispatcher::setRate(double rate)
         emitRateChanged(rate);
 }
 
+double QTextToSpeechPrivateSpeechDispatcher::rate() const
+{
+    return 0.0; // FIXME
+}
+
 void QTextToSpeechPrivateSpeechDispatcher::setVolume(int volume)
 {
     int result = spd_set_volume(speechDispatcher, ( -100 + volume * 2) );
     if (result == 0)
         emitVolumeChanged(volume);
+}
+
+int QTextToSpeechPrivateSpeechDispatcher::volume() const
+{
+    return 100; // FIXME
 }
 
 void QTextToSpeechPrivateSpeechDispatcher::setLocale(const QLocale &locale)

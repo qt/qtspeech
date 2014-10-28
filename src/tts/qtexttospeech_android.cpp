@@ -200,6 +200,21 @@ void QTextToSpeechPrivateAndroid::setVolume(int /*volume*/)
 {
 }
 
+double QTextToSpeechPrivateAndroid::pitch() const
+{
+    return 0.0; // FIXME
+}
+
+double QTextToSpeechPrivateAndroid::rate() const
+{
+    return 0.0; // FIXME
+}
+
+int QTextToSpeechPrivateAndroid::volume() const
+{
+    return 100; // FIXME
+}
+
 QVector<QLocale> QTextToSpeechPrivateAndroid::availableLocales() const
 {
     return QVector<QLocale>();

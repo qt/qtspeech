@@ -73,10 +73,13 @@ public:
     virtual void pause() = 0;
     virtual void resume() = 0;
 
+    virtual double rate() const = 0;
     virtual void setRate(double rate) = 0;
+    virtual double pitch() const = 0;
     virtual void setPitch(double pitch) = 0;
     virtual void setLocale(const QLocale &locale) = 0;
     virtual QLocale currentLocale() const = 0;
+    virtual int volume() const = 0;
     virtual void setVolume(int volume) = 0;
     virtual QTextToSpeech::State state() const = 0;
 

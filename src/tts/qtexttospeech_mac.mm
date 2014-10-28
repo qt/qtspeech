@@ -70,8 +70,11 @@ public:
     void pause() Q_DECL_OVERRIDE;
     void resume() Q_DECL_OVERRIDE;
 
+    double rate() const Q_DECL_OVERRIDE;
     void setRate(double rate) Q_DECL_OVERRIDE;
+    double pitch() const Q_DECL_OVERRIDE;
     void setPitch(double pitch) Q_DECL_OVERRIDE;
+    int volume() const Q_DECL_OVERRIDE;
     void setVolume(int volume) Q_DECL_OVERRIDE;
     void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
     QLocale currentLocale() const Q_DECL_OVERRIDE;
@@ -97,6 +100,7 @@ private:
     Q_UNUSED(sender);
     speechPrivate->speechStopped(success);
 }
+
 @end
 
 QTextToSpeech::QTextToSpeech(QObject *parent)
@@ -183,8 +187,18 @@ void QTextToSpeechPrivateMac::resume()
     [speechSynthesizer continueSpeaking];
 }
 
+double QTextToSpeechPrivateMac::rate() const
+{
+    return [speechSynthesizer rate] / 200 - 200;
+}
+
 void QTextToSpeechPrivateMac::setPitch(double pitch)
 {
+}
+
+int QTextToSpeechPrivateMac::volume() const
+{
+    return [speechSynthesizer volume] * 100;
 }
 
 void QTextToSpeechPrivateMac::setRate(double rate)
@@ -192,6 +206,11 @@ void QTextToSpeechPrivateMac::setRate(double rate)
     // NSSpeechSynthesizer supports words per minute,
     // human speech is 180 to 220 - use 0 to 400 as range here
     [speechSynthesizer setRate: 200 + (rate * 200)];
+}
+
+double QTextToSpeechPrivateMac::pitch() const
+{
+    return 0.0; // FIXME
 }
 
 void QTextToSpeechPrivateMac::setVolume(int volume)

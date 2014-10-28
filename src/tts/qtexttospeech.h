@@ -59,6 +59,9 @@ class QTEXTTOSPEECH_EXPORT QTextToSpeech : public QObject
     Q_OBJECT
     Q_ENUMS(QTextToSpeech::State)
     Q_PROPERTY(State state READ state NOTIFY stateChanged)
+    Q_PROPERTY(int volume READ volume WRITE setVolume NOTIFY volumeChanged)
+    Q_PROPERTY(double rate READ rate WRITE setRate NOTIFY rateChanged)
+    Q_PROPERTY(double pitch READ pitch WRITE setPitch NOTIFY pitchChanged)
     Q_DECLARE_PRIVATE(QTextToSpeech)
 public:
     enum State {
@@ -82,8 +85,11 @@ public Q_SLOTS:
 
     void setLocale(const QLocale &locale);
 
+    double rate() const;
     void setRate(double rate);
+    double pitch() const;
     void setPitch(double pitch);
+    int volume() const;
     void setVolume(int volume);
 
     // FIXME is qstring really good enough here?
