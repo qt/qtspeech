@@ -105,19 +105,19 @@ public:
     QTextToSpeechPrivateAndroid(QTextToSpeech *speech);
     ~QTextToSpeechPrivateAndroid();
 
-    QVector<QLocale> availableLocales() const;
+    QVector<QLocale> availableLocales() const Q_DECL_OVERRIDE;
 
-    void say(const QString &text);
-    void stop();
-    void pause();
-    void resume();
+    void say(const QString &text) Q_DECL_OVERRIDE;
+    void stop() Q_DECL_OVERRIDE;
+    void pause() Q_DECL_OVERRIDE;
+    void resume() Q_DECL_OVERRIDE;
 
-    void setRate(double rate);
-    void setPitch(double pitch);
-    void setLocale(const QLocale &locale);
-    QLocale currentLocale() const;
-    void setVolume(int volume);
-    QTextToSpeech::State state() const;
+    void setRate(double rate) Q_DECL_OVERRIDE;
+    void setPitch(double pitch) Q_DECL_OVERRIDE;
+    void setVolume(int volume) Q_DECL_OVERRIDE;
+    void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
+    QLocale currentLocale() const Q_DECL_OVERRIDE;
+    QTextToSpeech::State state() const Q_DECL_OVERRIDE;
 
 private:
     QJNIObjectPrivate m_speech;
