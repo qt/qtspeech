@@ -54,7 +54,7 @@ void tst_QTextToSpeech::say_hello()
     QElapsedTimer timer;
     timer.start();
     tts.say(text);
-    QCOMPARE(tts.state(), QTextToSpeech::Speaking);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
     QSignalSpy spy(&tts, SIGNAL(stateChanged(QTextToSpeech::State)));
     spy.wait(10000);
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
@@ -76,7 +76,7 @@ void tst_QTextToSpeech::speech_rate()
         QElapsedTimer timer;
         timer.start();
         tts.say(text);
-        QCOMPARE(tts.state(), QTextToSpeech::Speaking);
+        QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
         QSignalSpy spy(&tts, SIGNAL(stateChanged(QTextToSpeech::State)));
         spy.wait(10000);
         QCOMPARE(tts.state(), QTextToSpeech::Ready);
