@@ -61,12 +61,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui.pauseButton, &QPushButton::clicked, &m_speech, &QTextToSpeech::pause);
     connect(ui.resumeButton, &QPushButton::clicked, &m_speech, &QTextToSpeech::resume);
 
-    connect(ui.pitch, SIGNAL(valueChanged(double)), &m_speech, SLOT(setPitch(double)));
-    connect(ui.rate, SIGNAL(valueChanged(double)), &m_speech, SLOT(setRate(double)));
-    connect(ui.volume, SIGNAL(valueChanged(int)), &m_speech, SLOT(setVolume(int)));
+    connect(ui.pitch, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), &m_speech, &QTextToSpeech::setPitch);
+    connect(ui.rate, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), &m_speech, &QTextToSpeech::setRate);
+    connect(ui.volume, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), &m_speech, &QTextToSpeech::setVolume);
 
     connect(&m_speech, &QTextToSpeech::stateChanged, this, &MainWindow::stateChanged);
-    connect(ui.language, SIGNAL(currentIndexChanged(int)), this, SLOT(languageSelected(int)));
+    connect(ui.language, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::languageSelected);
 //    connect(ui.voiceType, SIGNAL(currentIndexChanged(QString)), &m_speech, SLOT(setVoiceType(QString)));
 
 //    QStringList voices;
