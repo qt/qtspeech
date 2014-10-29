@@ -72,6 +72,7 @@ public:
     State state() const;
 
     QVector<QLocale> availableLocales() const;
+    QLocale currentLocale() const;
 
 public Q_SLOTS:
     void say(const QString &text);
@@ -80,7 +81,6 @@ public Q_SLOTS:
     void resume();
 
     void setLocale(const QLocale &locale);
-    QLocale currentLocale() const;
 
     void setRate(double rate);
     void setPitch(double pitch);
