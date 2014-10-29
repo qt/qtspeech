@@ -104,7 +104,7 @@ Q_SIGNALS:
     void localeChanged(const QLocale &locale);
     void rateChanged(double rate);
     void pitchChanged(double pitch);
-    void volumeChanged(double volume);
+    void volumeChanged(int volume);
 
 private:
     Q_DISABLE_COPY(QTextToSpeech)

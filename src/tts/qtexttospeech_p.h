@@ -99,7 +99,7 @@ protected:
         emit m_speech->pitchChanged(pitch);
     }
 
-    void emitVolumeChanged(double volume)
+    void emitVolumeChanged(int volume)
     {
         emit m_speech->volumeChanged(volume);
     }
