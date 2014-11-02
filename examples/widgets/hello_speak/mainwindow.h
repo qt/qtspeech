@@ -58,6 +58,9 @@ public slots:
     void speak();
     void stop();
 
+    void setRate(int);
+    void setPitch(int);
+
     void stateChanged(QTextToSpeech::State state);
     void languageSelected(int language);
 

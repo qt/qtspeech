@@ -61,9 +61,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui.pauseButton, &QPushButton::clicked, &m_speech, &QTextToSpeech::pause);
     connect(ui.resumeButton, &QPushButton::clicked, &m_speech, &QTextToSpeech::resume);
 
-    connect(ui.pitch, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), &m_speech, &QTextToSpeech::setPitch);
-    connect(ui.rate, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), &m_speech, &QTextToSpeech::setRate);
-    connect(ui.volume, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), &m_speech, &QTextToSpeech::setVolume);
+    connect(ui.pitch, QSlider::valueChanged, this, &MainWindow::setPitch);
+    connect(ui.rate, QSlider::valueChanged, this, &MainWindow::setRate);
+    connect(ui.volume, QSlider::valueChanged, &m_speech, &QTextToSpeech::setVolume);
 
     connect(&m_speech, &QTextToSpeech::stateChanged, this, &MainWindow::stateChanged);
     connect(ui.language, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::languageSelected);
@@ -88,6 +88,16 @@ void MainWindow::speak()
 void MainWindow::stop()
 {
     m_speech.stop();
+}
+
+void MainWindow::setRate(int rate)
+{
+    m_speech.setRate(rate / 10.0);
+}
+
+void MainWindow::setPitch(int pitch)
+{
+    m_speech.setPitch(pitch / 10.0);
 }
 
 void MainWindow::stateChanged(QTextToSpeech::State state)
