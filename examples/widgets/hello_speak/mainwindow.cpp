@@ -61,9 +61,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui.pauseButton, &QPushButton::clicked, &m_speech, &QTextToSpeech::pause);
     connect(ui.resumeButton, &QPushButton::clicked, &m_speech, &QTextToSpeech::resume);
 
-    connect(ui.pitch, QSlider::valueChanged, this, &MainWindow::setPitch);
-    connect(ui.rate, QSlider::valueChanged, this, &MainWindow::setRate);
-    connect(ui.volume, QSlider::valueChanged, &m_speech, &QTextToSpeech::setVolume);
+    connect(ui.pitch, &QSlider::valueChanged, this, &MainWindow::setPitch);
+    connect(ui.rate, &QSlider::valueChanged, this, &MainWindow::setRate);
+    connect(ui.volume, &QSlider::valueChanged, &m_speech, &QTextToSpeech::setVolume);
 
     connect(&m_speech, &QTextToSpeech::stateChanged, this, &MainWindow::stateChanged);
     connect(ui.language, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::languageSelected);
