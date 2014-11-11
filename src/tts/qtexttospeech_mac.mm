@@ -225,18 +225,49 @@ void QTextToSpeechPrivateMac::setVolume(int volume)
     [speechSynthesizer setVolume: volume / 100.0];
 }
 
-QVector<QLocale> QTextToSpeechPrivateMac::availableLocales() const
+QLocale localeForVoice(NSString *voice)
 {
-    return QVector<QLocale>();
+    NSDictionary *attrs = [NSSpeechSynthesizer attributesForVoice:voice];
+    return QString::fromNSString(attrs[NSVoiceLocaleIdentifier]);
 }
 
-void QTextToSpeechPrivateMac::setLocale(const QLocale & /* locale */)
+QVector<QLocale> QTextToSpeechPrivateMac::availableLocales() const
 {
+    QVector<QLocale> locales;
+    NSArray *voices = [NSSpeechSynthesizer availableVoices];
+    for (NSString *voice in voices) {
+        QLocale locale = localeForVoice(voice);
+        if (!locales.contains(locale))
+            locales.append(locale);
+    }
+    return locales;
+}
+
+void QTextToSpeechPrivateMac::setLocale(const QLocale &locale)
+{
+    NSArray *voices = [NSSpeechSynthesizer availableVoices];
+    NSString *voice = [NSSpeechSynthesizer defaultVoice];
+    // always prefer default
+    if (locale == localeForVoice(voice)) {
+        [speechSynthesizer setVoice:voice];
+        return;
+    }
+
+    for (voice in voices) {
+        QLocale voiceLocale = localeForVoice(voice);
+        if (locale == voiceLocale) {
+            [speechSynthesizer setVoice:voice];
+            return;
+        }
+    }
 }
 
 QLocale QTextToSpeechPrivateMac::locale() const
 {
-    return QLocale();
+    NSString *voice = [speechSynthesizer voice];
+    NSDictionary *attrs = [NSSpeechSynthesizer attributesForVoice:voice];
+    QLocale locale(QString::fromNSString(attrs[NSVoiceLocaleIdentifier]));
+    return locale;
 }
 
 QTextToSpeech::State QTextToSpeechPrivateMac::state() const
