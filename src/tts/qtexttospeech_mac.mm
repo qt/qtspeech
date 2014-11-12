@@ -197,6 +197,15 @@ double QTextToSpeechPrivateMac::rate() const
 
 void QTextToSpeechPrivateMac::setPitch(double pitch)
 {
+    // 30 to 65
+    double p = 30.0 + ((pitch + 1.0) / 2.0) * 35.0;
+    [speechSynthesizer setObject:[NSNumber numberWithFloat:p] forProperty:NSSpeechPitchBaseProperty error:nil];
+}
+
+double QTextToSpeechPrivateMac::pitch() const
+{
+    double pitch = [[speechSynthesizer objectForProperty:NSSpeechPitchBaseProperty error:nil] floatValue];
+    return (pitch - 30.0) / 35.0 * 2.0 - 1.0;
 }
 
 int QTextToSpeechPrivateMac::volume() const
@@ -209,11 +218,6 @@ void QTextToSpeechPrivateMac::setRate(double rate)
     // NSSpeechSynthesizer supports words per minute,
     // human speech is 180 to 220 - use 0 to 400 as range here
     [speechSynthesizer setRate: 200 + (rate * 200)];
-}
-
-double QTextToSpeechPrivateMac::pitch() const
-{
-    return 0.0; // FIXME
 }
 
 void QTextToSpeechPrivateMac::setVolume(int volume)

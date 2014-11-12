@@ -42,6 +42,7 @@ class tst_QTextToSpeech : public QObject
 private slots:
     void say_hello();
     void speech_rate();
+    void pitch();
 };
 
 
@@ -83,6 +84,15 @@ void tst_QTextToSpeech::speech_rate()
         qint64 time = timer.elapsed();
         QVERIFY(time > lastTime);
         lastTime = time;
+    }
+}
+
+void tst_QTextToSpeech::pitch()
+{
+    QTextToSpeech tts;
+    for (int i = -10; ++i; i <= 10) {
+        tts.setPitch(i / 10.0);
+        QCOMPARE(tts.pitch(), i / 10.0);
     }
 }
 
