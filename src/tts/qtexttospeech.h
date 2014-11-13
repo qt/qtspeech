@@ -83,6 +83,10 @@ public:
     QVoice voice() const;
     QVector<QVoice> availableVoices() const;
 
+    double rate() const;
+    double pitch() const;
+    int volume() const;
+
 public Q_SLOTS:
     void say(const QString &text);
     void stop();
@@ -91,11 +95,8 @@ public Q_SLOTS:
 
     void setLocale(const QLocale &locale);
 
-    double rate() const;
     void setRate(double rate);
-    double pitch() const;
     void setPitch(double pitch);
-    int volume() const;
     void setVolume(int volume);
     void setVoice(const QVoice &voice);
 
