@@ -82,7 +82,7 @@ public:
     HRESULT NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/);
 
 private:
-    ISpVoice *voice;
+    ISpVoice *m_voice;
     double m_pitch;
     int m_pauseCount;
 };
@@ -100,12 +100,12 @@ QTextToSpeechPrivateWindows::QTextToSpeechPrivateWindows(QTextToSpeech *speech)
     if (FAILED(::CoInitialize(NULL)))
         qWarning() << "Init of COM failed";
 
-    HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&voice);
+    HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&m_voice);
     if (!SUCCEEDED(hr))
         qWarning() << "Could not init voice";
 
-    voice->SetInterest(SPFEI_ALL_TTS_EVENTS, SPFEI_ALL_TTS_EVENTS);
-    voice->SetNotifyCallbackInterface(this, 0, 0);
+    m_voice->SetInterest(SPFEI_ALL_TTS_EVENTS, SPFEI_ALL_TTS_EVENTS);
+    m_voice->SetNotifyCallbackInterface(this, 0, 0);
 }
 
 QTextToSpeechPrivateWindows::~QTextToSpeechPrivateWindows()
@@ -120,7 +120,7 @@ QTextToSpeech::State QTextToSpeechPrivate::state() const
 bool QTextToSpeechPrivateWindows::isSpeaking() const
 {
     SPVOICESTATUS eventStatus;
-    voice->GetStatus(&eventStatus, NULL);
+    m_voice->GetStatus(&eventStatus, NULL);
     return eventStatus.dwRunningState == SPRS_IS_SPEAKING;
 }
 
@@ -139,14 +139,14 @@ void QTextToSpeechPrivateWindows::say(const QString &text)
     }
 
     std::wstring wtext = text.toStdWString();
-    voice->Speak(wtext.data(), SPF_ASYNC, NULL);
+    m_voice->Speak(wtext.data(), SPF_ASYNC, NULL);
 }
 
 void QTextToSpeechPrivateWindows::stop()
 {
     if (isPaused())
         resume();
-    voice->Speak(NULL, SPF_PURGEBEFORESPEAK, 0);
+    m_voice->Speak(NULL, SPF_PURGEBEFORESPEAK, 0);
 }
 
 void QTextToSpeechPrivateWindows::pause()
@@ -156,7 +156,7 @@ void QTextToSpeechPrivateWindows::pause()
 
     if (m_pauseCount == 0) {
         ++m_pauseCount;
-        voice->Pause();
+        m_voice->Pause();
         m_state = QTextToSpeech::Paused;
         emitStateChanged(m_state);
     }
@@ -166,7 +166,7 @@ void QTextToSpeechPrivateWindows::resume()
 {
     if (m_pauseCount > 0) {
         --m_pauseCount;
-        voice->Resume();
+        m_voice->Resume();
         if (isSpeaking()) {
             m_state = QTextToSpeech::Speaking;
         } else {
@@ -189,23 +189,31 @@ double QTextToSpeechPrivateWindows::pitch() const
 void QTextToSpeechPrivateWindows::setRate(double rate)
 {
     // -10 to 10
-    voice->SetRate(long(rate*10));
+    m_voice->SetRate(long(rate*10));
 }
 
 double QTextToSpeechPrivateWindows::rate() const
 {
-    return voice->GetRate() / 10.0;
+    long rateValue;
+    if (m_voice->GetRate(&rateValue) == S_OK)
+        return rateValue / 10.0;
+    return -1;
 }
 
 void QTextToSpeechPrivateWindows::setVolume(int volume)
 {
     // 0 to 100
-    voice->SetVolume(volume);
+    m_voice->SetVolume(volume);
 }
 
 int QTextToSpeechPrivateWindows::volume() const
 {
-    return voice->GetVolume();
+    USHORT baseVolume;
+    if (m_voice->GetVolume(&baseVolume) == S_OK)
+    {
+        return baseVolume;
+    }
+    return -1;
 }
 
 QVector<QLocale> QTextToSpeechPrivateWindows::availableLocales() const
@@ -216,6 +224,7 @@ QVector<QLocale> QTextToSpeechPrivateWindows::availableLocales() const
 
 void QTextToSpeechPrivateWindows::setLocale(const QLocale &locale)
 {
+    Q_UNUSED(locale)
     // FIXME: Implement this method.
 }
 
@@ -233,6 +242,7 @@ QVector<QVoice> QTextToSpeechPrivateWindows::availableVoices() const
 
 void QTextToSpeechPrivateWindows::setVoice(const QVoice &voice)
 {
+    Q_UNUSED(voice)
     // FIXME: Implement this method.
 }
 
