@@ -129,16 +129,14 @@ void QTextToSpeechPrivateWindows::say(const QString &text)
     if (text.isEmpty())
         return;
 
+    QString textString = text;
     if (m_state != QTextToSpeech::Ready)
         stop();
-    qDebug() << "say: " << text;
 
-    if (m_pitch != 0.0) {
-         // prepend <pitch middle = '-10'/>
-        ;
-    }
+    textString.prepend(QString::fromLatin1("<pitch absmiddle=\"%1\"/>").arg(m_pitch * 10));
+    qDebug() << "say: " << textString;
 
-    std::wstring wtext = text.toStdWString();
+    std::wstring wtext = textString.toStdWString();
     m_voice->Speak(wtext.data(), SPF_ASYNC, NULL);
 }
 
