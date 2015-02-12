@@ -79,7 +79,7 @@ public:
     bool isPaused() const { return m_pauseCount; }
     bool isSpeaking() const;
 
-    HRESULT NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/);
+    HRESULT STDMETHODCALLTYPE NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/);
 
 private:
     ISpVoice *m_voice;
