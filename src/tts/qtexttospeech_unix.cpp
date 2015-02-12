@@ -56,7 +56,7 @@ public:
     ~QTextToSpeechPrivateSpeechDispatcher();
 
     QVector<QLocale> availableLocales() const Q_DECL_OVERRIDE;
-    QVector<QVoice> availableVoices() const;
+    QVector<QVoice> availableVoices() const Q_DECL_OVERRIDE;
 
     void say(const QString &text) Q_DECL_OVERRIDE;
     void stop() Q_DECL_OVERRIDE;
