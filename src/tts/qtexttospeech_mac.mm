@@ -89,6 +89,7 @@ public:
     void speechStopped(bool success);
 
 private:
+    QVoice voiceForNSVoice(NSString *voiceString) const;
     NSSpeechSynthesizer *speechSynthesizer;
     StateDelegate *stateDelegate;
 };
@@ -231,6 +232,25 @@ QLocale localeForVoice(NSString *voice)
     return QString::fromNSString(attrs[NSVoiceLocaleIdentifier]);
 }
 
+QVoice QTextToSpeechPrivateMac::voiceForNSVoice(NSString *voiceString) const
+{
+    NSDictionary *attrs = [NSSpeechSynthesizer attributesForVoice:voiceString];
+    QVoice voice;
+    voice.setName(QString::fromNSString(attrs[NSVoiceName]));
+    NSString *gender = attrs[NSVoiceGender];
+    voice.setGender(gender == NSVoiceGenderMale ? QVoice::Male :
+                    gender == NSVoiceGenderFemale ? QVoice::Female :
+                    QVoice::Unknown);
+    NSString *age = attrs[NSVoiceAge];
+    int voiceAge = QString::fromNSString(age).toInt();
+    voice.setAge(voiceAge < 13 ? QVoice::Child :
+                 voiceAge < 20 ? QVoice::Teenager :
+                 voiceAge < 45 ? QVoice::Adult :
+                 voiceAge < 90 ? QVoice::Senior : QVoice::Other);
+    voice.setData(QVariant(QString::fromNSString(attrs[NSVoiceIdentifier])));
+    return voice;
+}
+
 QVector<QLocale> QTextToSpeechPrivateMac::availableLocales() const
 {
     QVector<QLocale> locales;
@@ -250,6 +270,8 @@ void QTextToSpeechPrivateMac::setLocale(const QLocale &locale)
     // always prefer default
     if (locale == localeForVoice(voice)) {
         [speechSynthesizer setVoice:voice];
+        emitLocaleChanged(locale);
+        emitVoiceChanged(voiceForNSVoice(voice));
         return;
     }
 
@@ -257,6 +279,8 @@ void QTextToSpeechPrivateMac::setLocale(const QLocale &locale)
         QLocale voiceLocale = localeForVoice(voice);
         if (locale == voiceLocale) {
             [speechSynthesizer setVoice:voice];
+            emitLocaleChanged(locale);
+            emitVoiceChanged(voiceForNSVoice(voice));
             return;
         }
     }
@@ -277,16 +301,28 @@ QTextToSpeech::State QTextToSpeechPrivateMac::state() const
 
 QVector<QVoice> QTextToSpeechPrivateMac::availableVoices() const
 {
-    return QVector<QVoice>();
+    QVector<QVoice> voiceList;
+    NSArray *voices = [NSSpeechSynthesizer availableVoices];
+    for (NSString *voice in voices) {
+        QVoice data = voiceForNSVoice(voice);
+        voiceList.append(data);
+    }
+    return voiceList;
 }
 
-void QTextToSpeechPrivateMac::setVoice(const QVoice & /* voice */)
+void QTextToSpeechPrivateMac::setVoice(const QVoice &voice)
 {
+    NSString *identifier = voice.data().toString().toNSString();
+    [speechSynthesizer setVoice:identifier];
+    QLocale newLocale = localeForVoice(identifier);
+    emitLocaleChanged(newLocale);
+    emitVoiceChanged(voice);
 }
 
 QVoice QTextToSpeechPrivateMac::voice() const
 {
-    return QVoice();
+    NSString *voice = [speechSynthesizer voice];
+    return voiceForNSVoice(voice);
 }
 
 QT_END_NAMESPACE

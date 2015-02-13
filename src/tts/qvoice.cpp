@@ -55,8 +55,8 @@ QVoice::QVoice(const QVoice &other)
 {
 }
 
-QVoice::QVoice(const QString &name, Gender gender, Age age)
-    :d(new QVoicePrivate(name, gender, age))
+QVoice::QVoice(const QString &name, Gender gender, Age age, QVariant data)
+    :d(new QVoicePrivate(name, gender, age, data))
 {
 }
 
@@ -69,11 +69,7 @@ void QVoice::operator=(const QVoice&other)
     d->name = other.d->name;
     d->gender = other.d->gender;
     d->age = other.d->age;
-}
-
-bool QVoice::operator<(const QVoice &other) const
-{
-    return d->name < other.d->name || d->gender < other.d->gender || d->age < other.d->age;
+    d->data = other.d->data;
 }
 
 void QVoice::setName(const QString &name)
@@ -91,6 +87,11 @@ void QVoice::setAge(Age age)
     d->age = age;
 }
 
+void QVoice::setData(QVariant data)
+{
+    d->data = data;
+}
+
 QString QVoice::name() const
 {
     return d->name;
@@ -104,6 +105,11 @@ QVoice::Age QVoice::age() const
 QVoice::Gender QVoice::gender() const
 {
     return d->gender;
+}
+
+QVariant QVoice::data() const
+{
+    return d->data;
 }
 
 QT_END_NAMESPACE

@@ -73,21 +73,23 @@ public:
     ~QVoice();
 
     void operator=(const QVoice &other);
-    bool operator<(const QVoice &other) const;
 
     QString name() const;
     Gender gender() const;
     Age age() const;
-
 private:
-    QVoice(const QString &name, Gender gender, Age age);
+    QVoice(const QString &name, Gender gender, Age age, QVariant data);
 
     void setName(const QString &name);
     void setGender(Gender gender);
     void setAge(Age age);
+    void setData(QVariant data);
+    QVariant data() const;
+
     QSharedDataPointer<QVoicePrivate> d;
 
     friend class QTextToSpeechPrivateSpeechDispatcher;
+    friend class QTextToSpeechPrivateMac;
 };
 
 QT_END_NAMESPACE

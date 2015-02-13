@@ -53,12 +53,16 @@ class QVoicePrivate : public QSharedData
 public:
     QVoicePrivate();
     QVoicePrivate(const QVoicePrivate &other);
-    QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a);
+    QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, QVariant d);
     ~QVoicePrivate() {};
 
     QString name;
     QVoice::Gender gender;
     QVoice::Age age;
+    // Various data depending on the platform:
+    // On OS X the VoiceIdentifier is stored.
+    // On unix the synthesizer (output module) is stored.
+    QVariant data;
 };
 
 QVoicePrivate::QVoicePrivate()
@@ -66,15 +70,16 @@ QVoicePrivate::QVoicePrivate()
     name = qApp->translate("QVoice", "Default");
     age = QVoice::Other;
     gender = QVoice::Unknown;
+    data = QVariant();
 }
 
 QVoicePrivate::QVoicePrivate(const QVoicePrivate &other)
- :QSharedData(other), name(other.name), gender(other.gender), age(other.age)
+ :QSharedData(other), name(other.name), gender(other.gender), age(other.age), data(other.data)
 {
 }
 
-QVoicePrivate::QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a)
-    :name(n), gender(g), age(a)
+QVoicePrivate::QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, QVariant d)
+    :name(n), gender(g), age(a), data(d)
 {
 }
 
