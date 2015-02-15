@@ -18,6 +18,10 @@ SOURCES = \
     qvoice.cpp \
 
 win32 {
+    QMAKE_CFLAGS_RELEASE -= -Zc:strictStrings
+    QMAKE_CFLAGS_RELEASE_WITH_DEBUGINFO -= -Zc:strictStrings
+    QMAKE_CXXFLAGS_RELEASE -= -Zc:strictStrings
+    QMAKE_CXXFLAGS_RELEASE_WITH_DEBUGINFO -= -Zc:strictStrings
     SOURCES += qtexttospeech_win.cpp
     LIBS *= -lole32 -lsapi
 } else:mac {
