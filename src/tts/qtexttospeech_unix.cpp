@@ -81,9 +81,6 @@ private:
     void updateVoices();
 
     SPDConnection *speechDispatcher;
-    // The current output module. Whenever this changes, we need to recheck
-    // which locales are supported, as each spd module supports different
-    // locales.
     QLocale m_currentLocale;
     QVector<QLocale> m_locales;
     QVoice m_currentVoice;
@@ -272,8 +269,9 @@ QLocale QTextToSpeechPrivateSpeechDispatcher::locale() const
 
 void QTextToSpeechPrivateSpeechDispatcher::setVoice(const QVoice &voice)
 {
-    const int result = spd_set_synthesis_voice(speechDispatcher, voice.name().toUtf8().data());
-    if (result == 0) {
+    const int result = spd_set_output_module(speechDispatcher, voice.data().toString().toUtf8().data());
+    const int result2 = spd_set_synthesis_voice(speechDispatcher, voice.name().toUtf8().data());
+    if (result == 0 && result2 == 0) {
         m_currentVoice = voice;
         emitVoiceChanged(voice);
     }
@@ -291,21 +289,29 @@ QTextToSpeech::State QTextToSpeechPrivateSpeechDispatcher::state() const
 
 void QTextToSpeechPrivateSpeechDispatcher::updateVoices()
 {
-    SPDVoice **voices = spd_list_synthesis_voices(speechDispatcher);
-    int i = 0;
-    while (voices != NULL && voices[i] != NULL) {
-        QLocale locale = localeForVoice(voices[i]);
-        if (!m_locales.contains(locale))
-            m_locales.append(locale);
-        const QString name = QString::fromUtf8(voices[i]->name);
-        // iterate over genders and ages, creating a voice for each one
-        QVoice voice;
-        voice.setName(name);
-        m_voices.insert(locale.name(), voice);
-        ++i;
-    }
+    char **modules = spd_list_modules(speechDispatcher);
+    char **module = modules;
+    while (module != NULL && module[0] != NULL) {
+        spd_set_output_module(speechDispatcher, module[0]);
 
-    // FIXME: free voices once libspeechd has api to free them.
+        SPDVoice **voices = spd_list_synthesis_voices(speechDispatcher);
+        int i = 0;
+        while (voices != NULL && voices[i] != NULL) {
+            QLocale locale = localeForVoice(voices[i]);
+            if (!m_locales.contains(locale))
+                m_locales.append(locale);
+            const QString name = QString::fromUtf8(voices[i]->name);
+            // iterate over genders and ages, creating a voice for each one
+            QVoice voice;
+            voice.setName(name);
+            voice.setData(QLatin1String(module[0]));
+            m_voices.insert(locale.name(), voice);
+            ++i;
+        }
+        // FIXME: free voices once libspeechd has api to free them.
+        ++module;
+    }
+    // FIXME: Also free modules once libspeechd has api to free them.
 }
 
 QVector<QLocale> QTextToSpeechPrivateSpeechDispatcher::availableLocales() const
