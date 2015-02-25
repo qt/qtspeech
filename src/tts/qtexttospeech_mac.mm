@@ -83,7 +83,7 @@ public:
     QVoice voice() const Q_DECL_OVERRIDE;
     QTextToSpeech::State state() const Q_DECL_OVERRIDE;
 
-    bool isPaused() const { return false; }
+    bool isPaused() const;
     bool isSpeaking() const;
 
     void speechStopped(bool success);
@@ -182,6 +182,11 @@ void QTextToSpeechPrivateMac::pause()
         m_state = QTextToSpeech::Paused;
         emitStateChanged(m_state);
     }
+}
+
+bool QTextToSpeechPrivateMac::isPaused() const
+{
+    return m_state == QTextToSpeech::Paused;
 }
 
 void QTextToSpeechPrivateMac::resume()
@@ -289,9 +294,7 @@ void QTextToSpeechPrivateMac::setLocale(const QLocale &locale)
 QLocale QTextToSpeechPrivateMac::locale() const
 {
     NSString *voice = [speechSynthesizer voice];
-    NSDictionary *attrs = [NSSpeechSynthesizer attributesForVoice:voice];
-    QLocale locale(QString::fromNSString(attrs[NSVoiceLocaleIdentifier]));
-    return locale;
+    return localeForVoice(voice);
 }
 
 QTextToSpeech::State QTextToSpeechPrivateMac::state() const
