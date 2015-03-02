@@ -64,7 +64,7 @@ QVoice::~QVoice()
 {
 }
 
-void QVoice::operator=(const QVoice&other)
+void QVoice::operator=(const QVoice &other)
 {
     d->name = other.d->name;
     d->gender = other.d->gender;
