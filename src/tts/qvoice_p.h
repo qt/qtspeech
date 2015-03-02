@@ -53,7 +53,7 @@ class QVoicePrivate : public QSharedData
 public:
     QVoicePrivate();
     QVoicePrivate(const QVoicePrivate &other);
-    QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, QVariant d);
+    QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, const QVariant &d);
     ~QVoicePrivate() {};
 
     QString name;
@@ -78,7 +78,7 @@ QVoicePrivate::QVoicePrivate(const QVoicePrivate &other)
 {
 }
 
-QVoicePrivate::QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, QVariant d)
+QVoicePrivate::QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, const QVariant &d)
     :name(n), gender(g), age(a), data(d)
 {
 }

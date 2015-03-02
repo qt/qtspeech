@@ -78,12 +78,12 @@ public:
     Gender gender() const;
     Age age() const;
 private:
-    QVoice(const QString &name, Gender gender, Age age, QVariant data);
+    QVoice(const QString &name, Gender gender, Age age, const QVariant &data);
 
     void setName(const QString &name);
     void setGender(Gender gender);
     void setAge(Age age);
-    void setData(QVariant data);
+    void setData(const QVariant &data);
     QVariant data() const;
 
     QSharedDataPointer<QVoicePrivate> d;

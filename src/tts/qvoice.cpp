@@ -55,7 +55,7 @@ QVoice::QVoice(const QVoice &other)
 {
 }
 
-QVoice::QVoice(const QString &name, Gender gender, Age age, QVariant data)
+QVoice::QVoice(const QString &name, Gender gender, Age age, const QVariant &data)
     :d(new QVoicePrivate(name, gender, age, data))
 {
 }
@@ -87,7 +87,7 @@ void QVoice::setAge(Age age)
     d->age = age;
 }
 
-void QVoice::setData(QVariant data)
+void QVoice::setData(const QVariant &data)
 {
     d->data = data;
 }
