@@ -47,6 +47,7 @@
 
 #include <QString>
 #include <QCoreApplication>
+#include <QVariant>
 
 class QVoicePrivate : public QSharedData
 {
