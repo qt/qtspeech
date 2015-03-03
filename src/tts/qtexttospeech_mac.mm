@@ -241,17 +241,18 @@ QVoice QTextToSpeechPrivateMac::voiceForNSVoice(NSString *voiceString) const
 {
     NSDictionary *attrs = [NSSpeechSynthesizer attributesForVoice:voiceString];
     QVoice voice;
-    voice.setName(QString::fromNSString(attrs[NSVoiceName]));
+    QString voiceName = QString::fromNSString(attrs[NSVoiceName]);
+    voice.setName(voiceName);
     NSString *gender = attrs[NSVoiceGender];
     voice.setGender(gender == NSVoiceGenderMale ? QVoice::Male :
                     gender == NSVoiceGenderFemale ? QVoice::Female :
                     QVoice::Unknown);
-    NSString *age = attrs[NSVoiceAge];
-    int voiceAge = QString::fromNSString(age).toInt();
-    voice.setAge(voiceAge < 13 ? QVoice::Child :
-                 voiceAge < 20 ? QVoice::Teenager :
-                 voiceAge < 45 ? QVoice::Adult :
-                 voiceAge < 90 ? QVoice::Senior : QVoice::Other);
+    NSNumber *age = attrs[NSVoiceAge];
+    int ageInt = age.intValue;
+    voice.setAge(ageInt < 13 ? QVoice::Child :
+                 ageInt < 20 ? QVoice::Teenager :
+                 ageInt < 45 ? QVoice::Adult :
+                 ageInt < 90 ? QVoice::Senior : QVoice::Other);
     voice.setData(QVariant(QString::fromNSString(attrs[NSVoiceIdentifier])));
     return voice;
 }
