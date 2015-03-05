@@ -89,9 +89,12 @@ public:
     void speechStopped(bool success);
 
 private:
+    void updateVoices();
     QVoice voiceForNSVoice(NSString *voiceString) const;
     NSSpeechSynthesizer *speechSynthesizer;
     StateDelegate *stateDelegate;
+    QVector<QLocale> m_locales;
+    QMultiMap<QString, QVoice> m_voices;
 };
 
 @implementation StateDelegate
@@ -120,6 +123,7 @@ QTextToSpeechPrivateMac::QTextToSpeechPrivateMac(QTextToSpeech *speech)
 
     speechSynthesizer = [[NSSpeechSynthesizer alloc] init];
     [speechSynthesizer setDelegate: stateDelegate];
+    updateVoices();
 }
 
 QTextToSpeechPrivateMac::~QTextToSpeechPrivateMac()
@@ -259,14 +263,7 @@ QVoice QTextToSpeechPrivateMac::voiceForNSVoice(NSString *voiceString) const
 
 QVector<QLocale> QTextToSpeechPrivateMac::availableLocales() const
 {
-    QVector<QLocale> locales;
-    NSArray *voices = [NSSpeechSynthesizer availableVoices];
-    for (NSString *voice in voices) {
-        QLocale locale = localeForVoice(voice);
-        if (!locales.contains(locale))
-            locales.append(locale);
-    }
-    return locales;
+    return m_locales;
 }
 
 void QTextToSpeechPrivateMac::setLocale(const QLocale &locale)
@@ -303,15 +300,21 @@ QTextToSpeech::State QTextToSpeechPrivateMac::state() const
     return m_state;
 }
 
-QVector<QVoice> QTextToSpeechPrivateMac::availableVoices() const
+void QTextToSpeechPrivateMac::updateVoices()
 {
-    QVector<QVoice> voiceList;
     NSArray *voices = [NSSpeechSynthesizer availableVoices];
     for (NSString *voice in voices) {
+        QLocale locale = localeForVoice(voice);
         QVoice data = voiceForNSVoice(voice);
-        voiceList.append(data);
+        if (!m_locales.contains(locale))
+            m_locales.append(locale);
+        m_voices.insert(locale.name(), data);
     }
-    return voiceList;
+}
+
+QVector<QVoice> QTextToSpeechPrivateMac::availableVoices() const
+{
+    return m_voices.values(locale().name()).toVector();
 }
 
 void QTextToSpeechPrivateMac::setVoice(const QVoice &voice)
