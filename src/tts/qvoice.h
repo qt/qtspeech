@@ -78,6 +78,9 @@ public:
     QString name() const;
     Gender gender() const;
     Age age() const;
+
+    static QString genderName(QVoice::Gender gender);
+    static QString ageName(QVoice::Age age);
 private:
     QVoice(const QString &name, Gender gender, Age age, const QVariant &data);
 

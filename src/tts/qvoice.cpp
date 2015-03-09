@@ -42,6 +42,7 @@
 
 #include "qvoice.h"
 #include "qvoice_p.h"
+#include "qtexttospeech.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -110,6 +111,48 @@ QVoice::Gender QVoice::gender() const
 QVariant QVoice::data() const
 {
     return d->data;
+}
+
+QString QVoice::genderName(QVoice::Gender gender)
+{
+    QString retval;
+    switch (gender) {
+        case QVoice::Male:
+            retval = QTextToSpeech::tr("Male", "Gender of a voice");
+            break;
+        case QVoice::Female:
+            retval = QTextToSpeech::tr("Female", "Gender of a voice");
+            break;
+        case QVoice::Unknown:
+        default:
+            retval = QTextToSpeech::tr("Unknown Gender", "Voice gender is unknown");
+            break;
+    }
+    return retval;
+}
+
+QString QVoice::ageName(QVoice::Age age)
+{
+    QString retval;
+    switch (age) {
+        case QVoice::Child:
+            retval = QTextToSpeech::tr("Child", "Age of a voice");
+            break;
+        case QVoice::Teenager:
+            retval = QTextToSpeech::tr("Teenager", "Age of a voice");
+            break;
+        case QVoice::Adult:
+            retval = QTextToSpeech::tr("Adult", "Age of a voice");
+            break;
+        case QVoice::Senior:
+            retval = QTextToSpeech::tr("Senior", "Age of a voice");
+            break;
+        case QVoice::Other:
+        default:
+            retval = QTextToSpeech::tr("Other Age", "Unknown age of a voice");
+            break;
+    }
+    return retval;
 }
 
 QT_END_NAMESPACE
