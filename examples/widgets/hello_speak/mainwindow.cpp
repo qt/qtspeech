@@ -129,7 +129,9 @@ void MainWindow::localeChanged(const QLocale &locale)
     m_voices = m_speech.availableVoices();
     QVoice currentVoice = m_speech.voice();
     foreach (const QVoice &voice, m_voices) {
-        ui.voice->addItem(voice.name());
+        ui.voice->addItem(QString("%1 - %2 - %3").arg(voice.name())
+                          .arg(QVoice::genderName(voice.gender()))
+                          .arg(QVoice::ageName(voice.age())));
         if (voice.name() == currentVoice.name())
             ui.voice->setCurrentIndex(ui.voice->count() - 1);
     }
