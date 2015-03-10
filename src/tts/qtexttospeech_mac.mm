@@ -248,8 +248,8 @@ QVoice QTextToSpeechPrivateMac::voiceForNSVoice(NSString *voiceString) const
     QString voiceName = QString::fromNSString(attrs[NSVoiceName]);
     voice.setName(voiceName);
     NSString *gender = attrs[NSVoiceGender];
-    voice.setGender(gender == NSVoiceGenderMale ? QVoice::Male :
-                    gender == NSVoiceGenderFemale ? QVoice::Female :
+    voice.setGender([gender isEqualToString:NSVoiceGenderMale] ? QVoice::Male :
+                    [gender isEqualToString:NSVoiceGenderFemale] ? QVoice::Female :
                     QVoice::Unknown);
     NSNumber *age = attrs[NSVoiceAge];
     int ageInt = age.intValue;
