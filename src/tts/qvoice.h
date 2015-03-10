@@ -94,6 +94,7 @@ private:
 
     friend class QTextToSpeechPrivateSpeechDispatcher;
     friend class QTextToSpeechPrivateMac;
+    friend class QTextToSpeechPrivateWindows;
 };
 
 QT_END_NAMESPACE

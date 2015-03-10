@@ -44,6 +44,7 @@
 
 #include <windows.h>
 #include <sapi.h>
+#include <sphelper.h>
 #include <qdebug.h>
 
 QT_BEGIN_NAMESPACE
@@ -82,9 +83,18 @@ public:
     HRESULT STDMETHODCALLTYPE NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/);
 
 private:
+    QMap<QString, QString> voiceAttributes(ISpObjectToken *speechToken);
+    QString voiceId(ISpObjectToken *speechToken);
+    QLocale lcidToLocale(const QString &lcid);
+    void updateVoices();
+
     ISpVoice *m_voice;
     double m_pitch;
     int m_pauseCount;
+    QLocale m_currentLocale;
+    QVector<QLocale> m_locales;
+    QVoice m_currentVoice;
+    QMultiMap<QString, QVoice> m_voices;
 };
 
 
@@ -106,6 +116,7 @@ QTextToSpeechPrivateWindows::QTextToSpeechPrivateWindows(QTextToSpeech *speech)
 
     m_voice->SetInterest(SPFEI_ALL_TTS_EVENTS, SPFEI_ALL_TTS_EVENTS);
     m_voice->SetNotifyCallbackInterface(this, 0, 0);
+    updateVoices();
 }
 
 QTextToSpeechPrivateWindows::~QTextToSpeechPrivateWindows()
@@ -214,6 +225,118 @@ int QTextToSpeechPrivateWindows::volume() const
     return -1;
 }
 
+QString QTextToSpeechPrivateWindows::voiceId(ISpObjectToken *speechToken)
+{
+    HRESULT hr = S_OK;
+    LPWSTR vId = nullptr;
+    hr = speechToken->GetId(&vId);
+    if (FAILED(hr)) {
+        qWarning() << "ISpObjectToken::GetId failed";
+        return QString();
+    }
+    return QString::fromWCharArray(vId);
+}
+
+QMap<QString, QString> QTextToSpeechPrivateWindows::voiceAttributes(ISpObjectToken *speechToken)
+{
+    HRESULT hr = S_OK;
+    QMap<QString, QString> result;
+
+    ISpDataKey *pAttrKey = nullptr;
+    hr = speechToken->OpenKey(L"Attributes", &pAttrKey);
+    if (FAILED(hr)) {
+        qWarning() << "ISpObjectToken::OpenKeys failed";
+        return result;
+    }
+
+    // enumerate values
+    for (ULONG v = 0; ; v++) {
+        LPWSTR val = nullptr;
+        hr = pAttrKey->EnumValues(v, &val);
+        if (SPERR_NO_MORE_ITEMS == hr) {
+            // done
+            break;
+        } else if (FAILED(hr)) {
+            qWarning() << "ISpDataKey::EnumValues failed";
+            continue;
+        }
+
+        // how do we know whether it's a string or a DWORD?
+        LPWSTR data = nullptr;
+        hr = pAttrKey->GetStringValue(val, &data);
+        if (FAILED(hr)) {
+            qWarning() << "ISpDataKey::GetStringValue failed";
+            continue;
+        }
+
+        if (0 != wcscmp(val, L"")) {
+            result[QString::fromWCharArray(val)] = QString::fromWCharArray(data);
+        }
+
+        // FIXME: Do we need to free the memory here?
+        CoTaskMemFree(val);
+        CoTaskMemFree(data);
+    }
+
+    return result;
+}
+
+QLocale QTextToSpeechPrivateWindows::lcidToLocale(const QString &lcid)
+{
+    bool ok;
+    LCID locale = lcid.toInt(&ok, 16);
+    if (!ok) {
+        qWarning() << "Could not convert language attribute to LCID";
+        return QLocale();
+    }
+    int nchars = GetLocaleInfoW(locale, LOCALE_SISO639LANGNAME, NULL, 0);
+    wchar_t* languageCode = new wchar_t[nchars];
+    GetLocaleInfoW(locale, LOCALE_SISO639LANGNAME, languageCode, nchars);
+    QString iso = QString::fromWCharArray(languageCode);
+    delete[] languageCode;
+    return QLocale(iso);
+}
+
+void QTextToSpeechPrivateWindows::updateVoices()
+{
+    HRESULT hr = S_OK;
+    CComPtr<ISpObjectToken> cpVoiceToken;
+    CComPtr<IEnumSpObjectTokens> cpEnum;
+    CComPtr<ISpVoice> cpVoice;
+    ULONG ulCount = 0;
+
+    hr = SpEnumTokens(SPCAT_VOICES, NULL, NULL, &cpEnum);
+    if (SUCCEEDED(hr)) {
+        hr = cpEnum->GetCount(&ulCount);
+    }
+
+    // Loop through all voices
+    while (SUCCEEDED(hr) && ulCount--) {
+        cpVoiceToken.Release();
+        hr = cpEnum->Next(1, &cpVoiceToken, NULL);
+
+        // Get attributes of the voice
+        QMap<QString, QString> vAttr = voiceAttributes(cpVoiceToken);
+
+        // Transform Windows LCID to QLocale
+        QLocale vLocale = lcidToLocale(vAttr["Language"]);
+        if (!m_locales.contains(vLocale))
+            m_locales.append(vLocale);
+
+        // Create voice
+        QVoice voice;
+        voice.setName(vAttr["Name"]);
+        voice.setAge(vAttr["Age"] == "Adult" ?  QVoice::Adult : QVoice::Other);
+        voice.setGender(vAttr["Gender"] == "Male" ? QVoice::Male :
+                        vAttr["Gender"] == "Female" ? QVoice::Female :
+                        QVoice::Unknown);
+        // Getting the ID of the voice to set the voice later
+        QString vId = voiceId(cpVoiceToken);
+        voice.setData(vId);
+        m_voices.insert(vLocale.name(), voice);
+    }
+}
+
 QVector<QLocale> QTextToSpeechPrivateWindows::availableLocales() const
 {
     // FIXME: Implement this method.
@@ -240,8 +363,31 @@ QVector<QVoice> QTextToSpeechPrivateWindows::availableVoices() const
 
 void QTextToSpeechPrivateWindows::setVoice(const QVoice &voice)
 {
-    Q_UNUSED(voice)
-    // FIXME: Implement this method.
+    // Convert voice id to null-terminated wide char string
+    QString vId = voice.data().toString();
+    wchar_t* tokenId = new wchar_t[vId.size()+1];
+    vId.toWCharArray(tokenId);
+    tokenId[vId.size()] = 0;
+
+    // create the voice token via the id
+    HRESULT hr = S_OK;
+    CComPtr<ISpObjectToken> cpVoiceToken;
+    hr = SpCreateNewToken(tokenId, &cpVoiceToken);
+    if (FAILED(hr)) {
+        qWarning() << "Creating the voice token from ID failed";
+        m_state = QTextToSpeech::BackendError;
+        emitStateChanged(m_state);
+        return;
+    }
+
+    if (m_state != QTextToSpeech::Ready) {
+        m_state = QTextToSpeech::Ready;
+        emitStateChanged(m_state);
+    }
+
+    delete[] tokenId;
+    m_voice->SetVoice(cpVoiceToken);
+    emitVoiceChanged(voice);
 }
 
 QVoice QTextToSpeechPrivateWindows::voice() const
