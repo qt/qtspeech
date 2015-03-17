@@ -78,6 +78,7 @@ public:
     void spdStateChanged(SPDNotificationType state);
 private:
     QLocale localeForVoice(SPDVoice *voice) const;
+    bool connectToSpeechDispatcher();
     void updateVoices();
 
     SPDConnection *speechDispatcher;
@@ -112,49 +113,65 @@ QLocale QTextToSpeechPrivateSpeechDispatcher::localeForVoice(SPDVoice *voice) co
 }
 
 QTextToSpeechPrivateSpeechDispatcher::QTextToSpeechPrivateSpeechDispatcher(QTextToSpeech *speech)
-    : QTextToSpeechPrivate(speech)
+    : QTextToSpeechPrivate(speech), speechDispatcher(0)
 {
     backends->append(this);
-    speechDispatcher = spd_open("QTextToSpeech", "main", 0, SPD_MODE_THREADED);
-    speechDispatcher->callback_begin = speech_finished_callback;
-    spd_set_notification_on(speechDispatcher, SPD_BEGIN);
-    speechDispatcher->callback_end = speech_finished_callback;
-    spd_set_notification_on(speechDispatcher, SPD_END);
-    speechDispatcher->callback_cancel = speech_finished_callback;
-    spd_set_notification_on(speechDispatcher, SPD_CANCEL);
-    speechDispatcher->callback_resume = speech_finished_callback;
-    spd_set_notification_on(speechDispatcher, SPD_RESUME);
-    speechDispatcher->callback_pause = speech_finished_callback;
-    spd_set_notification_on(speechDispatcher, SPD_PAUSE);
-
-    QStringList availableModules;
-    char **modules = spd_list_modules(speechDispatcher);
-    int i = 0;
-    while (modules && modules[i]) {
-        availableModules.append(QString::fromUtf8(modules[i]));
-        ++i;
-    }
-
-    if (availableModules.length() == 0) {
-        qWarning() << "Found no modules in speech-dispatcher. No text to speech possible.";
-    } else if (availableModules.length() == 1 && availableModules.at(0) == dummyModule) {
-        qWarning() << "Found only the dummy module in speech-dispatcher. No text to speech possible. Install a tts module (e.g. espeak).";
-    } else {
-        m_state = QTextToSpeech::Ready;
-    }
-
-    updateVoices();
-    // Default to system locale, since there's no api to get this from spd yet.
-    m_currentLocale = QLocale::system();
-    // TODO: Set m_currentVoice from spd once there's api to get it
-    m_currentVoice = QVoice();
+    connectToSpeechDispatcher();
 }
 
 QTextToSpeechPrivateSpeechDispatcher::~QTextToSpeechPrivateSpeechDispatcher()
 {
-    if ((m_state != QTextToSpeech::BackendError) && (m_state != QTextToSpeech::Ready))
+    if ((m_state != QTextToSpeech::BackendError) && (m_state != QTextToSpeech::Ready) && speechDispatcher)
         spd_cancel_all(speechDispatcher);
     spd_close(speechDispatcher);
+}
+
+bool QTextToSpeechPrivateSpeechDispatcher::connectToSpeechDispatcher()
+{
+    if (speechDispatcher)
+        return true;
+
+    speechDispatcher = spd_open("QTextToSpeech", "main", 0, SPD_MODE_THREADED);
+    if (speechDispatcher) {
+        speechDispatcher->callback_begin = speech_finished_callback;
+        spd_set_notification_on(speechDispatcher, SPD_BEGIN);
+        speechDispatcher->callback_end = speech_finished_callback;
+        spd_set_notification_on(speechDispatcher, SPD_END);
+        speechDispatcher->callback_cancel = speech_finished_callback;
+        spd_set_notification_on(speechDispatcher, SPD_CANCEL);
+        speechDispatcher->callback_resume = speech_finished_callback;
+        spd_set_notification_on(speechDispatcher, SPD_RESUME);
+        speechDispatcher->callback_pause = speech_finished_callback;
+        spd_set_notification_on(speechDispatcher, SPD_PAUSE);
+
+        QStringList availableModules;
+        char **modules = spd_list_modules(speechDispatcher);
+        int i = 0;
+        while (modules && modules[i]) {
+            availableModules.append(QString::fromUtf8(modules[i]));
+            ++i;
+        }
+
+        if (availableModules.length() == 0) {
+            qWarning() << "Found no modules in speech-dispatcher. No text to speech possible.";
+        } else if (availableModules.length() == 1 && availableModules.at(0) == dummyModule) {
+            qWarning() << "Found only the dummy module in speech-dispatcher. No text to speech possible. Install a tts module (e.g. espeak).";
+        } else {
+            m_state = QTextToSpeech::Ready;
+        }
+
+        updateVoices();
+        // Default to system locale, since there's no api to get this from spd yet.
+        m_currentLocale = QLocale::system();
+        // TODO: Set m_currentVoice from spd once there's api to get it
+        m_currentVoice = QVoice();
+        return true;
+    } else {
+        qWarning() << "Connection to speech-dispatcher failed";
+        m_state = QTextToSpeech::BackendError;
+        return false;
+    }
+    return false;
 }
 
 // hack to get state notifications
@@ -183,7 +200,7 @@ QTextToSpeech::State QTextToSpeechPrivate::state() const
 
 void QTextToSpeechPrivateSpeechDispatcher::say(const QString &text)
 {
-    if (text.isEmpty())
+    if (text.isEmpty() || !connectToSpeechDispatcher())
         return;
 
     if (m_state != QTextToSpeech::Ready)
@@ -194,6 +211,9 @@ void QTextToSpeechPrivateSpeechDispatcher::say(const QString &text)
 
 void QTextToSpeechPrivateSpeechDispatcher::stop()
 {
+    if (!connectToSpeechDispatcher())
+        return;
+
     int r1 = -77;
     if (m_state == QTextToSpeech::Paused)
         r1 = spd_resume_all(speechDispatcher);
@@ -203,6 +223,9 @@ void QTextToSpeechPrivateSpeechDispatcher::stop()
 
 void QTextToSpeechPrivateSpeechDispatcher::pause()
 {
+    if (!connectToSpeechDispatcher())
+        return;
+
     if (m_state == QTextToSpeech::Speaking) {
         int ret = spd_pause_all(speechDispatcher);
         qDebug() << "pause: " << ret;
@@ -211,6 +234,9 @@ void QTextToSpeechPrivateSpeechDispatcher::pause()
 
 void QTextToSpeechPrivateSpeechDispatcher::resume()
 {
+    if (!connectToSpeechDispatcher())
+        return;
+
     if (m_state == QTextToSpeech::Paused) {
         int ret = spd_resume_all(speechDispatcher);
         qDebug() << "resume: " << ret;
@@ -219,6 +245,9 @@ void QTextToSpeechPrivateSpeechDispatcher::resume()
 
 void QTextToSpeechPrivateSpeechDispatcher::setPitch(double pitch)
 {
+    if (!connectToSpeechDispatcher())
+        return;
+
     int result = spd_set_voice_pitch(speechDispatcher, static_cast<int>(pitch * 100));
     if (result == 0)
         emitPitchChanged(pitch);
@@ -226,11 +255,19 @@ void QTextToSpeechPrivateSpeechDispatcher::setPitch(double pitch)
 
 double QTextToSpeechPrivateSpeechDispatcher::pitch() const
 {
-    return 0.0; // FIXME
+    double pitch = 0.0;
+    if (speechDispatcher != 0) {
+        int result = spd_get_voice_pitch(speechDispatcher);
+        pitch = result / 100;
+    }
+    return pitch;
 }
 
 void QTextToSpeechPrivateSpeechDispatcher::setRate(double rate)
 {
+    if (!connectToSpeechDispatcher())
+        return;
+
     int result = spd_set_voice_rate(speechDispatcher, static_cast<int>(rate * 100));
     if (result == 0)
         emitRateChanged(rate);
@@ -238,11 +275,19 @@ void QTextToSpeechPrivateSpeechDispatcher::setRate(double rate)
 
 double QTextToSpeechPrivateSpeechDispatcher::rate() const
 {
-    return 0.0; // FIXME
+    double rate = 0.0;
+    if (speechDispatcher != 0) {
+        int result = spd_get_voice_rate(speechDispatcher);
+        rate = result / 100;
+    }
+    return rate;
 }
 
 void QTextToSpeechPrivateSpeechDispatcher::setVolume(int volume)
 {
+    if (!connectToSpeechDispatcher())
+        return;
+
     int result = spd_set_volume(speechDispatcher, ( -100 + volume * 2) );
     if (result == 0)
         emitVolumeChanged(volume);
@@ -250,11 +295,19 @@ void QTextToSpeechPrivateSpeechDispatcher::setVolume(int volume)
 
 int QTextToSpeechPrivateSpeechDispatcher::volume() const
 {
-    return 100; // FIXME
+    int volume = 0;
+    if (speechDispatcher != 0) {
+        int result = spd_get_volume(speechDispatcher);
+        volume = (result + 100) / 2;
+    }
+    return volume;
 }
 
 void QTextToSpeechPrivateSpeechDispatcher::setLocale(const QLocale &locale)
 {
+    if (!connectToSpeechDispatcher())
+        return;
+
     int result = spd_set_language(speechDispatcher, locale.uiLanguages().at(0).toUtf8().data());
     if (result == 0) {
         m_currentLocale = locale;
@@ -269,6 +322,9 @@ QLocale QTextToSpeechPrivateSpeechDispatcher::locale() const
 
 void QTextToSpeechPrivateSpeechDispatcher::setVoice(const QVoice &voice)
 {
+    if (!connectToSpeechDispatcher())
+        return;
+
     const int result = spd_set_output_module(speechDispatcher, voice.data().toString().toUtf8().data());
     const int result2 = spd_set_synthesis_voice(speechDispatcher, voice.name().toUtf8().data());
     if (result == 0 && result2 == 0) {
