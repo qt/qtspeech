@@ -83,15 +83,14 @@ public:
     HRESULT STDMETHODCALLTYPE NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/);
 
 private:
-    QMap<QString, QString> voiceAttributes(ISpObjectToken *speechToken);
-    QString voiceId(ISpObjectToken *speechToken);
-    QLocale lcidToLocale(const QString &lcid);
+    QMap<QString, QString> voiceAttributes(ISpObjectToken *speechToken) const;
+    QString voiceId(ISpObjectToken *speechToken) const;
+    QLocale lcidToLocale(const QString &lcid) const;
     void updateVoices();
 
     ISpVoice *m_voice;
     double m_pitch;
     int m_pauseCount;
-    QLocale m_currentLocale;
     QVector<QLocale> m_locales;
     QVoice m_currentVoice;
     QMultiMap<QString, QVoice> m_voices;
@@ -225,7 +224,7 @@ int QTextToSpeechPrivateWindows::volume() const
     return -1;
 }
 
-QString QTextToSpeechPrivateWindows::voiceId(ISpObjectToken *speechToken)
+QString QTextToSpeechPrivateWindows::voiceId(ISpObjectToken *speechToken) const
 {
     HRESULT hr = S_OK;
     LPWSTR vId = nullptr;
@@ -237,7 +236,7 @@ QString QTextToSpeechPrivateWindows::voiceId(ISpObjectToken *speechToken)
     return QString::fromWCharArray(vId);
 }
 
-QMap<QString, QString> QTextToSpeechPrivateWindows::voiceAttributes(ISpObjectToken *speechToken)
+QMap<QString, QString> QTextToSpeechPrivateWindows::voiceAttributes(ISpObjectToken *speechToken) const
 {
     HRESULT hr = S_OK;
     QMap<QString, QString> result;
@@ -281,7 +280,7 @@ QMap<QString, QString> QTextToSpeechPrivateWindows::voiceAttributes(ISpObjectTok
     return result;
 }
 
-QLocale QTextToSpeechPrivateWindows::lcidToLocale(const QString &lcid)
+QLocale QTextToSpeechPrivateWindows::lcidToLocale(const QString &lcid) const
 {
     bool ok;
     LCID locale = lcid.toInt(&ok, 16);
@@ -302,7 +301,6 @@ void QTextToSpeechPrivateWindows::updateVoices()
     HRESULT hr = S_OK;
     CComPtr<ISpObjectToken> cpVoiceToken;
     CComPtr<IEnumSpObjectTokens> cpEnum;
-    CComPtr<ISpVoice> cpVoice;
     ULONG ulCount = 0;
 
     hr = SpEnumTokens(SPCAT_VOICES, NULL, NULL, &cpEnum);
@@ -339,26 +337,34 @@ void QTextToSpeechPrivateWindows::updateVoices()
 
 QVector<QLocale> QTextToSpeechPrivateWindows::availableLocales() const
 {
-    // FIXME: Implement this method.
-    return QVector<QLocale>();
+    return m_locales;
 }
 
 void QTextToSpeechPrivateWindows::setLocale(const QLocale &locale)
 {
-    Q_UNUSED(locale)
-    // FIXME: Implement this method.
+    QList<QVoice> voicesForLocale = m_voices.values(locale.name());
+    if (voicesForLocale.length() > 0) {
+        setVoice(voicesForLocale[0]);
+        emitLocaleChanged(locale);
+        emitVoiceChanged(voicesForLocale[0]);
+    } else {
+        qWarning() << "No voice found for given locale";
+    }
 }
 
 QLocale QTextToSpeechPrivateWindows::locale() const
 {
-    // FIXME: Implement this method.
-    return QLocale::system();
+    // Get current voice id
+    CComPtr<ISpObjectToken> cpVoiceToken;
+    m_voice->GetVoice(&cpVoiceToken);
+    // read attributes
+    QMap<QString, QString> vAttr = voiceAttributes(cpVoiceToken);
+    return lcidToLocale(vAttr["Language"]);
 }
 
 QVector<QVoice> QTextToSpeechPrivateWindows::availableVoices() const
 {
-    // FIXME: Implement this method.
-    return QVector<QVoice>();
+    return m_voices.values(locale().name()).toVector();
 }
 
 void QTextToSpeechPrivateWindows::setVoice(const QVoice &voice)
@@ -392,7 +398,14 @@ void QTextToSpeechPrivateWindows::setVoice(const QVoice &voice)
 
 QVoice QTextToSpeechPrivateWindows::voice() const
 {
-    // FIXME: Implement this method.
+    CComPtr<ISpObjectToken> cpVoiceToken;
+    m_voice->GetVoice(&cpVoiceToken);
+    QString vId = voiceId(cpVoiceToken);
+    foreach (const QVoice &voice, m_voices.values()) {
+        if (voice.data().toString() == vId) {
+            return voice;
+        }
+    }
     return QVoice();
 }
 
