@@ -43,6 +43,7 @@ private slots:
     void say_hello();
     void speech_rate();
     void pitch();
+    void set_voice();
 };
 
 
@@ -94,6 +95,31 @@ void tst_QTextToSpeech::pitch()
         tts.setPitch(i / 10.0);
         QCOMPARE(tts.pitch(), i / 10.0);
     }
+}
+
+void tst_QTextToSpeech::set_voice()
+{
+    QString text = QStringLiteral("this is an example text");
+    QTextToSpeech tts;
+    QCOMPARE(tts.state(), QTextToSpeech::Ready);
+
+    // Choose a voice
+    QVector<QVoice> voices = tts.availableVoices();
+    int vId = 0;
+    if (voices.length() > 1) {
+        vId = 1;
+    }
+    tts.setVoice(voices[vId]);
+    QCOMPARE(tts.state(), QTextToSpeech::Ready);
+
+    QElapsedTimer timer;
+    timer.start();
+    tts.say(text);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
+    QSignalSpy spy(&tts, SIGNAL(stateChanged(QTextToSpeech::State)));
+    spy.wait(10000);
+    QCOMPARE(tts.state(), QTextToSpeech::Ready);
+    QVERIFY(timer.elapsed() > 100);
 }
 
 QTEST_MAIN(tst_QTextToSpeech)
