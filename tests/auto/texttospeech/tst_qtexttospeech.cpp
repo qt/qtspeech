@@ -68,7 +68,7 @@ void tst_QTextToSpeech::speech_rate()
     QTextToSpeech tts;
     tts.setRate(0.5);
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
-//    QCOMPARE(tts.rate(), 0.0); FIXME not implemented yet
+    QCOMPARE(tts.rate(), 0.5);
 
     qint64 lastTime = 0;
     // check that speaking at slower rate takes more time (for 0.5, 0.0, -0.5)
@@ -90,7 +90,7 @@ void tst_QTextToSpeech::speech_rate()
 void tst_QTextToSpeech::pitch()
 {
     QTextToSpeech tts;
-    for (int i = -10; ++i; i <= 10) {
+    for (int i = -10; i <= 10; ++i) {
         tts.setPitch(i / 10.0);
         QCOMPARE(tts.pitch(), i / 10.0);
     }
