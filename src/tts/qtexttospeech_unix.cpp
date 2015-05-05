@@ -258,7 +258,7 @@ double QTextToSpeechPrivateSpeechDispatcher::pitch() const
     double pitch = 0.0;
     if (speechDispatcher != 0) {
         int result = spd_get_voice_pitch(speechDispatcher);
-        pitch = result / 100;
+        pitch = result / 100.0;
     }
     return pitch;
 }
@@ -278,7 +278,7 @@ double QTextToSpeechPrivateSpeechDispatcher::rate() const
     double rate = 0.0;
     if (speechDispatcher != 0) {
         int result = spd_get_voice_rate(speechDispatcher);
-        rate = result / 100;
+        rate = result / 100.0;
     }
     return rate;
 }
