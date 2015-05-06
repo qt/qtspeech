@@ -342,6 +342,7 @@ QTextToSpeech::State QTextToSpeechPrivateSpeechDispatcher::state() const
 void QTextToSpeechPrivateSpeechDispatcher::updateVoices()
 {
     char **modules = spd_list_modules(speechDispatcher);
+    char *original_module = spd_get_output_module(speechDispatcher);
     char **module = modules;
     while (module != NULL && module[0] != NULL) {
         spd_set_output_module(speechDispatcher, module[0]);
@@ -360,10 +361,16 @@ void QTextToSpeechPrivateSpeechDispatcher::updateVoices()
             m_voices.insert(locale.name(), voice);
             ++i;
         }
-        // FIXME: free voices once libspeechd has api to free them.
+        // free voices.
+        free_spd_voices(voices);
         ++module;
     }
-    // FIXME: Also free modules once libspeechd has api to free them.
+    // Also free modules.
+    free_spd_modules(modules);
+
+    // Set the output module back to what it was.
+    spd_set_output_module(speechDispatcher, original_module);
+    free(original_module);
 }
 
 QVector<QLocale> QTextToSpeechPrivateSpeechDispatcher::availableLocales() const
