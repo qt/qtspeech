@@ -140,7 +140,7 @@ void QTextToSpeechPrivateAndroid::say(const QString &text)
 {
     QJNIEnvironmentPrivate env;
     jstring jstr = env->NewString(reinterpret_cast<const jchar*>(text.constData()),
-                                        text.length());
+                                  text.length());
     m_speech.callMethod<void>("say", "(Ljava/lang/String;)V", jstr);
 }
 

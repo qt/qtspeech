@@ -59,7 +59,7 @@ public class QtTextToSpeech
     private TextToSpeech mTts;
     private static final int SPEECH_FLUSH_ALL = 2;
 
-// OnInitListener
+    // OnInitListener
     private final OnInitListener mTtsChangeListener = new OnInitListener() {
         @Override
         public void onInit(int status) {
