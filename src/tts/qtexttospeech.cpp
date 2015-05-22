@@ -114,6 +114,8 @@ void QTextToSpeech::stop()
   take several seconds until it takes effect or may pause instantly.
   Some synthesizers will look for a break that they can later resume from, such as
   a sentence end.
+  \note Due to Android platform limitations, pause() stops the current utterance,
+  while resume() starts the previously queued utterance from the beginning.
   \sa resume()
 */
 void QTextToSpeech::pause()

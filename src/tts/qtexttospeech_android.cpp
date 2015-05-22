@@ -70,6 +70,7 @@ public:
     void setState(QTextToSpeech::State state);
 
 private:
+    QString m_text;
     QJNIObjectPrivate m_speech;
 };
 
@@ -180,6 +181,7 @@ void QTextToSpeechPrivateAndroid::say(const QString &text)
     if (m_state == QTextToSpeech::Speaking)
         stop();
 
+    m_text = text;
     QJNIEnvironmentPrivate env;
     jstring jstr = env->NewString(reinterpret_cast<const jchar*>(text.constData()),
                                   text.length());
@@ -219,6 +221,10 @@ void QTextToSpeechPrivateAndroid::pause()
 
 void QTextToSpeechPrivateAndroid::resume()
 {
+    if (m_state != QTextToSpeech::Paused)
+        return;
+
+    say(m_text);
 }
 
 void QTextToSpeechPrivateAndroid::setPitch(double /*pitch*/)
