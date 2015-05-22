@@ -41,13 +41,17 @@
 
 package org.qtproject.qt5.android.speech;
 
+import android.content.ContentResolver;
 import android.content.Context;
+import android.provider.Settings;
+import android.provider.Settings.SettingNotFoundException;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.speech.tts.UtteranceProgressListener;
 import android.os.Build;
 import android.util.Log;
+import java.lang.Float;
 import java.util.HashMap;
 
 public class QtTextToSpeech
@@ -59,6 +63,7 @@ public class QtTextToSpeech
 
     private TextToSpeech mTts;
     private final long mId;
+    private float mPitch = 1.0f;
 
     // OnInitListener
     private final OnInitListener mTtsChangeListener = new OnInitListener() {
@@ -117,6 +122,15 @@ public class QtTextToSpeech
         mId = id;
         mTts = new TextToSpeech(context, mTtsChangeListener);
         mTts.setOnUtteranceProgressListener(mTtsUtteranceProgressListener);
+
+        // Read pitch from settings
+        ContentResolver resolver = context.getContentResolver();
+        try {
+            float pitch = Settings.Secure.getFloat(resolver, android.provider.Settings.Secure.TTS_DEFAULT_PITCH);
+            mPitch = pitch / 100.0f;
+        } catch (SettingNotFoundException e) {
+            mPitch = 1.0f;
+        }
     }
 
     public void say(String text)
@@ -139,6 +153,23 @@ public class QtTextToSpeech
     {
         Log.w("QtTextToSpeech", "STOP");
         mTts.stop();
+    }
+
+    public float pitch()
+    {
+        return mPitch;
+    }
+
+    public int setPitch(float pitch)
+    {
+        if (Float.compare(pitch, mPitch) == 0)
+            return TextToSpeech.ERROR;
+
+        int success = mTts.setPitch(pitch);
+        if (success == TextToSpeech.SUCCESS)
+            mPitch = pitch;
+
+        return success;
     }
 
     public void shutdown()
