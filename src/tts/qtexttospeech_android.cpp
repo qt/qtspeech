@@ -38,50 +38,10 @@
 #include <jni.h>
 #include <QtCore/private/qjni_p.h>
 #include <QtCore/private/qjnihelpers_p.h>
-#include <qdebug.h>
 
 QT_BEGIN_NAMESPACE
 
-QString dummyModule = QStringLiteral("dummy");
-
 static jclass g_qtSpeechClass = 0;
-
-Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
-{
-    typedef union {
-        JNIEnv *nativeEnvironment;
-        void *venv;
-    } UnionJNIEnvToVoid;
-
-    UnionJNIEnvToVoid uenv;
-    uenv.venv = NULL;
-
-    if (vm->GetEnv(&uenv.venv, JNI_VERSION_1_4) != JNI_OK)
-        return JNI_ERR;
-
-    JNIEnv *jniEnv = uenv.nativeEnvironment;
-    jclass clazz = jniEnv->FindClass("org/qtproject/qt5/android/speech/QtTextToSpeech");
-
-    if (clazz) {
-        g_qtSpeechClass = static_cast<jclass>(jniEnv->NewGlobalRef(clazz));
-//        if (env->RegisterNatives(g_qtSpeechClass,
-//                                 methods,
-//                                 sizeof(methods) / sizeof(methods[0])) < 0) {
-//            return false;
-//        }
-
-        qDebug() << "FOUND JCLASS QtSpeech";
-
-        //QJNIObjectPrivate obj(res);
-        //jniEnv->DeleteLocalRef(res);
-
-//        jniEnv->call
-//        g_qtSpeechClass
-    }
-
-    return JNI_VERSION_1_4;
-}
-
 class QTextToSpeechPrivateAndroid : public QTextToSpeechPrivate
 {
 public:
@@ -107,25 +67,102 @@ public:
     void setVoice(const QVoice &voice) Q_DECL_OVERRIDE;
     QVoice voice() const Q_DECL_OVERRIDE;
     QTextToSpeech::State state() const Q_DECL_OVERRIDE;
+    void setState(QTextToSpeech::State state);
 
 private:
     QJNIObjectPrivate m_speech;
 };
+
+typedef QMap<jlong, QTextToSpeechPrivateAndroid *> TextToSpeechMap;
+Q_GLOBAL_STATIC(TextToSpeechMap, textToSpeechMap)
+
+static void notifyError(JNIEnv *env, jobject thiz, jlong id)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thiz);
+
+    QTextToSpeechPrivateAndroid *const tts = (*textToSpeechMap)[id];
+    if (!tts)
+        return;
+
+    tts->setState(QTextToSpeech::BackendError);
+}
+
+static void notifyReady(JNIEnv *env, jobject thiz, jlong id)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thiz);
+
+    QTextToSpeechPrivateAndroid *const tts = (*textToSpeechMap)[id];
+    if (!tts || tts->state() == QTextToSpeech::Paused)
+        return;
+
+    tts->setState(QTextToSpeech::Ready);
+}
+
+static void notifySpeaking(JNIEnv *env, jobject thiz, jlong id)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thiz);
+
+    QTextToSpeechPrivateAndroid *const tts = (*textToSpeechMap)[id];
+    if (!tts)
+        return;
+
+    tts->setState(QTextToSpeech::Speaking);
+}
+
+Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
+{
+    typedef union {
+        JNIEnv *nativeEnvironment;
+        void *venv;
+    } UnionJNIEnvToVoid;
+
+    UnionJNIEnvToVoid uenv;
+    uenv.venv = NULL;
+
+    if (vm->GetEnv(&uenv.venv, JNI_VERSION_1_4) != JNI_OK)
+        return JNI_ERR;
+
+    JNIEnv *jniEnv = uenv.nativeEnvironment;
+    jclass clazz = jniEnv->FindClass("org/qtproject/qt5/android/speech/QtTextToSpeech");
+
+    static const JNINativeMethod methods[] = {
+        {"notifyError", "(J)V", reinterpret_cast<void *>(notifyError)},
+        {"notifyReady", "(J)V", reinterpret_cast<void *>(notifyReady)},
+        {"notifySpeaking", "(J)V", reinterpret_cast<void *>(notifySpeaking)}
+    };
+
+    if (clazz) {
+        g_qtSpeechClass = static_cast<jclass>(jniEnv->NewGlobalRef(clazz));
+        if (jniEnv->RegisterNatives(g_qtSpeechClass,
+                                    methods,
+                                    sizeof(methods) / sizeof(methods[0])) != JNI_OK) {
+            return JNI_ERR;
+        }
+    }
+
+    return JNI_VERSION_1_4;
+}
 
 QTextToSpeechPrivateAndroid::QTextToSpeechPrivateAndroid(QTextToSpeech *speech)
     : QTextToSpeechPrivate(speech)
 {
     Q_ASSERT(g_qtSpeechClass);
 
-    jobject activity = QtAndroidPrivate::activity();
+    const jlong id = reinterpret_cast<jlong>(this);
     m_speech = QJNIObjectPrivate::callStaticObjectMethod(g_qtSpeechClass,
-                                                           "open",
-                                                           "(Landroid/content/Context;)Lorg/qtproject/qt5/android/speech/QtTextToSpeech;",
-                                                           activity);
+                                                         "open",
+                                                         "(Landroid/content/Context;J)Lorg/qtproject/qt5/android/speech/QtTextToSpeech;",
+                                                         QtAndroidPrivate::activity(),
+                                                         id);
+    (*textToSpeechMap)[id] = this;
 }
 
 QTextToSpeechPrivateAndroid::~QTextToSpeechPrivateAndroid()
 {
+    textToSpeechMap->remove(reinterpret_cast<jlong>(this));
     m_speech.callMethod<void>("shutdown");
 }
 
@@ -137,6 +174,12 @@ QTextToSpeech::QTextToSpeech(QObject *parent)
 
 void QTextToSpeechPrivateAndroid::say(const QString &text)
 {
+    if (text.isEmpty())
+        return;
+
+    if (m_state == QTextToSpeech::Speaking)
+        stop();
+
     QJNIEnvironmentPrivate env;
     jstring jstr = env->NewString(reinterpret_cast<const jchar*>(text.constData()),
                                   text.length());
@@ -148,14 +191,30 @@ QTextToSpeech::State QTextToSpeechPrivateAndroid::state() const
     return m_state;
 }
 
+void QTextToSpeechPrivateAndroid::setState(QTextToSpeech::State state)
+{
+    if (m_state == state)
+        return;
+
+    m_state = state;
+    emitStateChanged(m_state);
+}
+
 void QTextToSpeechPrivateAndroid::stop()
 {
-//    QJNIEnvironmentPrivate env;
+    if (m_state == QTextToSpeech::Ready)
+        return;
+
     m_speech.callMethod<void>("stop", "()V");
 }
 
 void QTextToSpeechPrivateAndroid::pause()
 {
+    if (m_state == QTextToSpeech::Paused)
+        return;
+
+    stop();
+    setState(QTextToSpeech::Paused);
 }
 
 void QTextToSpeechPrivateAndroid::resume()

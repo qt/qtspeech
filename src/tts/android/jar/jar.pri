@@ -2,7 +2,7 @@ load(qt_build_paths)
 CONFIG += java
 
 DESTDIR = $$MODULE_BASE_OUTDIR/jar
-API_VERSION = android-10
+API_VERSION = android-21
 
 PATHPREFIX = $$PWD/src/org/qtproject/qt5/android/speech
 

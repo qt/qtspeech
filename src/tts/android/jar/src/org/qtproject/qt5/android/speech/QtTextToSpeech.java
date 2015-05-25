@@ -41,51 +41,100 @@
 
 package org.qtproject.qt5.android.speech;
 
+import android.content.Context;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
 import android.speech.tts.TextToSpeech.OnInitListener;
-
-import android.accessibilityservice.AccessibilityService;
-import android.graphics.Rect;
-import android.os.Bundle;
+import android.speech.tts.UtteranceProgressListener;
+import android.os.Build;
 import android.util.Log;
-import android.content.Context;
-
 import java.util.HashMap;
 
 public class QtTextToSpeech
 {
+    // Native callback functions
+    native public void notifyError(long id);
+    native public void notifyReady(long id);
+    native public void notifySpeaking(long id);
 
     private TextToSpeech mTts;
-    private static final int SPEECH_FLUSH_ALL = 2;
+    private final long mId;
 
     // OnInitListener
     private final OnInitListener mTtsChangeListener = new OnInitListener() {
         @Override
         public void onInit(int status) {
             Log.w("QtTextToSpeech", "tts initialized");
-            // FIXME make sure to only do something when initialized, not before
+            if (status == TextToSpeech.SUCCESS) {
+                notifyReady(mId);
+            } else {
+                notifyError(mId);
+            }
         }
     };
 
-    public static QtTextToSpeech open(Context context)
+    // UtteranceProgressListener
+    private final UtteranceProgressListener mTtsUtteranceProgressListener = new UtteranceProgressListener() {
+        @Override
+        public void onDone(String utteranceId) {
+            Log.w("UtteranceProgressListener", "onDone");
+            if (utteranceId.equals("UtteranceId")) {
+                notifyReady(mId);
+            }
+        }
+
+        @Override
+        public void onError(String utteranceId) {
+            Log.w("UtteranceProgressListener", "onError");
+            if (utteranceId.equals("UtteranceId")) {
+                notifyReady(mId);
+            }
+        }
+
+        @Override
+        public void onError(String utteranceId, int errorCode) {
+            Log.w("UtteranceProgressListener", "onError");
+            if (utteranceId.equals("UtteranceId")) {
+                notifyReady(mId);
+            }
+        }
+
+        @Override
+        public void onStart(String utteranceId) {
+            Log.w("UtteranceProgressListener", "onStart");
+            if (utteranceId.equals("UtteranceId")) {
+                notifySpeaking(mId);
+            }
+         }
+     };
+
+    public static QtTextToSpeech open(final Context context, final long id)
     {
-        return new QtTextToSpeech(context);
+        return new QtTextToSpeech(context, id);
     }
 
-    QtTextToSpeech(Context context) {
+    QtTextToSpeech(final Context context, final long id) {
+        mId = id;
         mTts = new TextToSpeech(context, mTtsChangeListener);
+        mTts.setOnUtteranceProgressListener(mTtsUtteranceProgressListener);
     }
 
     public void say(String text)
     {
         Log.w("QtTextToSpeech", text);
 
-        mTts.stop();
-        HashMap<String, String> params = null;
-        final int result = mTts.speak(text, SPEECH_FLUSH_ALL, params);
+        int result = -1;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            result = mTts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "UtteranceId");
+        } else {
+            HashMap<String, String> map = new HashMap<String, String>();
+            map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "UtteranceId");
+            result = mTts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
+        }
+
         Log.w("QtTextToSpeech", "RESULT: " + Integer.toString(result));
     }
+
     public void stop()
     {
         Log.w("QtTextToSpeech", "STOP");
