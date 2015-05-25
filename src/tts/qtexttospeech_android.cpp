@@ -126,6 +126,7 @@ QTextToSpeechPrivateAndroid::QTextToSpeechPrivateAndroid(QTextToSpeech *speech)
 
 QTextToSpeechPrivateAndroid::~QTextToSpeechPrivateAndroid()
 {
+    m_speech.callMethod<void>("shutdown");
 }
 
 QTextToSpeech::QTextToSpeech(QObject *parent)

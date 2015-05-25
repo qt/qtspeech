@@ -91,4 +91,9 @@ public class QtTextToSpeech
         Log.w("QtTextToSpeech", "STOP");
         mTts.stop();
     }
+
+    public void shutdown()
+    {
+        mTts.shutdown();
+    }
 }
