@@ -253,13 +253,17 @@ void QTextToSpeechPrivateAndroid::setRate(double rate)
         emitRateChanged(rate);
 }
 
-void QTextToSpeechPrivateAndroid::setVolume(int /*volume*/)
-{
-}
-
 int QTextToSpeechPrivateAndroid::volume() const
 {
-    return 100; // FIXME
+    jfloat volume = m_speech.callMethod<jfloat>("volume");
+    return int(volume * 100);
+}
+
+void QTextToSpeechPrivateAndroid::setVolume(int volume)
+{
+    // 0 == SUCCESS
+    if (m_speech.callMethod<jint>("setVolume", "(F)I", float(volume) / 100) == 0)
+        emitVolumeChanged(volume);
 }
 
 QVector<QLocale> QTextToSpeechPrivateAndroid::availableLocales() const

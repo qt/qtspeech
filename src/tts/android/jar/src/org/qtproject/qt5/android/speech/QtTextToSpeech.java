@@ -50,6 +50,7 @@ import android.speech.tts.TextToSpeech.Engine;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.speech.tts.UtteranceProgressListener;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.Log;
 import java.lang.Float;
 import java.util.HashMap;
@@ -65,6 +66,7 @@ public class QtTextToSpeech
     private final long mId;
     private float mPitch = 1.0f;
     private float mRate = 1.0f;
+    private float mVolume = 1.0f;
 
     // OnInitListener
     private final OnInitListener mTtsChangeListener = new OnInitListener() {
@@ -148,10 +150,13 @@ public class QtTextToSpeech
 
         int result = -1;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            result = mTts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "UtteranceId");
+            Bundle params = new Bundle();
+            params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, mVolume);
+            result = mTts.speak(text, TextToSpeech.QUEUE_FLUSH, params, "UtteranceId");
         } else {
             HashMap<String, String> map = new HashMap<String, String>();
             map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "UtteranceId");
+            map.put(TextToSpeech.Engine.KEY_PARAM_VOLUME, Float.toString(mVolume));
             result = mTts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
         }
 
@@ -197,4 +202,19 @@ public class QtTextToSpeech
     {
         mTts.shutdown();
     }
+
+    public float volume()
+    {
+        return mVolume;
+    }
+
+    public int setVolume(float volume)
+    {
+        if (Float.compare(volume, mVolume) == 0)
+            return TextToSpeech.ERROR;
+
+        mVolume = volume;
+        return TextToSpeech.SUCCESS;
+    }
+
 }
