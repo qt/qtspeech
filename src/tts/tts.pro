@@ -29,20 +29,12 @@ win32 {
 } else:android {
     SUBDIRS += android
     SOURCES += qtexttospeech_android.cpp
+    ANDROID_BUNDLED_JAR_DEPENDENCIES = jar/QtTextToSpeech-bundled.jar:org.qtproject.qt5.android.speech.QtTextToSpeech
+    ANDROID_JAR_DEPENDENCIES = jar/QtTextToSpeech.jar:org.qtproject.qt5.android.speech.QtTextToSpeech
+    OTHER_FILES += android/jar/src/org/qtproject/qt5/android/speech/QtTextToSpeech.java
 } else:unix {
     CONFIG += link_pkgconfig
     SOURCES += qtexttospeech_unix.cpp
     LIBS += -lspeechd
     PKGCONFIG = speech-dispatcher
 }
-
-ANDROID_BUNDLED_JAR_DEPENDENCIES = \
-    jar/QtTextToSpeech-bundled.jar:org.qtproject.qt5.android.speech.QtTextToSpeech
-ANDROID_JAR_DEPENDENCIES = \
-    jar/QtTextToSpeech.jar:org.qtproject.qt5.android.speech.QtTextToSpeech
-
-SUBDIRS += \
-    android/android.pro
-
-OTHER_FILES += \
-    android/jar/src/org/qtproject/qt5/android/speech/QtTextToSpeech.java

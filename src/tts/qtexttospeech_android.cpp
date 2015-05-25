@@ -96,8 +96,11 @@ public:
     void pause() Q_DECL_OVERRIDE;
     void resume() Q_DECL_OVERRIDE;
 
+    double rate() const Q_DECL_OVERRIDE;
     void setRate(double rate) Q_DECL_OVERRIDE;
+    double pitch() const Q_DECL_OVERRIDE;
     void setPitch(double pitch) Q_DECL_OVERRIDE;
+    int volume() const Q_DECL_OVERRIDE;
     void setVolume(int volume) Q_DECL_OVERRIDE;
     void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
     QLocale locale() const Q_DECL_OVERRIDE;
@@ -204,7 +207,7 @@ QVector<QVoice> QTextToSpeechPrivateAndroid::availableVoices() const
     return QVector<QVoice>();
 }
 
-void QTextTospeechPrivateAndroid::setVoice(const QVoice & /* voice */)
+void QTextToSpeechPrivateAndroid::setVoice(const QVoice & /* voice */)
 {
 }
 
