@@ -5,7 +5,6 @@ MODULE = texttospeech
 
 load(qt_module)
 
-
 HEADERS = \
     qtexttospeech.h \
     qtexttospeech_p.h \
@@ -36,7 +35,6 @@ win32 {
     LIBS += -lspeechd
     PKGCONFIG = speech-dispatcher
 }
-
 
 ANDROID_BUNDLED_JAR_DEPENDENCIES = \
     jar/QtTextToSpeech-bundled.jar:org.qtproject.qt5.android.speech.QtTextToSpeech

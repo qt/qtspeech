@@ -34,14 +34,10 @@
 **
 ****************************************************************************/
 
-
-
 #include "qtexttospeech_p.h"
 #include <jni.h>
-
 #include <QtCore/private/qjni_p.h>
 #include <QtCore/private/qjnihelpers_p.h>
-
 #include <qdebug.h>
 
 QT_BEGIN_NAMESPACE
@@ -112,7 +108,6 @@ public:
 private:
     QJNIObjectPrivate m_speech;
 };
-
 
 QTextToSpeechPrivateAndroid::QTextToSpeechPrivateAndroid(QTextToSpeech *speech)
     : QTextToSpeechPrivate(speech)
