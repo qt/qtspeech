@@ -64,6 +64,7 @@ public class QtTextToSpeech
     private TextToSpeech mTts;
     private final long mId;
     private float mPitch = 1.0f;
+    private float mRate = 1.0f;
 
     // OnInitListener
     private final OnInitListener mTtsChangeListener = new OnInitListener() {
@@ -131,6 +132,14 @@ public class QtTextToSpeech
         } catch (SettingNotFoundException e) {
             mPitch = 1.0f;
         }
+
+        // Read rate from settings
+        try {
+            float rate = Settings.Secure.getFloat(resolver, android.provider.Settings.Secure.TTS_DEFAULT_RATE);
+            mRate = rate / 100.0f;
+        } catch (SettingNotFoundException e) {
+            mRate = 1.0f;
+        }
     }
 
     public void say(String text)
@@ -168,6 +177,18 @@ public class QtTextToSpeech
         int success = mTts.setPitch(pitch);
         if (success == TextToSpeech.SUCCESS)
             mPitch = pitch;
+
+        return success;
+    }
+
+    public int setRate(float rate)
+    {
+        if (Float.compare(rate, mRate) == 0)
+            return TextToSpeech.ERROR;
+
+        int success = mTts.setSpeechRate(rate);
+        if (success == TextToSpeech.SUCCESS)
+            mRate = rate;
 
         return success;
     }

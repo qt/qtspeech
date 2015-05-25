@@ -240,17 +240,21 @@ void QTextToSpeechPrivateAndroid::setPitch(double pitch)
         emitPitchChanged(pitch);
 }
 
-void QTextToSpeechPrivateAndroid::setRate(double /*rate*/)
+double QTextToSpeechPrivateAndroid::rate() const
 {
+    jfloat rate = m_speech.callMethod<jfloat>("rate");
+    return double(rate - 1.0f);
+}
+
+void QTextToSpeechPrivateAndroid::setRate(double rate)
+{
+    // 0 == SUCCESS and 1.0 == Android API's normal rate.
+    if (m_speech.callMethod<int>("setRate", "(F)I", rate + 1.0f) == 0)
+        emitRateChanged(rate);
 }
 
 void QTextToSpeechPrivateAndroid::setVolume(int /*volume*/)
 {
-}
-
-double QTextToSpeechPrivateAndroid::rate() const
-{
-    return 0.0; // FIXME
 }
 
 int QTextToSpeechPrivateAndroid::volume() const
