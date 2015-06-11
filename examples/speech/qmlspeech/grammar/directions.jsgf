@@ -1,0 +1,5 @@
+#JSGF V1.0 UTF-8;
+grammar directions;
+
+public <command> = [GO] <direction> [PLEASE];
+<direction> = UP | DOWN | LEFT | RIGHT | FORWARD | BACKWARD;
