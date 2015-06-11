@@ -1,0 +1,8 @@
+{
+    "Keys": ["pocketsphinx"],
+    "Provider": "pocketsphinx",
+    "Version": 100,
+    "Experimental": true,
+    "Features": [
+    ]
+}
