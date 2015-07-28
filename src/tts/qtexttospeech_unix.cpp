@@ -41,6 +41,12 @@
 #include <qdebug.h>
 #include <speech-dispatcher/libspeechd.h>
 
+#if LIBSPEECHD_MAJOR_VERSION > 0 || LIBSPEECHD_MINOR_VERSION >= 9
+  #define HAVE_SPD_090
+#endif
+
+
+
 QT_BEGIN_NAMESPACE
 
 QString dummyModule = QStringLiteral("dummy");
@@ -245,10 +251,12 @@ void QTextToSpeechPrivateSpeechDispatcher::setPitch(double pitch)
 double QTextToSpeechPrivateSpeechDispatcher::pitch() const
 {
     double pitch = 0.0;
+#ifdef HAVE_SPD_090
     if (speechDispatcher != 0) {
         int result = spd_get_voice_pitch(speechDispatcher);
         pitch = result / 100.0;
     }
+#endif
     return pitch;
 }
 
@@ -265,10 +273,12 @@ void QTextToSpeechPrivateSpeechDispatcher::setRate(double rate)
 double QTextToSpeechPrivateSpeechDispatcher::rate() const
 {
     double rate = 0.0;
+#ifdef HAVE_SPD_090
     if (speechDispatcher != 0) {
         int result = spd_get_voice_rate(speechDispatcher);
         rate = result / 100.0;
     }
+#endif
     return rate;
 }
 
@@ -285,10 +295,12 @@ void QTextToSpeechPrivateSpeechDispatcher::setVolume(int volume)
 int QTextToSpeechPrivateSpeechDispatcher::volume() const
 {
     int volume = 0;
+#ifdef HAVE_SPD_090
     if (speechDispatcher != 0) {
         int result = spd_get_volume(speechDispatcher);
         volume = (result + 100) / 2;
     }
+#endif
     return volume;
 }
 
@@ -334,8 +346,10 @@ QTextToSpeech::State QTextToSpeechPrivateSpeechDispatcher::state() const
 
 void QTextToSpeechPrivateSpeechDispatcher::updateVoices()
 {
-    char **modules = spd_list_modules(speechDispatcher);
+#ifdef HAVE_SPD_090
     char *original_module = spd_get_output_module(speechDispatcher);
+#endif
+    char **modules = spd_list_modules(speechDispatcher);
     char **module = modules;
     while (module != NULL && module[0] != NULL) {
         spd_set_output_module(speechDispatcher, module[0]);
@@ -355,15 +369,19 @@ void QTextToSpeechPrivateSpeechDispatcher::updateVoices()
             ++i;
         }
         // free voices.
+#ifdef HAVE_SPD_090
         free_spd_voices(voices);
+#endif
         ++module;
     }
+#ifdef HAVE_SPD_090
     // Also free modules.
     free_spd_modules(modules);
 
     // Set the output module back to what it was.
     spd_set_output_module(speechDispatcher, original_module);
     free(original_module);
+#endif
 }
 
 QVector<QLocale> QTextToSpeechPrivateSpeechDispatcher::availableLocales() const
