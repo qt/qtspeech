@@ -173,8 +173,6 @@ bool QTextToSpeechPrivateSpeechDispatcher::connectToSpeechDispatcher()
 // hack to get state notifications
 void QTextToSpeechPrivateSpeechDispatcher::spdStateChanged(SPDNotificationType state)
 {
-    qDebug() << "SPD state changed: " << state;
-
     QTextToSpeech::State s = QTextToSpeech::BackendError;
     if (state == SPD_EVENT_PAUSE)
         s = QTextToSpeech::Paused;
@@ -201,8 +199,7 @@ void QTextToSpeechPrivateSpeechDispatcher::say(const QString &text)
 
     if (m_state != QTextToSpeech::Ready)
         stop();
-    int ret = spd_say(speechDispatcher, SPD_MESSAGE, text.toUtf8().constData());
-    qDebug() << "say: " << ret;
+    spd_say(speechDispatcher, SPD_MESSAGE, text.toUtf8().constData());
 }
 
 void QTextToSpeechPrivateSpeechDispatcher::stop()
@@ -210,11 +207,9 @@ void QTextToSpeechPrivateSpeechDispatcher::stop()
     if (!connectToSpeechDispatcher())
         return;
 
-    int r1 = -77;
     if (m_state == QTextToSpeech::Paused)
-        r1 = spd_resume_all(speechDispatcher);
-    int ret = spd_cancel_all(speechDispatcher);
-    qDebug() << "stop: " << r1 << ", " << ret;
+        spd_resume_all(speechDispatcher);
+    spd_cancel_all(speechDispatcher);
 }
 
 void QTextToSpeechPrivateSpeechDispatcher::pause()
@@ -223,8 +218,7 @@ void QTextToSpeechPrivateSpeechDispatcher::pause()
         return;
 
     if (m_state == QTextToSpeech::Speaking) {
-        int ret = spd_pause_all(speechDispatcher);
-        qDebug() << "pause: " << ret;
+        spd_pause_all(speechDispatcher);
     }
 }
 
@@ -234,8 +228,7 @@ void QTextToSpeechPrivateSpeechDispatcher::resume()
         return;
 
     if (m_state == QTextToSpeech::Paused) {
-        int ret = spd_resume_all(speechDispatcher);
-        qDebug() << "resume: " << ret;
+        spd_resume_all(speechDispatcher);
     }
 }
 
