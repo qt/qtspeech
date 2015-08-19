@@ -11,32 +11,30 @@ headerdirs += ..
 imagedirs += images
 
 exampledirs += \
-               ../examples/speech \
-               snippets \
-               ../tests/auto \
+              ../../examples/speech
 
-depends += qtcore
+depends += qtcore qtdoc
 
-qhp.projects            = QtTextToSpeech
+qhp.projects            = QtSpeech
 
-qhp.QtTextToSpeech.file                = qttexttospeech.qhp
-qhp.QtTextToSpeech.namespace           = org.qt-project.qttexttospeech.$QT_VERSION_TAG
-qhp.QtTextToSpeech.virtualFolder       = qttexttospeech
-qhp.QtTextToSpeech.indexTitle          = Qt Text To Speech
-qhp.QtTextToSpeech.indexRoot           =
+qhp.QtSpeech.file                = qtspeech.qhp
+qhp.QtSpeech.namespace           = org.qt-project.qtspeech.$QT_VERSION_TAG
+qhp.QtSpeech.virtualFolder       = qtspeech
+qhp.QtSpeech.indexTitle          = Qt Speech
+qhp.QtSpeech.indexRoot           =
 
-qhp.QtTextToSpeech.filterAttributes    = qttexttospeech 1.0.0
-qhp.QtTextToSpeech.customFilters.Qt.name = QtTextToSpeech 1.0.0
-qhp.QtTextToSpeech.customFilters.Qt.filterAttributes = qttexttospeech 1.0.0
+qhp.QtSpeech.filterAttributes    = qtspeech 1.0.0
+qhp.QtSpeech.customFilters.Qt.name = QtSpeech 1.0.0
+qhp.QtSpeech.customFilters.Qt.filterAttributes = qtspeech 1.0.0
 
-qhp.QtTextToSpeech.subprojects         = classes examples
+qhp.QtSpeech.subprojects         = classes examples
 
-qhp.QtTextToSpeech.subprojects.classes.title = C++ Classes
-qhp.QtTextToSpeech.subprojects.classes.indexTitle = Qt Text To Speech C++ Classes
-qhp.QtTextToSpeech.subprojects.classes.selectors = class
-qhp.QtTextToSpeech.subprojects.classes.sortPages = true
+qhp.QtSpeech.subprojects.classes.title = C++ Classes
+qhp.QtSpeech.subprojects.classes.indexTitle = Qt Speech C++ Classes
+qhp.QtSpeech.subprojects.classes.selectors = class
+qhp.QtSpeech.subprojects.classes.sortPages = true
 
-qhp.QtTextToSpeech.subprojects.examples.title = Examples
-qhp.QtTextToSpeech.subprojects.examples.indexTitle = Qt Text To Speech Examples
-qhp.QtTextToSpeech.subprojects.examples.selectors = fake:example
-qhp.QtTextToSpeech.subprojects.examples.sortPages = true
+qhp.QtSpeech.subprojects.examples.title = Examples
+qhp.QtSpeech.subprojects.examples.indexTitle = Hello Speak Example
+qhp.QtSpeech.subprojects.examples.selectors = fake:example
+qhp.QtSpeech.subprojects.examples.sortPages = true

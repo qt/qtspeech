@@ -56,6 +56,7 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech)
 /*!
   \class QTextToSpeech
   \brief The QTextToSpeech class provides a convenient access to text-to-speech engines
+  \inmodule QtSpeech
 
   Use \l say() to start synthesizing text.
   It is possible to specify the language with \l language().
