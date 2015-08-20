@@ -59,10 +59,16 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech)
   \inmodule QtSpeech
 
   Use \l say() to start synthesizing text.
-  It is possible to specify the language with \l language().
-  To select between the available voices use \l voiceName().
+  It is possible to specify the language with \l setLocale().
+  To select between the available voices use \l setVoice().
   The languages and voices depend on the available synthesizers on each platform.
   On Linux by default speech-dispatcher is used.
+*/
+
+/*!
+  \fn explicit QTextToSpeech::QTextToSpeech(QObject *parent=0)
+
+  Constructs a QTextToSpeech object as the child of \a parent.
 */
 
 /*!
@@ -76,7 +82,7 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech)
 
 /*!
   \property QTextToSpeech::state
-  The current state of the speech synthesizer.
+  This property holds the current state of the speech synthesizer.
   Use \l say() to start synthesizing text with the current voice and locale.
 
 */
@@ -155,7 +161,7 @@ void QTextToSpeech::resume()
 
 /*!
  \property QTextToSpeech::pitch
- The voice \a pitch to a value between -1.0 and 1.0.
+ This property holds the voice pitch in the range -1.0 to 1.0.
  The default of 0.0 is normal speech pitch.
 */
 
@@ -173,8 +179,8 @@ double QTextToSpeech::pitch() const
 
 /*!
  \property QTextToSpeech::rate
- The voice \a rate between -1.0 and 1.0.
- The default of 0.0 is normal speech flow.
+ This property holds the current voice rate in the range -1.0 to 1.0.
+ The default value of 0.0 is normal speech flow.
 */
 void QTextToSpeech::setRate(double rate)
 {
@@ -190,8 +196,8 @@ double QTextToSpeech::rate() const
 
 /*!
  \property QTextToSpeech::volume
- The voice \a volume between 0 and 100.
- The default depends on the platform's default volume.
+ This property holds the current volume in the range 0 to 100.
+ The default value depends on the platform's default volume.
 */
 
 void QTextToSpeech::setVolume(int volume)
@@ -218,7 +224,9 @@ void QTextToSpeech::setLocale(const QLocale &locale)
 }
 
 /*!
- Gets the current locale.
+ \property QTextToSpeech::locale
+ This property holds the current locale in use. By default, the system locale
+ is used.
 */
 QLocale QTextToSpeech::locale() const
 {
@@ -237,10 +245,11 @@ QVector<QLocale> QTextToSpeech::availableLocales() const
 }
 
 /*!
- Sets the voice to use.
- \note on some platforms setting the voice changes other voice attributes
- such as locale, pitch, etc. in which case signals for these will be
- emitted also.
+ Sets the \a voice to use.
+
+ \note On some platforms setting the voice changes other voice attributes
+ such as locale, pitch, etc. in which case signals are emitted for these
+ changes.
 */
 void QTextToSpeech::setVoice(const QVoice &voice)
 {
@@ -249,7 +258,8 @@ void QTextToSpeech::setVoice(const QVoice &voice)
 }
 
 /*!
- Gets the current voice.
+ \property QTextToSpeech::voice
+ This property holds the current voice used for the speech.
 */
 QVoice QTextToSpeech::voice() const
 {
