@@ -11,7 +11,7 @@ headerdirs += ..
 imagedirs += images
 
 exampledirs += \
-               ../examples/widgets \
+               ../examples/speech \
                snippets \
                ../tests/auto \
 
