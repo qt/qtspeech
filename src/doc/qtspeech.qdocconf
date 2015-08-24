@@ -1,8 +1,7 @@
 include($QT_INSTALL_DOCS/global/qt-module-defaults.qdocconf)
 
-project = QtTextToSpeech
+project = QtSpeech
 description = Qt Text-To-Speech library
-url = http://qt-project.org/doc/qt-$QT_VER/qttexttospeech-index.html
 version = $QT_VERSION
 
 sourcedirs += ..
@@ -13,7 +12,11 @@ imagedirs += images
 exampledirs += \
               ../../examples/speech
 
+examplesinstallpath = speech
+
 depends += qtcore qtdoc
+
+tagfile                 = qtspeech.tags
 
 qhp.projects            = QtSpeech
 
@@ -23,9 +26,9 @@ qhp.QtSpeech.virtualFolder       = qtspeech
 qhp.QtSpeech.indexTitle          = Qt Speech
 qhp.QtSpeech.indexRoot           =
 
-qhp.QtSpeech.filterAttributes    = qtspeech 1.0.0
-qhp.QtSpeech.customFilters.Qt.name = QtSpeech 1.0.0
-qhp.QtSpeech.customFilters.Qt.filterAttributes = qtspeech 1.0.0
+qhp.QtSpeech.filterAttributes    = qtspeech $QT_VERSION qtrefdoc
+qhp.QtSpeech.customFilters.Qt.name = QtSpeech $QT_VERSION
+qhp.QtSpeech.customFilters.Qt.filterAttributes = qtspeech $QT_VERSION
 
 qhp.QtSpeech.subprojects         = classes examples
 
@@ -38,3 +41,6 @@ qhp.QtSpeech.subprojects.examples.title = Examples
 qhp.QtSpeech.subprojects.examples.indexTitle = Hello Speak Example
 qhp.QtSpeech.subprojects.examples.selectors = fake:example
 qhp.QtSpeech.subprojects.examples.sortPages = true
+
+navigation.landingpage = "Qt Speech"
+navigation.cppclassespage = "Qt Speech C++ Classes"
