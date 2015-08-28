@@ -197,7 +197,7 @@ void QTextToSpeechPrivateMac::resume()
 
 double QTextToSpeechPrivateMac::rate() const
 {
-    return [speechSynthesizer rate] / 200 - 200;
+    return ([speechSynthesizer rate] - 200) / 200.0;
 }
 
 void QTextToSpeechPrivateMac::setPitch(double pitch)
