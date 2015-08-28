@@ -162,7 +162,7 @@ void QTextToSpeechPrivateMac::say(const QString &text)
     NSString *ntext = text.toNSString();
     [speechSynthesizer startSpeakingString:ntext];
 
-    if ([speechSynthesizer isSpeaking] && m_state != QTextToSpeech::Speaking) {
+    if (m_state != QTextToSpeech::Speaking) {
         m_state = QTextToSpeech::Speaking;
         emitStateChanged(m_state);
     }
