@@ -109,8 +109,9 @@ private:
 };
 
 Q_DECLARE_TYPEINFO(QTextToSpeech::State, Q_PRIMITIVE_TYPE);
-Q_DECLARE_METATYPE(QTextToSpeech::State)
 
 QT_END_NAMESPACE
+
+Q_DECLARE_METATYPE(QTextToSpeech::State)
 
 #endif
