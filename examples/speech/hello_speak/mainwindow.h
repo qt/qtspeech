@@ -63,6 +63,7 @@ public slots:
     void setPitch(int);
 
     void stateChanged(QTextToSpeech::State state);
+    void engineSelected(int index);
     void languageSelected(int language);
     void voiceSelected(int index);
 
@@ -70,7 +71,7 @@ public slots:
 
 private:
     Ui::MainWindow ui;
-    QTextToSpeech m_speech;
+    QTextToSpeech *m_speech;
     QVector<QVoice> m_voices;
 };
 
