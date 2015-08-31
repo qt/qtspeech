@@ -40,77 +40,31 @@
 #define QTEXTTOSPEECH_P_H
 
 #include <qtexttospeech.h>
+#include <qtexttospeechplugin.h>
+#include <QMutex>
 #include <QtCore/private/qobject_p.h>
 
-#if defined(Q_OS_ANDROID)
-#elif defined(Q_OS_OSX)
-#elif defined(Q_OS_UNIX)
-#include <speech-dispatcher/libspeechd.h>
-#endif
-
 QT_BEGIN_NAMESPACE
-
-class QTextToSpeechBackend;
 
 class QTextToSpeech;
 class QTextToSpeechPrivate : public QObjectPrivate
 {
 public:
-    QTextToSpeechPrivate(QTextToSpeech *speech);
+    QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine);
+    ~QTextToSpeechPrivate();
+    static QHash<QString, QJsonObject> plugins(bool reload = false);
 
-    virtual QVector<QLocale> availableLocales() const = 0;
-    virtual QVector<QVoice> availableVoices() const = 0;
-
-    virtual void say(const QString &text) = 0;
-    virtual void stop() = 0;
-    virtual void pause() = 0;
-    virtual void resume() = 0;
-
-    virtual double rate() const = 0;
-    virtual void setRate(double rate) = 0;
-    virtual double pitch() const = 0;
-    virtual void setPitch(double pitch) = 0;
-    virtual void setLocale(const QLocale &locale) = 0;
-    virtual QLocale locale() const = 0;
-    virtual int volume() const = 0;
-    virtual void setVolume(int volume) = 0;
-    virtual void setVoice(const QVoice &voiceName) = 0;
-    virtual QVoice voice() const = 0;
-    virtual QTextToSpeech::State state() const = 0;
-
-protected:
-    void emitStateChanged(QTextToSpeech::State s)
-    {
-        emit m_speech->stateChanged(s);
-    }
-
-    void emitRateChanged(double rate)
-    {
-        emit m_speech->rateChanged(rate);
-    }
-
-    void emitPitchChanged(double pitch)
-    {
-        emit m_speech->pitchChanged(pitch);
-    }
-
-    void emitVolumeChanged(int volume)
-    {
-        emit m_speech->volumeChanged(volume);
-    }
-
-    void emitLocaleChanged(const QLocale &locale)
-    {
-        emit m_speech->localeChanged(locale);
-    }
-
-    void emitVoiceChanged(const QVoice &voice)
-    {
-        emit m_speech->voiceChanged(voice);
-    }
-
+    QTextToSpeechPluginEngine *m_engine;
+private:
+    bool loadMeta();
+    void loadPlugin();
+    static void loadPluginMetadata(QHash<QString, QJsonObject> &list);
     QTextToSpeech *m_speech;
-    QTextToSpeech::State m_state;
+    QString m_providerName;
+    QTextToSpeechPlugin *m_plugin;
+    QJsonObject m_metaData;
+    bool m_allowExperimental;
+    static QMutex m_mutex;
 };
 
 QT_END_NAMESPACE

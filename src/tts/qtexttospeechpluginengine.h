@@ -34,67 +34,53 @@
 **
 ****************************************************************************/
 
+#ifndef QTEXTTOSPEECHPLUGINENGINE_H
+#define QTEXTTOSPEECHPLUGINENGINE_H
 
+#include "qtexttospeech.h"
 
-
-#ifndef QVOICE_H
-#define QVOICE_H
-
-#include <QtTextToSpeech/qtexttospeech_global.h>
-#include <QtCore/qshareddata.h>
+#include <QtCore/QObject>
+#include <QtCore/QLocale>
+#include <QtCore/QDir>
 
 QT_BEGIN_NAMESPACE
 
-class QVoicePrivate;
-class QVariant;
-
-class QTEXTTOSPEECH_EXPORT QVoice
+class QTEXTTOSPEECH_EXPORT QTextToSpeechPluginEngine : public QObject
 {
+    Q_OBJECT
+
 public:
-    enum Gender {
-        Male,
-        Female,
-        Unknown
-    };
+    explicit QTextToSpeechPluginEngine(QObject *parent = 0);
+    ~QTextToSpeechPluginEngine();
 
-    enum Age {
-        Child,
-        Teenager,
-        Adult,
-        Senior,
-        Other
-    };
+    virtual QVector<QLocale> availableLocales() const = 0;
+    virtual QVector<QVoice> availableVoices() const = 0;
 
-    QVoice();
-    QVoice(const QVoice &other);
-    ~QVoice();
+    virtual void say(const QString &text) = 0;
+    virtual void stop() = 0;
+    virtual void pause() = 0;
+    virtual void resume() = 0;
 
-    void operator=(const QVoice &other);
+    virtual double rate() const = 0;
+    virtual bool setRate(double rate) = 0;
+    virtual double pitch() const = 0;
+    virtual bool setPitch(double pitch) = 0;
+    virtual QLocale locale() const = 0;
+    virtual bool setLocale(const QLocale &locale) = 0;
+    virtual int volume() const = 0;
+    virtual bool setVolume(int volume) = 0;
+    virtual QVoice voice() const = 0;
+    virtual bool setVoice(const QVoice &voice) = 0;
+    virtual QTextToSpeech::State state() const = 0;
 
-    QString name() const;
-    Gender gender() const;
-    Age age() const;
+protected:
+    static QVoice createVoice(const QString &name, QVoice::Gender gender, QVoice::Age age, const QVariant &data);
+    static QVariant voiceData(const QVoice &voice);
 
-    static QString genderName(QVoice::Gender gender);
-    static QString ageName(QVoice::Age age);
-private:
-    QVoice(const QString &name, Gender gender, Age age, const QVariant &data);
-
-    void setName(const QString &name);
-    void setGender(Gender gender);
-    void setAge(Age age);
-    void setData(const QVariant &data);
-    QVariant data() const;
-
-    QSharedDataPointer<QVoicePrivate> d;
-
-    friend class QTextToSpeechPrivateSpeechDispatcher;
-    friend class QTextToSpeechPrivateMac;
-    friend class QTextToSpeechPrivateWindows;
-    friend class QTextToSpeechPluginEngine;
+Q_SIGNALS:
+    void stateChanged(QTextToSpeech::State state);
 };
 
 QT_END_NAMESPACE
 
 #endif
-
