@@ -126,6 +126,7 @@ QTextToSpeechPrivateSpeechDispatcher::~QTextToSpeechPrivateSpeechDispatcher()
     if ((m_state != QTextToSpeech::BackendError) && (m_state != QTextToSpeech::Ready) && speechDispatcher)
         spd_cancel_all(speechDispatcher);
     spd_close(speechDispatcher);
+    backends->removeAll(this);
 }
 
 bool QTextToSpeechPrivateSpeechDispatcher::connectToSpeechDispatcher()
