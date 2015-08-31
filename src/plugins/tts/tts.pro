@@ -6,3 +6,7 @@ unix {
         SUBDIRS += speechdispatcher
     }
 }
+
+config_flite {
+    SUBDIRS += flite
+}
