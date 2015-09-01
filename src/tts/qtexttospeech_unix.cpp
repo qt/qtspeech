@@ -346,10 +346,12 @@ QTextToSpeech::State QTextToSpeechPrivateSpeechDispatcher::state() const
 
 void QTextToSpeechPrivateSpeechDispatcher::updateVoices()
 {
+    char **modules = spd_list_modules(speechDispatcher);
 #ifdef HAVE_SPD_090
     char *original_module = spd_get_output_module(speechDispatcher);
+#else
+    char *original_module = modules[0];
 #endif
-    char **modules = spd_list_modules(speechDispatcher);
     char **module = modules;
     while (module != NULL && module[0] != NULL) {
         spd_set_output_module(speechDispatcher, module[0]);
@@ -374,12 +376,16 @@ void QTextToSpeechPrivateSpeechDispatcher::updateVoices()
 #endif
         ++module;
     }
+    // go back to the default module
+    spd_set_output_module(speechDispatcher, modules[0]);
+
 #ifdef HAVE_SPD_090
     // Also free modules.
     free_spd_modules(modules);
-
+#endif
     // Set the output module back to what it was.
     spd_set_output_module(speechDispatcher, original_module);
+#ifdef HAVE_SPD_090
     free(original_module);
 #endif
 }
