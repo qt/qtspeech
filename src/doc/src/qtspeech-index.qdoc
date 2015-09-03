@@ -28,7 +28,8 @@
 /*!
    \page qtspeech-index.html
    \title Qt Speech
-   \brief The Qt Speech module enables access to text-to-speech engines
+   \brief The Qt Speech module enables access to text-to-speech and
+   speech recognition engines
 
    The module enables a Qt application to support accessibility features such
    as text-to-speech, which is useful for end-users who are visually
@@ -36,13 +37,11 @@
    most common use case where text-to-speech comes in handy is when the
    end-user is driving and cannot attend the incoming messages on the phone.
    In such a scenario, the messaging application can read out the incoming
-   message.
+   message. Also speech recognition can be utilized in similar cases.
 
-   The module depends on Speech Dispatcher (libspeechd) on the Linux platform.
-   On other platforms, it uses the native APIs to access the
-   platform-specific text-to-speech engines.
+   \section1 Text-to-speech
 
-   \section1 Getting Started
+   \section2 Getting Started
 
    To include the definitions of the module's classes and functions, use the
    following directive:
@@ -57,10 +56,40 @@
    QT += texttospeech
    \endcode
 
-   \section1 Examples
+   \section2 Examples
 
    \list
     \li \l{Hello Speak Example}
+   \endlist
+
+   \section1 Speech Recognition
+
+   \section2 Getting Started
+
+   To include the definitions of the module's classes and functions, use the
+   following directive:
+
+   \code
+   #include <QSpeechRecognition>
+   \endcode
+
+   To link against the module, add this line to your qmake \c .pro file:
+
+   \badcode
+   QT += speechrecognition
+   \endcode
+
+   \section2 Available Plugins
+
+   \list
+    \li \l {PocketSphinx Speech Recognition Plugin}
+    \li Nuance VoCon Hybrid Plugin is available. Please contact The Qt Company for details.
+   \endlist
+
+   \section2 Examples
+
+   \list
+    \li \l{Speech Recognition Example}
    \endlist
 
    \section1 API Reference

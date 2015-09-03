@@ -1,0 +1,98 @@
+/****************************************************************************
+**
+** Copyright (C) 2015 The Qt Company Ltd.
+** Contact: http://www.qt.io/licensing/
+**
+** This file is part of the documentation of the Qt Toolkit.
+**
+** $QT_BEGIN_LICENSE:FDL$
+** Commercial License Usage
+** Licensees holding valid commercial Qt licenses may use this file in
+** accordance with the commercial license agreement provided with the
+** Software or, alternatively, in accordance with the terms contained in
+** a written agreement between you and The Qt Company. For licensing terms
+** and conditions see http://www.qt.io/terms-conditions. For further
+** information use the contact form at http://www.qt.io/contact-us.
+**
+** GNU Free Documentation License Usage
+** Alternatively, this file may be used under the terms of the GNU Free
+** Documentation License version 1.3 as published by the Free Software
+** Foundation and appearing in the file included in the packaging of
+** this file. Please review the following information to ensure
+** the GNU Free Documentation License version 1.3 requirements
+** will be met: http://www.gnu.org/copyleft/fdl.html.
+** $QT_END_LICENSE$
+**
+****************************************************************************/
+
+/*!
+   \page qspeechrecognition-pocketsphinx.html
+   \title PocketSphinx Speech Recognition Plugin
+   \brief Speech recognition plug-in that uses PocketSphinx engine.
+
+   \keyword PocketSphinx
+
+   The engine provider name for this plug-in is "pocketsphinx".
+
+   The plug-in only supports JSGF-format grammars (loading from Qt resources is supported).
+
+  A directory containing PocketSphinx acoustic model files needs to be installed in the
+  locale-specific sub-directory under the configured engine resource directory. The name
+  of the acoustic model directory should be one of the following:
+  \list 1
+    \li \c acmodel_SAMPLERATE
+        where \c SAMPLERATE is the configured audio sample rate. Example: acmodel_16000.
+        This format should be used if multiple sample rates need to be supported.
+    \li \c acmodel
+  \endlist
+
+  The following table lists the supported engine parameters.
+  See QSpeechRecognitionEngine::supportedParameters() for generic details of the
+  parameters.
+
+  \table
+  \header
+    \li Key
+    \li Value type
+    \li Description
+  \row
+    \li locale
+    \li QLocale
+    \li
+  \row
+    \li dictionary
+    \li QUrl
+    \li PocketSphinx (CMU) format dictionary file.
+        If not given, file "lexicon.dict" in the locale-specific resource directory is used.
+        Loading the dictionary from Qt resources is not supported.
+  \row
+    \li resourceDirectory
+    \li QString
+    \li
+  \row
+    \li dataDirectory
+    \li QString
+    \li
+  \row
+    \li debugAudioDirectory
+    \li QString
+    \li
+  \row
+    \li audioSampleRate
+    \li int
+    \li
+  \row
+    \li audioInputFile
+    \li QString
+    \li
+  \row
+    \li audioInputDevices
+    \li QStringList
+    \li
+  \row
+    \li audioInputDevice
+    \li QString
+    \li
+  \endtable
+
+*/

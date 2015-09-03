@@ -106,11 +106,16 @@ QT_BEGIN_NAMESPACE
         If the URL contains a relative file path, the dictionary is loaded
         from the locale-specific sub-directory under the engine resource directory.
         Some engines may also support reading the dictionary from built-in Qt resources.
+        The format of the dictionary is engine-specific; some engines or grammars may not need
+        a dictionary at all.
   \row
     \li resourceDirectory
     \li QString
     \li Path to the directory where engine-specific resource files are located.
         If not given, the program's working directory is used.
+        Some resources may need to be located inside locale-specific sub-directories
+        under this root directory, in which case BCP 47 names should be used for
+        the sub-directories.
   \row
     \li dataDirectory
     \li QString
@@ -150,7 +155,7 @@ QT_BEGIN_NAMESPACE
 */
 
 /*!
-  \fn QVariant QSpeechRecognitionEngine::parameter(const QString &key)
+  \fn QVariant QSpeechRecognitionEngine::parameter(const QString &key) const
 
   Get engine parameter with the given \a key.
 

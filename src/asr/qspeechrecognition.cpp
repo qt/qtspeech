@@ -284,6 +284,7 @@ QSpeechRecognitionEngine *QSpeechRecognition::engine(const QString& name) const
   If the \a location URL contains a relative file path, the grammar is loaded from
   the locale-specific sub-directory under the engine resource directory.
   The grammar can also be loaded from built-in Qt resources.
+  The format of the grammar file is engine-specific and is automatically detected by the engine.
 
   Returns a pointer to the grammar handle. QSpeechRecognition retains ownership
   of the returned pointer. The same pointer can be later retrieved with \l grammar().

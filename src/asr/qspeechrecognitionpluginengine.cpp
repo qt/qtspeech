@@ -61,7 +61,7 @@ QT_BEGIN_NAMESPACE
   emitting signals.
 */
 
-/*! \fn QSpeechRecognition::Error updateParameter(const QString &key, const QVariant &value, QString *errorString)
+/*! \fn QSpeechRecognition::Error QSpeechRecognitionPluginEngine::updateParameter(const QString &key, const QVariant &value, QString *errorString)
 
   Attempts to update engine run-time parameter.
   Parameters \a key and \a value are passed directly from QSpeechRecognitionEngine::setParameter().
