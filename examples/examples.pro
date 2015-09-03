@@ -1,2 +1,2 @@
 TEMPLATE = subdirs
-SUBDIRS = widgets speech
+SUBDIRS = speech

@@ -48,6 +48,8 @@
 #include <speech-dispatcher/libspeechd.h>
 #endif
 
+QT_BEGIN_NAMESPACE
+
 class QTextToSpeechBackend;
 
 class QTextToSpeech;
@@ -110,5 +112,7 @@ protected:
     QTextToSpeech *m_speech;
     QTextToSpeech::State m_state;
 };
+
+QT_END_NAMESPACE
 
 #endif

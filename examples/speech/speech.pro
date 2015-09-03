@@ -1,3 +1,2 @@
 TEMPLATE = subdirs
-SUBDIRS = qmlspeech
-
+SUBDIRS = hello_speak qmlspeech

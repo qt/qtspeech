@@ -41,6 +41,12 @@
 #include <qdebug.h>
 #include <speech-dispatcher/libspeechd.h>
 
+#if LIBSPEECHD_MAJOR_VERSION > 0 || LIBSPEECHD_MINOR_VERSION >= 9
+  #define HAVE_SPD_090
+#endif
+
+
+
 QT_BEGIN_NAMESPACE
 
 QString dummyModule = QStringLiteral("dummy");
@@ -120,6 +126,7 @@ QTextToSpeechPrivateSpeechDispatcher::~QTextToSpeechPrivateSpeechDispatcher()
     if ((m_state != QTextToSpeech::BackendError) && (m_state != QTextToSpeech::Ready) && speechDispatcher)
         spd_cancel_all(speechDispatcher);
     spd_close(speechDispatcher);
+    backends->removeAll(this);
 }
 
 bool QTextToSpeechPrivateSpeechDispatcher::connectToSpeechDispatcher()
@@ -173,8 +180,6 @@ bool QTextToSpeechPrivateSpeechDispatcher::connectToSpeechDispatcher()
 // hack to get state notifications
 void QTextToSpeechPrivateSpeechDispatcher::spdStateChanged(SPDNotificationType state)
 {
-    qDebug() << "SPD state changed: " << state;
-
     QTextToSpeech::State s = QTextToSpeech::BackendError;
     if (state == SPD_EVENT_PAUSE)
         s = QTextToSpeech::Paused;
@@ -201,8 +206,7 @@ void QTextToSpeechPrivateSpeechDispatcher::say(const QString &text)
 
     if (m_state != QTextToSpeech::Ready)
         stop();
-    int ret = spd_say(speechDispatcher, SPD_MESSAGE, text.toUtf8().constData());
-    qDebug() << "say: " << ret;
+    spd_say(speechDispatcher, SPD_MESSAGE, text.toUtf8().constData());
 }
 
 void QTextToSpeechPrivateSpeechDispatcher::stop()
@@ -210,11 +214,9 @@ void QTextToSpeechPrivateSpeechDispatcher::stop()
     if (!connectToSpeechDispatcher())
         return;
 
-    int r1 = -77;
     if (m_state == QTextToSpeech::Paused)
-        r1 = spd_resume_all(speechDispatcher);
-    int ret = spd_cancel_all(speechDispatcher);
-    qDebug() << "stop: " << r1 << ", " << ret;
+        spd_resume_all(speechDispatcher);
+    spd_cancel_all(speechDispatcher);
 }
 
 void QTextToSpeechPrivateSpeechDispatcher::pause()
@@ -223,8 +225,7 @@ void QTextToSpeechPrivateSpeechDispatcher::pause()
         return;
 
     if (m_state == QTextToSpeech::Speaking) {
-        int ret = spd_pause_all(speechDispatcher);
-        qDebug() << "pause: " << ret;
+        spd_pause_all(speechDispatcher);
     }
 }
 
@@ -234,8 +235,7 @@ void QTextToSpeechPrivateSpeechDispatcher::resume()
         return;
 
     if (m_state == QTextToSpeech::Paused) {
-        int ret = spd_resume_all(speechDispatcher);
-        qDebug() << "resume: " << ret;
+        spd_resume_all(speechDispatcher);
     }
 }
 
@@ -252,10 +252,12 @@ void QTextToSpeechPrivateSpeechDispatcher::setPitch(double pitch)
 double QTextToSpeechPrivateSpeechDispatcher::pitch() const
 {
     double pitch = 0.0;
+#ifdef HAVE_SPD_090
     if (speechDispatcher != 0) {
         int result = spd_get_voice_pitch(speechDispatcher);
         pitch = result / 100.0;
     }
+#endif
     return pitch;
 }
 
@@ -272,10 +274,12 @@ void QTextToSpeechPrivateSpeechDispatcher::setRate(double rate)
 double QTextToSpeechPrivateSpeechDispatcher::rate() const
 {
     double rate = 0.0;
+#ifdef HAVE_SPD_090
     if (speechDispatcher != 0) {
         int result = spd_get_voice_rate(speechDispatcher);
         rate = result / 100.0;
     }
+#endif
     return rate;
 }
 
@@ -292,10 +296,12 @@ void QTextToSpeechPrivateSpeechDispatcher::setVolume(int volume)
 int QTextToSpeechPrivateSpeechDispatcher::volume() const
 {
     int volume = 0;
+#ifdef HAVE_SPD_090
     if (speechDispatcher != 0) {
         int result = spd_get_volume(speechDispatcher);
         volume = (result + 100) / 2;
     }
+#endif
     return volume;
 }
 
@@ -342,6 +348,11 @@ QTextToSpeech::State QTextToSpeechPrivateSpeechDispatcher::state() const
 void QTextToSpeechPrivateSpeechDispatcher::updateVoices()
 {
     char **modules = spd_list_modules(speechDispatcher);
+#ifdef HAVE_SPD_090
+    char *original_module = spd_get_output_module(speechDispatcher);
+#else
+    char *original_module = modules[0];
+#endif
     char **module = modules;
     while (module != NULL && module[0] != NULL) {
         spd_set_output_module(speechDispatcher, module[0]);
@@ -360,10 +371,24 @@ void QTextToSpeechPrivateSpeechDispatcher::updateVoices()
             m_voices.insert(locale.name(), voice);
             ++i;
         }
-        // FIXME: free voices once libspeechd has api to free them.
+        // free voices.
+#ifdef HAVE_SPD_090
+        free_spd_voices(voices);
+#endif
         ++module;
     }
-    // FIXME: Also free modules once libspeechd has api to free them.
+    // go back to the default module
+    spd_set_output_module(speechDispatcher, modules[0]);
+
+#ifdef HAVE_SPD_090
+    // Also free modules.
+    free_spd_modules(modules);
+#endif
+    // Set the output module back to what it was.
+    spd_set_output_module(speechDispatcher, original_module);
+#ifdef HAVE_SPD_090
+    free(original_module);
+#endif
 }
 
 QVector<QLocale> QTextToSpeechPrivateSpeechDispatcher::availableLocales() const

@@ -45,6 +45,8 @@
 #include <QCoreApplication>
 #include <QVariant>
 
+QT_BEGIN_NAMESPACE
+
 class QVoicePrivate : public QSharedData
 {
 public:
@@ -79,6 +81,8 @@ QVoicePrivate::QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, 
     :name(n), gender(g), age(a), data(d)
 {
 }
+
+QT_END_NAMESPACE
 
 #endif
 

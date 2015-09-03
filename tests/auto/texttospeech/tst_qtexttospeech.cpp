@@ -39,6 +39,13 @@
 #include <QTextToSpeech>
 #include <QSignalSpy>
 
+#if defined(Q_OS_UNIX) && !(defined(Q_OS_MAC) || defined(Q_OS_ANDROID))
+    #include <speech-dispatcher/libspeechd.h>
+    #if LIBSPEECHD_MAJOR_VERSION > 0 || LIBSPEECHD_MINOR_VERSION >= 9
+        #define HAVE_SPD_090
+    #endif
+#endif
+
 class tst_QTextToSpeech : public QObject
 {
     Q_OBJECT
@@ -73,7 +80,9 @@ void tst_QTextToSpeech::speech_rate()
     QTextToSpeech tts;
     tts.setRate(0.5);
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
+#ifdef HAVE_SPD_090
     QCOMPARE(tts.rate(), 0.5);
+#endif
 
     qint64 lastTime = 0;
     // check that speaking at slower rate takes more time (for 0.5, 0.0, -0.5)
@@ -97,7 +106,9 @@ void tst_QTextToSpeech::pitch()
     QTextToSpeech tts;
     for (int i = -10; i <= 10; ++i) {
         tts.setPitch(i / 10.0);
+#ifdef HAVE_SPD_090
         QCOMPARE(tts.pitch(), i / 10.0);
+#endif
     }
 }
 
