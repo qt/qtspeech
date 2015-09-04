@@ -1,0 +1,16 @@
+## Run the following commands in this directory to set up the
+## required libraries for PocketSphinx speech recognition plug-in.
+## The "git checkout" commands are only to ensure a compatible
+## version and should be removed if the latest versions are needed.
+
+git clone https://github.com/cmusphinx/pocketsphinx.git
+git clone https://github.com/cmusphinx/sphinxbase.git
+cd sphinxbase
+git checkout c623063421a2f1a3
+./autogen.sh
+make CFLAGS="-O2 -fPIC"
+cd ../pocketsphinx
+git checkout 0c8104d4242e1bf0
+./autogen.sh
+make CFLAGS="-O2 -fPIC"
+

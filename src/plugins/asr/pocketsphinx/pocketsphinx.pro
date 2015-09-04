@@ -18,5 +18,13 @@ SOURCES += \
 OTHER_FILES += \
     pocketsphinx_plugin.json
 
-CONFIG += link_pkgconfig
-PKGCONFIG += pocketsphinx
+LIBS += $$PWD/../../../3rdparty/pocketsphinx/src/libpocketsphinx/.libs/libpocketsphinx.a
+LIBS += $$PWD/../../../3rdparty/sphinxbase/src/libsphinxbase/.libs/libsphinxbase.a
+
+INCLUDEPATH += $$PWD/../../../3rdparty/pocketsphinx/include
+INCLUDEPATH += $$PWD/../../../3rdparty/sphinxbase/include
+DEPENDPATH += $$PWD/../../../3rdparty/pocketsphinx/include
+DEPENDPATH += $$PWD/../../../3rdparty/sphinxbase/include
+
+PRE_TARGETDEPS += $$PWD/../../../3rdparty/pocketsphinx/src/libpocketsphinx/.libs/libpocketsphinx.a
+PRE_TARGETDEPS += $$PWD/../../../3rdparty/sphinxbase/src/libsphinxbase/.libs/libsphinxbase.a
