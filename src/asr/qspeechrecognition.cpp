@@ -61,6 +61,29 @@ Q_LOGGING_CATEGORY(lcSpeechAsr, "qt.speech.asr")
 
   Unless otherwise mentioned, all the methods in this API return immediately and are handled
   asynchronously (in the call order).
+
+  \section1 Initialization
+
+  The following example creates a QSpeechRecognition instance with PocketSphinx engine
+  and creates one grammar. The acoustic model and dictionary for the given locale are
+  assumed to be found in the default resource directory for the engine.
+
+  \snippet asr/speechrecognition.cpp Init
+
+  \section1 Basic Control
+
+  The following example method starts and stops speech recognition for the grammar that
+  was created above:
+
+  \snippet asr/speechrecognition.cpp Start and stop
+
+  After calling \l {QSpeechRecognition::}{startListening()}, the application receives a
+  \l {QSpeechRecognition::}{listeningStarted()} signal as soon as audio recording has been
+  started.
+
+  After calling \l {QSpeechRecognition::}{stopListening()}, the application first receives a
+  \l {QSpeechRecognition::}{listeningStopped()} signal. Later, if a recognition result is
+  available, a \l {QSpeechRecognition::}{result()} signal is received.
 */
 
 /*!

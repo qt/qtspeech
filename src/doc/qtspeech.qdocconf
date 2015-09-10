@@ -10,7 +10,10 @@ headerdirs += ..
 imagedirs += images
 
 exampledirs += \
+              snippets \
               ../../examples/speech
+
+excludedirs += snippets
 
 examplesinstallpath = speech
 
