@@ -43,7 +43,6 @@
 #include <QtCore/QLocale>
 #include <QtCore/QLoggingCategory>
 #include <QtCore/private/qobject_p.h>
-#include <QtMultimedia/QAudioFormat>
 
 QT_BEGIN_NAMESPACE
 
@@ -61,14 +60,16 @@ class QSpeechRecognitionDebugAudioFile : public QFile
 {
     Q_OBJECT
 public:
-    QSpeechRecognitionDebugAudioFile(const QString &filePath, const QAudioFormat &audioFormat);
+    QSpeechRecognitionDebugAudioFile(const QString &filePath, int sampleRate, int sampleSize, int channelCount);
     ~QSpeechRecognitionDebugAudioFile();
     bool open();
 private slots:
     void onAboutToClose();
 private:
     bool writeWavHeader();
-    QAudioFormat m_audioFormat;
+    int m_sampleRate;
+    int m_sampleSize;
+    int m_channelCount;
     qint64 m_totalSizeOffset;
     qint64 m_dataSizeOffset;
     qint64 m_dataOffset;

@@ -56,7 +56,7 @@ public:
         QSpeechRecognitionAudioBuffer::AudioChunk publicData;
         quint32 bufferSize;
     };
-    QSpeechRecognitionAudioBufferPrivate(const QAudioFormat &format);
+    QSpeechRecognitionAudioBufferPrivate();
     void clear(bool reset);
     AudioChunkPrivate *nextChunk();
     void releaseChunk(AudioChunkPrivate *chunk);
@@ -65,9 +65,11 @@ public:
     qint64 recordingTime(qint64 streamOffset) const;
 
     mutable QMutex m_mutex;
-    const QAudioFormat m_format;
     QQueue<AudioChunkPrivate *> m_buffer;
     QMultiMap<int, AudioChunkPrivate *> m_pool;
+    int m_sampleRate;
+    int m_sampleSize;
+    int m_channelCount;
     unsigned int m_poolSize;
     unsigned int m_fifoSize;
     int m_poolLimit;

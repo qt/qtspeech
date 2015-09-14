@@ -481,7 +481,8 @@ QString QSpeechRecognitionPluginEngine::localizedFilePath(const QString &filePat
   file path is given, only creates the file if engine parameter "debugAudioDirectory" has
   been set (see QSpeechRecognition::createEngine()).
 
-  Parameter \a audioFormat specifies the type of audio data that will be written to the file.
+  Parameters \a sampleRate, \a sampleSize and \a channelCount specify the type of audio data
+  that will be written to the file. Sample size should be expressed in bits.
 
   If the file was successfully created, returns a pointer to an opened file object where
   raw PCM-formatted data can be written. Otherwise returns 0. The caller should delete
@@ -489,7 +490,7 @@ QString QSpeechRecognitionPluginEngine::localizedFilePath(const QString &filePat
 
   The audio data should be written in little-endian byte order.
 */
-QFile *QSpeechRecognitionPluginEngine::openDebugWavFile(const QString &filePath, const QAudioFormat &audioFormat)
+QFile *QSpeechRecognitionPluginEngine::openDebugWavFile(const QString &filePath, int sampleRate, int sampleSize, int channelCount)
 {
     Q_D(const QSpeechRecognitionPluginEngine);
     QString finalPath;
@@ -505,7 +506,7 @@ QFile *QSpeechRecognitionPluginEngine::openDebugWavFile(const QString &filePath,
     }
     if (!finalPath.isEmpty()) {
         qCDebug(lcSpeechAsr) << "QSpeechRecognitionPluginEngine: Writing debug audio to file" << finalPath;
-        QSpeechRecognitionDebugAudioFile *file = new QSpeechRecognitionDebugAudioFile(finalPath, audioFormat);
+        QSpeechRecognitionDebugAudioFile *file = new QSpeechRecognitionDebugAudioFile(finalPath, sampleRate, sampleSize, channelCount);
         if (file->open())
             return file;
         delete file;
@@ -528,9 +529,11 @@ QStringList QSpeechRecognitionPluginEnginePrivate::findFilesWithWildcards(const 
     return result;
 }
 
-QSpeechRecognitionDebugAudioFile::QSpeechRecognitionDebugAudioFile(const QString &filePath, const QAudioFormat &audioFormat):
+QSpeechRecognitionDebugAudioFile::QSpeechRecognitionDebugAudioFile(const QString &filePath, int sampleRate, int sampleSize, int channelCount):
     QFile(filePath),
-    m_audioFormat(audioFormat),
+    m_sampleRate(sampleRate),
+    m_sampleSize(sampleSize),
+    m_channelCount(channelCount),
     m_totalSizeOffset(0),
     m_dataSizeOffset(0),
     m_dataOffset(0)
@@ -586,13 +589,13 @@ bool QSpeechRecognitionDebugAudioFile::writeWavHeader()
     dataStream.setByteOrder(QDataStream::LittleEndian);
 
     wavFormatData.formatTag = 1;    // PCM
-    wavFormatData.channels = m_audioFormat.channelCount();
-    wavFormatData.samplesPerSec = m_audioFormat.sampleRate();
-    wavFormatData.bytesPerSec = (m_audioFormat.sampleRate()
-                               * m_audioFormat.sampleSize()
-                               * m_audioFormat.channelCount()) / 8;
-    wavFormatData.blockAlign = (m_audioFormat.sampleSize() * m_audioFormat.channelCount()) / 8;
-    wavFormatData.bitsPerSample = m_audioFormat.sampleSize();
+    wavFormatData.channels = m_channelCount;
+    wavFormatData.samplesPerSec = m_sampleRate;
+    wavFormatData.bytesPerSec = (m_sampleRate
+                               * m_sampleSize
+                               * m_channelCount) / 8;
+    wavFormatData.blockAlign = (m_sampleSize * m_channelCount) / 8;
+    wavFormatData.bitsPerSample = m_sampleSize;
 
     dataStream.writeRawData("RIFF", 4);
     m_totalSizeOffset = pos();

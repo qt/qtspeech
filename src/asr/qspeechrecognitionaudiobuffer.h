@@ -40,7 +40,6 @@
 #include "qspeechrecognition_global.h"
 
 #include <QtCore/QIODevice>
-#include <QtMultimedia/QAudioFormat>
 
 QT_BEGIN_NAMESPACE
 
@@ -62,9 +61,12 @@ public:
         char *data;
         quint32 audioSize;
     };
-    explicit QSpeechRecognitionAudioBuffer(const QAudioFormat &format, QObject *parent = 0);
+    explicit QSpeechRecognitionAudioBuffer(QObject *parent = 0);
     ~QSpeechRecognitionAudioBuffer();
 
+    void setSampleRate(int sampleRate);
+    void setSampleSize(int sampleSize);
+    void setChannelCount(int channelCount);
     int fifoLimit() const;
     void setFifoLimit(int bytes);
     int freeLimit() const;

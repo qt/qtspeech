@@ -1,5 +1,5 @@
 TARGET = QtSpeechRecognition
-QT = multimedia core-private
+QT = core-private
 DEFINES += QSPEECHRECOGNITION_LIBRARY
 MODULE = speechrecognition
 MODULE_PLUGIN_TYPES = speechrecognition

@@ -111,8 +111,11 @@ bool QSpeechRecognitionEnginePocketSphinx::init(QString *errorString)
     m_format.setSampleType(QAudioFormat::SignedInt);
     m_format.setByteOrder(QAudioFormat::LittleEndian);
     m_format.setCodec("audio/pcm");
-    m_audioBuffer = new QSpeechRecognitionAudioBuffer(m_format, this);
+    m_audioBuffer = new QSpeechRecognitionAudioBuffer(this);
     m_audioBuffer->setFreeLimit(5000);
+    m_audioBuffer->setSampleRate(m_format.sampleRate());
+    m_audioBuffer->setChannelCount(m_format.channelCount());
+    m_audioBuffer->setSampleSize(m_format.sampleSize());
     m_audioBufferLimit = m_format.bytesPerFrame() * m_format.sampleRate() * AUDIO_BUFFER_LIMIT_SEC;
     connect(m_audioBuffer, &QSpeechRecognitionAudioBuffer::dataAvailable, this, &QSpeechRecognitionEnginePocketSphinx::onAudioDataAvailable);
     QString acmodelName = "acmodel";
@@ -286,7 +289,9 @@ QSpeechRecognition::Error QSpeechRecognitionEnginePocketSphinx::startListening(i
     }
     if (m_debugAudioFile)
         delete m_debugAudioFile;
-    m_debugAudioFile = openDebugWavFile("pocketsphinx_audio_" + QString::number(session) + ".wav", m_format);
+    m_debugAudioFile = openDebugWavFile("pocketsphinx_audio_" + QString::number(session) + ".wav",
+                                        m_format.sampleRate(), m_format.sampleSize(),
+                                        m_format.channelCount());
     m_sessionStarted = true;
     m_muted = mute;
     return QSpeechRecognition::NoError;

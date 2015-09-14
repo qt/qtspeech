@@ -42,7 +42,6 @@
 #include <QtCore/QObject>
 #include <QtCore/QLocale>
 #include <QtCore/QDir>
-#include <QtMultimedia/QAudioFormat>
 
 QT_BEGIN_NAMESPACE
 
@@ -89,7 +88,7 @@ protected:
     int audioSampleRate() const;
     QString audioInputFile() const;
     QString localizedFilePath(const QString &filePath) const;
-    QFile *openDebugWavFile(const QString &filePath, const QAudioFormat &audioFormat);
+    QFile *openDebugWavFile(const QString &filePath, int sampleRate, int sampleSize, int channelCount);
 
     virtual QSpeechRecognition::Error updateParameter(const QString &key, const QVariant &value, QString *errorString) = 0;
 };

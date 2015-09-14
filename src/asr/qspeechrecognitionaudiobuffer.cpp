@@ -64,11 +64,9 @@ QT_BEGIN_NAMESPACE
 
 /*!
   Constructs the QSpeechRecognitionAudioBuffer instance.
-
-  Parameter \a format defines the type of audio that the buffer will receive.
 */
-QSpeechRecognitionAudioBuffer::QSpeechRecognitionAudioBuffer(const QAudioFormat &format, QObject *parent) :
-    QIODevice(*new QSpeechRecognitionAudioBufferPrivate(format), parent)
+QSpeechRecognitionAudioBuffer::QSpeechRecognitionAudioBuffer(QObject *parent) :
+    QIODevice(*new QSpeechRecognitionAudioBufferPrivate(), parent)
 {
 }
 
@@ -95,6 +93,61 @@ qint64 QSpeechRecognitionAudioBuffer::writeData(const char *data, qint64 len)
     if (writtenLen > 0)
         emit dataAvailable();
     return writtenLen;
+}
+
+/*!
+  Sets the sample rate in the buffered audio to \a sampleRate.
+
+  This value is only used for calculating features like audio level
+  and recording time.
+
+  \sa audioLevel()
+  \sa recordingTime()
+
+  Default: 16000.
+*/
+void QSpeechRecognitionAudioBuffer::setSampleRate(int sampleRate)
+{
+    Q_D(QSpeechRecognitionAudioBuffer);
+    QMutexLocker lock(&d->m_mutex);
+    d->m_sampleRate = sampleRate;
+}
+
+/*!
+  Sets the sample size in the buffered audio to \a sampleSize.
+  The value is expressed in bits.
+
+  This value is only used for calculating features like audio level
+  and recording time.
+
+  \sa audioLevel()
+  \sa recordingTime()
+
+  Default: 16.
+*/
+void QSpeechRecognitionAudioBuffer::setSampleSize(int sampleSize)
+{
+    Q_D(QSpeechRecognitionAudioBuffer);
+    QMutexLocker lock(&d->m_mutex);
+    d->m_sampleSize = sampleSize;
+}
+
+/*!
+  Sets the number of channels in the buffered audio to \a channelCount.
+
+  This value is only used for calculating features like audio level
+  and recording time.
+
+  \sa audioLevel()
+  \sa recordingTime()
+
+  Default: 1.
+*/
+void QSpeechRecognitionAudioBuffer::setChannelCount(int channelCount)
+{
+    Q_D(QSpeechRecognitionAudioBuffer);
+    QMutexLocker lock(&d->m_mutex);
+    d->m_channelCount = channelCount;
 }
 
 /*!
@@ -266,8 +319,10 @@ void QSpeechRecognitionAudioBuffer::close()
     d->m_streamStartTime = 0;
 }
 
-QSpeechRecognitionAudioBufferPrivate::QSpeechRecognitionAudioBufferPrivate(const QAudioFormat &format) :
-    m_format(format),
+QSpeechRecognitionAudioBufferPrivate::QSpeechRecognitionAudioBufferPrivate() :
+    m_sampleRate(16000),
+    m_sampleSize(16),
+    m_channelCount(1),
     m_poolSize(0),
     m_fifoSize(0),
     m_poolLimit(-1),
@@ -416,9 +471,8 @@ static qreal pcmToReal(qint16 pcm)
 void QSpeechRecognitionAudioBufferPrivate::updateAudioLevel(const char *data, qint64 len)
 {
     static const unsigned int AUDIO_LEVEL_WINDOW = 256;
-    if (m_format.sampleSize() != 16
-    || m_format.channelCount() != 1
-    || m_format.byteOrder() != QAudioFormat::LittleEndian) {
+    if (m_sampleSize != 16
+    || m_channelCount != 1) {
         return; // Not supported
     }
     qreal sum = 0.0;
@@ -449,5 +503,5 @@ void QSpeechRecognitionAudioBufferPrivate::updateAudioLevel(const char *data, qi
 qint64 QSpeechRecognitionAudioBufferPrivate::recordingTime(qint64 streamOffset) const
 {
     return m_streamStartTime + ((streamOffset * 1000)
-                                / (m_format.bytesPerFrame() * m_format.sampleRate()));
+                                / (m_sampleSize / 8 * m_channelCount * m_sampleRate));
 }
