@@ -68,15 +68,15 @@ void PocketShpinxErrorCb(void *user_data, err_lvl_t lvl, const char *fmt, ...)
 QSpeechRecognitionEnginePocketSphinx::QSpeechRecognitionEnginePocketSphinx(const QString &name,
     const QVariantMap &parameters, QObject *parent)
         : QSpeechRecognitionPluginEngine(name, createEngineParameters(parameters),
-            QStringList() << "locale"
-                          << "dictionary"
-                          << "resourceDirectory"
-                          << "dataDirectory"
-                          << "debugAudioDirectory"
-                          << "audioSampleRate"
-                          << "audioInputFile"
-                          << "audioInputDevices"
-                          << "audioInputDevice",
+            QStringList() << QSpeechRecognitionEngine::Locale
+                          << QSpeechRecognitionEngine::Dictionary
+                          << QSpeechRecognitionEngine::ResourceDirectory
+                          << QSpeechRecognitionEngine::DataDirectory
+                          << QSpeechRecognitionEngine::DebugAudioDirectory
+                          << QSpeechRecognitionEngine::AudioSampleRate
+                          << QSpeechRecognitionEngine::AudioInputFile
+                          << QSpeechRecognitionEngine::AudioInputDevices
+                          << QSpeechRecognitionEngine::AudioInputDevice,
             parent),
         m_session(0),
         m_decoder(0),
@@ -91,7 +91,7 @@ QSpeechRecognitionEnginePocketSphinx::QSpeechRecognitionEnginePocketSphinx(const
         m_cmnSize(0)
 {
     const QVariantMap &engineParams = QSpeechRecognitionPluginEngine::parameters();
-    QString inputDeviceName = engineParams["audioInputDevice"].toString();
+    QString inputDeviceName = engineParams[QSpeechRecognitionEngine::AudioInputDevice].toString();
     QList<QAudioDeviceInfo> audioDevices = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
     foreach (QAudioDeviceInfo device, audioDevices) {
         if (!inputDeviceName.isEmpty() && device.deviceName() == inputDeviceName) {
@@ -194,7 +194,7 @@ void QSpeechRecognitionEnginePocketSphinx::createAudioInput()
 
 QSpeechRecognition::Error QSpeechRecognitionEnginePocketSphinx::updateParameter(const QString &key, const QVariant &value, QString *errorString)
 {
-    if (key == "audioInputDevice") {
+    if (key == QSpeechRecognitionEngine::AudioInputDevice) {
         if (m_sessionStarted) {
             *errorString = "Cannot set audio input device while the engine is busy";
             return QSpeechRecognition::EngineParameterError;
@@ -213,7 +213,7 @@ QSpeechRecognition::Error QSpeechRecognitionEnginePocketSphinx::updateParameter(
             }
         }
         *errorString = QString("Audio input device with name \"") + value.toString() + "\" does not exist";
-    } else if (key == "audioInputFile") {
+    } else if (key == QSpeechRecognitionEngine::AudioInputFile) {
         if (value.type() != QVariant::String) {
             *errorString = QString("Parameter \"") + key + "\" has invalid type";
             return QSpeechRecognition::EngineParameterError;
@@ -322,7 +322,7 @@ void QSpeechRecognitionEnginePocketSphinx::stopListening(qint64 timestamp)
                 QString transcription(hyp);
                 qCDebug(lcSpeechAsrPocketSphinx) << "Result: " + transcription;
                 QVariantMap params;
-                params.insert("transcription", QVariant(transcription));
+                params.insert(QSpeechRecognition::Transcription, QVariant(transcription));
                 emit result(m_session, m_grammar, params);
                 // Store the adapted CMN values:
                 storeCmn();
@@ -337,7 +337,7 @@ void QSpeechRecognitionEnginePocketSphinx::stopListening(qint64 timestamp)
         delete m_debugAudioFile;
         m_debugAudioFile = 0;
         m_sessionStarted = false;
-        emit attributeUpdated(NO_SESSION, "audioLevel", QVariant((qreal)0.0));
+        emit attributeUpdated(NO_SESSION, QSpeechRecognition::AudioLevel, QVariant((qreal)0.0));
     }
 }
 
@@ -352,7 +352,7 @@ void QSpeechRecognitionEnginePocketSphinx::abortListening()
         if (!m_muted)
             ps_end_utt(m_decoder);
         m_sessionStarted = false;
-        emit attributeUpdated(NO_SESSION, "audioLevel", QVariant((qreal)0.0));
+        emit attributeUpdated(NO_SESSION, QSpeechRecognition::AudioLevel, QVariant((qreal)0.0));
     }
 }
 
@@ -384,20 +384,20 @@ void QSpeechRecognitionEnginePocketSphinx::onAudioDataAvailable()
 {
     if (m_sessionStarted && !m_muted) {
         emit requestProcess();
-        emit attributeUpdated(m_session, "audioLevel", QVariant(m_audioBuffer->audioLevel()));
+        emit attributeUpdated(m_session, QSpeechRecognition::AudioLevel, QVariant(m_audioBuffer->audioLevel()));
     }
 }
 
 void QSpeechRecognitionEnginePocketSphinx::onAudioStateChanged(QAudio::State state)
 {
     QVariantMap errorParams;
-    errorParams.insert("engine", name());
+    errorParams.insert(QSpeechRecognition::Engine, name());
     switch (state) {
         case QAudio::ActiveState:
             break;
         case QAudio::StoppedState:
             if (m_audioInput->error() != QAudio::NoError) {
-                errorParams.insert("reason", QString("Error (") + QString::number(m_audioInput->error()) + ") in QAudioInput");
+                errorParams.insert(QSpeechRecognition::Reason, QString("Error (") + QString::number(m_audioInput->error()) + ") in QAudioInput");
                 emit error(m_session, QSpeechRecognition::AudioError, errorParams);
             }
             break;
@@ -409,12 +409,12 @@ void QSpeechRecognitionEnginePocketSphinx::onAudioStateChanged(QAudio::State sta
 void QSpeechRecognitionEnginePocketSphinx::onAudioDecoderError(QAudioDecoder::Error errorCode)
 {
     QVariantMap errorParams;
-    errorParams.insert("engine", name());
+    errorParams.insert(QSpeechRecognition::Engine, name());
     switch (errorCode) {
         case QAudioDecoder::NoError:
             break;
         default:
-            errorParams.insert("reason", QString("QAudioDecoder error (") + QString::number(errorCode) + "): " + m_inputFileDecoder.errorString());
+            errorParams.insert(QSpeechRecognition::Reason, QString("QAudioDecoder error (") + QString::number(errorCode) + "): " + m_inputFileDecoder.errorString());
             emit error(m_session, QSpeechRecognition::AudioError, errorParams);
             break;
     }
@@ -467,16 +467,16 @@ QVariantMap QSpeechRecognitionEnginePocketSphinx::createEngineParameters(const Q
     QStringList audioDeviceNames;
     QString inputDeviceName;
     QAudioDeviceInfo inputDevice = QAudioDeviceInfo::defaultInputDevice();
-    if (inputParameters.contains("audioInputDevice"))
-        inputDeviceName = inputParameters["audioInputDevice"].toString();
+    if (inputParameters.contains(QSpeechRecognitionEngine::AudioInputDevice))
+        inputDeviceName = inputParameters[QSpeechRecognitionEngine::AudioInputDevice].toString();
     QList<QAudioDeviceInfo> audioDevices = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
     foreach (QAudioDeviceInfo device, audioDevices) {
         audioDeviceNames.append(device.deviceName());
         if (!inputDeviceName.isEmpty() && device.deviceName() == inputDeviceName)
             inputDevice = device;
     }
-    newParameters.insert("audioInputDevices", audioDeviceNames);
-    newParameters.insert("audioInputDevice", inputDevice.deviceName());
+    newParameters.insert(QSpeechRecognitionEngine::AudioInputDevices, audioDeviceNames);
+    newParameters.insert(QSpeechRecognitionEngine::AudioInputDevice, inputDevice.deviceName());
     return newParameters;
 }
 

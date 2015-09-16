@@ -65,41 +65,41 @@
     \li Value type
     \li Description
   \row
-    \li locale
+    \li Locale
     \li QLocale
     \li
   \row
-    \li dictionary
+    \li Dictionary
     \li QUrl
     \li PocketSphinx (CMU) format dictionary file.
         If not given, file "lexicon.dict" in the locale-specific resource directory is used.
         Loading the dictionary from Qt resources is not supported.
   \row
-    \li resourceDirectory
+    \li ResourceDirectory
     \li QString
     \li
   \row
-    \li dataDirectory
+    \li DataDirectory
     \li QString
     \li
   \row
-    \li debugAudioDirectory
+    \li DebugAudioDirectory
     \li QString
     \li
   \row
-    \li audioSampleRate
+    \li AudioSampleRate
     \li int
     \li
   \row
-    \li audioInputFile
+    \li AudioInputFile
     \li QString
     \li
   \row
-    \li audioInputDevices
+    \li AudioInputDevices
     \li QStringList
     \li
   \row
-    \li audioInputDevice
+    \li AudioInputDevice
     \li QString
     \li
   \endtable

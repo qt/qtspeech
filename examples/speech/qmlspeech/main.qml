@@ -53,10 +53,10 @@ ApplicationWindow {
         property url mainGrammarFile: "qrc:grammar/main"
         property url yesNoGrammarFile: "qrc:grammar/yesno"
         property var engine: createEngine("local", "pocketsphinx",
-                                        { "locale" : "en_US",
-                                          "resourceDirectory" : resourceDir,
-                                          //"debugAudioDirectory" : "/tmp",
-                                          "dictionary" : dictionaryFile })
+                                        { "Locale" : "en_US",
+                                          "ResourceDirectory" : resourceDir,
+                                          //"DebugAudioDirectory" : "/tmp",
+                                          "Dictionary" : dictionaryFile })
         property var mainGrammar: createGrammar(engine, "main", mainGrammarFile)
         property var yesNoGrammar: createGrammar(engine, "yesno", yesNoGrammarFile)
 
@@ -64,13 +64,13 @@ ApplicationWindow {
         }
 
         onResult: {
-            mainForm.resultText = grammarName + ": " + resultData["transcription"]
+            mainForm.resultText = grammarName + ": " + resultData["Transcription"]
             mainForm.statusText = "Ready"
         }
         onError: {
             var errorText = "Error " + errorCode
-            if (parameters["reason"] !== undefined)  {
-                errorText += ": " + parameters["reason"]
+            if (parameters["Reason"] !== undefined)  {
+                errorText += ": " + parameters["Reason"]
             }
             mainForm.resultText = ""
             mainForm.statusText = errorText
@@ -86,7 +86,7 @@ ApplicationWindow {
                 mainForm.statusText = "Ready"
         }
         onAttributeUpdated: {
-            if (key == "audioLevel")
+            if (key == "AudioLevel")
                 mainForm.audioLevel = value
         }
         onStateChanged: {
@@ -104,14 +104,14 @@ ApplicationWindow {
             var supportedParameters = speech.engine.supportedParameters()
             console.log("Supported engine parameters: " + supportedParameters)
             // Switch to "pulse" audio device if available
-            if (supportedParameters.indexOf("audioInputDevices") !== -1) {
-                var inputDevices = speech.engine.parameter("audioInputDevices")
+            if (supportedParameters.indexOf("AudioInputDevices") !== -1) {
+                var inputDevices = speech.engine.parameter("AudioInputDevices")
                 if (inputDevices.indexOf("pulse") !== -1)
-                    speech.engine.setParameter("audioInputDevice", "pulse")
+                    speech.engine.setParameter("AudioInputDevice", "pulse")
             }
             // Example: recognize audio clip instead of live audio:
-            //if (supportedParameters.indexOf("audioInputFile") !== -1) {
-            //    speech.engine.setParameter("audioInputFile", homeDir + "/asr_input_1.wav")
+            //if (supportedParameters.indexOf("AudioInputFile") !== -1) {
+            //    speech.engine.setParameter("AudioInputFile", homeDir + "/asr_input_1.wav")
             //}
         }
     }

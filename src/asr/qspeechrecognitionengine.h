@@ -63,6 +63,17 @@ public:
     Q_INVOKABLE virtual QList<QString> supportedParameters() const = 0;
     virtual bool isCreated() = 0;
 
+    // Common engine parameter keys:
+    static const QString Locale;
+    static const QString Dictionary;
+    static const QString ResourceDirectory;
+    static const QString DataDirectory;
+    static const QString DebugAudioDirectory;
+    static const QString AudioSampleRate;
+    static const QString AudioInputFile;
+    static const QString AudioInputDevice;
+    static const QString AudioInputDevices;
+
 Q_SIGNALS:
     void created();
 };

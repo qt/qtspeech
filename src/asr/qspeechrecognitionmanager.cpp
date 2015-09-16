@@ -91,7 +91,7 @@ void QSpeechRecognitionManager::setSession(int session)
 void QSpeechRecognitionManager::createEngine(const QString &engineName, const QString &provider, const QVariantMap &parameters)
 {
     QVariantMap errorParams;
-    errorParams.insert(QLatin1String("engine"), engineName);
+    errorParams.insert(QSpeechRecognition::Engine, engineName);
     if (!m_engines.contains(engineName)) {
         QSpeechRecognitionPluginEngine *engine = 0;
         QSpeechRecognitionPluginLoader *engineLoader = m_engineLoaders.value(provider, 0);
@@ -117,11 +117,11 @@ void QSpeechRecognitionManager::createEngine(const QString &engineName, const QS
         } else {
             delete engineLoader;
             if (!errorString.isEmpty())
-                errorParams.insert(QLatin1String("reason"), errorString);
+                errorParams.insert(QSpeechRecognition::Reason, errorString);
             emit error(NO_SESSION, QSpeechRecognition::EngineInitError, errorParams);
         }
     } else {
-        errorParams.insert(QLatin1String("reason"), QLatin1String("Engine with the given name already exists"));
+        errorParams.insert(QSpeechRecognition::Reason, QLatin1String("Engine with the given name already exists"));
         emit error(NO_SESSION, QSpeechRecognition::EngineInitError, errorParams);
     }
 }
@@ -130,8 +130,8 @@ void QSpeechRecognitionManager::createGrammar(const QString &engineName, const Q
 {
     qCDebug(lcSpeechAsr) << "QSpeechRecognitionManager::createGrammar()";
     QVariantMap errorParams;
-    errorParams.insert(QLatin1String("engine"), engineName);
-    errorParams.insert(QLatin1String("grammar"), grammarName);
+    errorParams.insert(QSpeechRecognition::Engine, engineName);
+    errorParams.insert(QSpeechRecognition::Grammar, grammarName);
     if (!m_grammars.contains(grammarName)) {
         QSpeechRecognitionPluginEngine* engine = m_engines.value(engineName, 0);
         if (engine) {
@@ -144,15 +144,15 @@ void QSpeechRecognitionManager::createGrammar(const QString &engineName, const Q
                 emit grammarCreated(grammarName);
             } else {
                 if (!errorString.isEmpty())
-                    errorParams.insert(QLatin1String("reason"), errorString);
+                    errorParams.insert(QSpeechRecognition::Reason, errorString);
                 emit error(NO_SESSION, QSpeechRecognition::GrammarInitError, errorParams);
             }
         } else {
-            errorParams.insert(QLatin1String("reason"), QLatin1String("The given engine was not properly initialized"));
+            errorParams.insert(QSpeechRecognition::Reason, QLatin1String("The given engine was not properly initialized"));
             emit error(NO_SESSION, QSpeechRecognition::GrammarInitError, errorParams);
         }
     } else {
-        errorParams.insert(QLatin1String("reason"), QLatin1String("Grammar with the given name already exists"));
+        errorParams.insert(QSpeechRecognition::Reason, QLatin1String("Grammar with the given name already exists"));
         emit error(NO_SESSION, QSpeechRecognition::GrammarInitError, errorParams);
     }
 }
@@ -172,7 +172,7 @@ void QSpeechRecognitionManager::setGrammar(const QString &grammarName)
 {
     qCDebug(lcSpeechAsr) << "QSpeechRecognitionManager::setGrammar()";
     QVariantMap errorParams;
-    errorParams.insert(QLatin1String("grammar"), grammarName);
+    errorParams.insert(QSpeechRecognition::Grammar, grammarName);
     GrammarInfo grammar = m_grammars.value(grammarName, GrammarInfo());
     if (m_grammar.engine && grammar.engine && grammar.engine != m_grammar.engine)
         m_grammar.engine->reset(); // Make sure any audio resources are released
@@ -191,7 +191,7 @@ void QSpeechRecognitionManager::setGrammar(const QString &grammarName)
                 m_grammar = grammar;
             } else {
                 if (!errorString.isEmpty())
-                    errorParams.insert(QLatin1String("reason"), errorString);
+                    errorParams.insert(QSpeechRecognition::Reason, errorString);
                 emit error(m_session, errorCode, errorParams);
             }
         }
@@ -218,9 +218,9 @@ void QSpeechRecognitionManager::startListening()
         } else {
             emit notListening(m_session);
             QVariantMap errorParams;
-            errorParams.insert(QLatin1String("engine"), m_grammar.engine->name());
+            errorParams.insert(QSpeechRecognition::Engine, m_grammar.engine->name());
             if (!errorString.isEmpty())
-                errorParams.insert(QLatin1String("reason"), errorString);
+                errorParams.insert(QSpeechRecognition::Reason, errorString);
             emit error(m_session, errorCode, errorParams);
         }
     }
@@ -305,9 +305,9 @@ void QSpeechRecognitionManager::setEngineParameter(const QString &engineName, co
             emit engineParameterUpdated(engineName, key, value);
         } else {
             QVariantMap errorParams;
-            errorParams.insert(QLatin1String("engine"), engineName);
+            errorParams.insert(QSpeechRecognition::Engine, engineName);
             if (!errorString.isEmpty())
-                errorParams.insert(QLatin1String("reason"), errorString);
+                errorParams.insert(QSpeechRecognition::Reason, errorString);
             emit error(m_session, errorCode, errorParams);
         }
     }

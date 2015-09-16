@@ -40,6 +40,85 @@
 
 QT_BEGIN_NAMESPACE
 
+/*
+    When these conditions are satisfied, QStringLiteral is implemented by
+    gcc's statement-expression extension.  However, in this file it will
+    not work, because "statement-expressions are not allowed outside functions
+    nor in template-argument lists".
+    MSVC 2012 produces an internal compiler error on encountering
+    QStringLiteral in this context.
+
+    Fall back to the less-performant QLatin1String in this case.
+*/
+#if defined(Q_CC_GNU) && defined(Q_COMPILER_LAMBDA)
+#    define Q_DEFINE_ASR_ENGINE_PARAMETER(key) const QString QSpeechRecognitionEngine::key(QStringLiteral(#key))
+#else
+#    define Q_DEFINE_ASR_ENGINE_PARAMETER(key) const QString QSpeechRecognitionEngine::key(QLatin1String(#key))
+#endif
+
+/*! \variable QSpeechRecognitionEngine::Locale
+
+    This constant is used as the key for a speech recognition engine parameter.
+    See supportedParameters().
+*/
+Q_DEFINE_ASR_ENGINE_PARAMETER(Locale);
+
+/*! \variable QSpeechRecognitionEngine::Dictionary
+
+    This constant is used as the key for a speech recognition engine parameter.
+    See supportedParameters().
+*/
+Q_DEFINE_ASR_ENGINE_PARAMETER(Dictionary);
+
+/*! \variable QSpeechRecognitionEngine::ResourceDirectory
+
+    This constant is used as the key for a speech recognition engine parameter.
+    See supportedParameters().
+*/
+Q_DEFINE_ASR_ENGINE_PARAMETER(ResourceDirectory);
+
+/*! \variable QSpeechRecognitionEngine::DataDirectory
+
+    This constant is used as the key for a speech recognition engine parameter.
+    See supportedParameters().
+*/
+Q_DEFINE_ASR_ENGINE_PARAMETER(DataDirectory);
+
+/*! \variable QSpeechRecognitionEngine::DebugAudioDirectory
+
+    This constant is used as the key for a speech recognition engine parameter.
+    See supportedParameters().
+*/
+Q_DEFINE_ASR_ENGINE_PARAMETER(DebugAudioDirectory);
+
+/*! \variable QSpeechRecognitionEngine::AudioSampleRate
+
+    This constant is used as the key for a speech recognition engine parameter.
+    See supportedParameters().
+*/
+Q_DEFINE_ASR_ENGINE_PARAMETER(AudioSampleRate);
+
+/*! \variable QSpeechRecognitionEngine::AudioInputFile
+
+    This constant is used as the key for a speech recognition engine parameter.
+    See supportedParameters().
+*/
+Q_DEFINE_ASR_ENGINE_PARAMETER(AudioInputFile);
+
+/*! \variable QSpeechRecognitionEngine::AudioInputDevice
+
+    This constant is used as the key for a speech recognition engine parameter.
+    See supportedParameters().
+*/
+Q_DEFINE_ASR_ENGINE_PARAMETER(AudioInputDevice);
+
+/*! \variable QSpeechRecognitionEngine::AudioInputDevices
+
+    This constant is used as the key for a speech recognition engine parameter.
+    See supportedParameters().
+*/
+Q_DEFINE_ASR_ENGINE_PARAMETER(AudioInputDevices);
+
 /*!
   \class QSpeechRecognitionEngine
   \inmodule QtSpeech
@@ -96,11 +175,11 @@ QT_BEGIN_NAMESPACE
     \li Value type
     \li Description
   \row
-    \li locale
+    \li \l Locale
     \li QLocale
     \li The locale for speech recognition
   \row
-    \li dictionary
+    \li \l Dictionary
     \li QUrl
     \li Location of the speech recognition dictionary (default lexicon).
         If the URL contains a relative file path, the dictionary is loaded
@@ -109,7 +188,7 @@ QT_BEGIN_NAMESPACE
         The format of the dictionary is engine-specific; some engines or grammars may not need
         a dictionary at all.
   \row
-    \li resourceDirectory
+    \li \l ResourceDirectory
     \li QString
     \li Path to the directory where engine-specific resource files are located.
         If not given, the program's working directory is used.
@@ -117,23 +196,23 @@ QT_BEGIN_NAMESPACE
         under this root directory, in which case BCP 47 names should be used for
         the sub-directories.
   \row
-    \li dataDirectory
+    \li \l DataDirectory
     \li QString
     \li Path to a persistent directory where any engine-specific data
         can be stored between application restarts. If not given, the program's
         working directory is used.
   \row
-    \li debugAudioDirectory
+    \li \l DebugAudioDirectory
     \li QString
     \li Path to a directory where the engine should write all the audio clips that go
         to the recognizer. If not given (or empty), no audio clips will be produced.
         This feature is meant to be used only for debugging purposes.
   \row
-    \li audioSampleRate
+    \li \l AudioSampleRate
     \li int
     \li Samples per second in the input audio. Default: 16000.
   \row
-    \li audioInputFile
+    \li \l AudioInputFile
     \li QString
     \li Path to an audio file that should be read instead of an audio input device.
         The given file will be read once for each recognition session.
@@ -141,17 +220,20 @@ QT_BEGIN_NAMESPACE
         until mute is released. The recognition session will be automatically stopped
         when the entire file has been read.
   \row
-    \li audioInputDevices
+    \li \l AudioInputDevices
     \li QStringList
     \li Names of the supported audio input devices (read-only).
   \row
-    \li audioInputDevice
+    \li \l AudioInputDevice
     \li QString
     \li Name of the currently selected audio input device.
         If not set, the system default will be used.
   \endtable
 
   Returns the names of the supported engine parameters.
+
+  \sa setParameter()
+  \sa parameter()
 */
 
 /*!

@@ -46,6 +46,67 @@ QT_BEGIN_NAMESPACE
 
 Q_LOGGING_CATEGORY(lcSpeechAsr, "qt.speech.asr")
 
+/*
+    When these conditions are satisfied, QStringLiteral is implemented by
+    gcc's statement-expression extension.  However, in this file it will
+    not work, because "statement-expressions are not allowed outside functions
+    nor in template-argument lists".
+    MSVC 2012 produces an internal compiler error on encountering
+    QStringLiteral in this context.
+
+    Fall back to the less-performant QLatin1String in this case.
+*/
+#if defined(Q_CC_GNU) && defined(Q_COMPILER_LAMBDA)
+#    define Q_DEFINE_ASR_ATTRIBUTE(key) const QString QSpeechRecognition::key(QStringLiteral(#key))
+#    define Q_DEFINE_ASR_ERROR_PARAMETER(key) const QString QSpeechRecognition::key(QStringLiteral(#key))
+#    define Q_DEFINE_ASR_RESULT_PARAMETER(key) const QString QSpeechRecognition::key(QStringLiteral(#key))
+#else
+#    define Q_DEFINE_ASR_ATTRIBUTE(key) const QString QSpeechRecognition::key(QLatin1String(#key))
+#    define Q_DEFINE_ASR_ERROR_PARAMETER(key) const QString QSpeechRecognition::key(QLatin1String(#key))
+#    define Q_DEFINE_ASR_RESULT_PARAMETER(key) const QString QSpeechRecognition::key(QLatin1String(#key))
+#endif
+
+// Run-time attributes:
+
+/*! \variable QSpeechRecognition::AudioLevel
+
+    This constant is used as the key for a speech recognition run-time attribute.
+    See attributeUpdated().
+*/
+Q_DEFINE_ASR_ATTRIBUTE(AudioLevel);
+
+// Error parameters:
+
+/*! \variable QSpeechRecognition::Reason
+
+    This constant is used as the key for a speech recognition error parameter.
+    See error().
+*/
+Q_DEFINE_ASR_ERROR_PARAMETER(Reason);
+
+/*! \variable QSpeechRecognition::Engine
+
+    This constant is used as the key for a speech recognition error parameter.
+    See error().
+*/
+Q_DEFINE_ASR_ERROR_PARAMETER(Engine);
+
+/*! \variable QSpeechRecognition::Grammar
+
+    This constant is used as the key for a speech recognition error parameter.
+    See error().
+*/
+Q_DEFINE_ASR_ERROR_PARAMETER(Grammar);
+
+// Result parameters:
+
+/*! \variable QSpeechRecognition::Transcription
+
+    This constant is used as the key for a speech recognition result parameter.
+    See result().
+*/
+Q_DEFINE_ASR_RESULT_PARAMETER(Transcription);
+
 /*!
   \class QSpeechRecognition
   \inmodule QtSpeech
@@ -157,7 +218,7 @@ Q_LOGGING_CATEGORY(lcSpeechAsr, "qt.speech.asr")
     \li Error codes that use the parameter
     \li Description
   \row
-    \li reason
+    \li \l Reason
     \li QString
     \li any
     \li Human-readable description of the error
@@ -180,7 +241,7 @@ Q_LOGGING_CATEGORY(lcSpeechAsr, "qt.speech.asr")
     \li Value type
     \li Description
   \row
-    \li transcription
+    \li \l Transcription
     \li QString
     \li Transcription of what was recognized
   \endtable
@@ -229,7 +290,7 @@ Q_LOGGING_CATEGORY(lcSpeechAsr, "qt.speech.asr")
     \li Value type
     \li Description
   \row
-    \li audioLevel
+    \li \l AudioLevel
     \li qreal
     \li Audio level between 0.0 and 1.0. Only updated when listening for commands.
   \endtable
@@ -694,7 +755,7 @@ void QSpeechRecognitionPrivate::onError(int session, QSpeechRecognition::Error e
                 }
                 break;
             case QSpeechRecognition::GrammarInitError:
-                grammar = m_grammars.value(parameters.value(QLatin1String("grammar")).toString(), 0);
+                grammar = m_grammars.value(parameters.value(QSpeechRecognition::Grammar).toString(), 0);
                 if (grammar) {
                     grammar->setState(QSpeechRecognitionGrammar::ErrorState);
                     emit q->error(errorCode, parameters);

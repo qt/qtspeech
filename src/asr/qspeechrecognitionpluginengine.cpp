@@ -268,16 +268,16 @@ QSpeechRecognitionPluginEngine::QSpeechRecognitionPluginEngine(const QString &na
     QVariantMap knownParameters;
     Q_D(QSpeechRecognitionPluginEngine);
     // Initialize built-in parameters to their default values if the value is not set:
-    if (!initialParameters.contains(QLatin1String("locale")))
-        initialParameters.insert(QLatin1String("locale"), locale());
-    if (!initialParameters.contains(QLatin1String("audioSampleRate")))
-        initialParameters.insert(QLatin1String("audioSampleRate"), audioSampleRate());
-    if (!initialParameters.contains(QLatin1String("resourceDirectory")))
-        initialParameters.insert(QLatin1String("resourceDirectory"), resourceDirectory().path());
-    if (!initialParameters.contains(QLatin1String("dataDirectory")))
-        initialParameters.insert(QLatin1String("dataDirectory"), dataDirectory().path());
-    if (!initialParameters.contains(QLatin1String("dictionary")))
-        initialParameters.insert(QLatin1String("dictionary"), dictionaryLocation());
+    if (!initialParameters.contains(QSpeechRecognitionEngine::Locale))
+        initialParameters.insert(QSpeechRecognitionEngine::Locale, locale());
+    if (!initialParameters.contains(QSpeechRecognitionEngine::AudioSampleRate))
+        initialParameters.insert(QSpeechRecognitionEngine::AudioSampleRate, audioSampleRate());
+    if (!initialParameters.contains(QSpeechRecognitionEngine::ResourceDirectory))
+        initialParameters.insert(QSpeechRecognitionEngine::ResourceDirectory, resourceDirectory().path());
+    if (!initialParameters.contains(QSpeechRecognitionEngine::DataDirectory))
+        initialParameters.insert(QSpeechRecognitionEngine::DataDirectory, dataDirectory().path());
+    if (!initialParameters.contains(QSpeechRecognitionEngine::Dictionary))
+        initialParameters.insert(QSpeechRecognitionEngine::Dictionary, dictionaryLocation());
     // Filter out unknown parameters:
     for (QVariantMap::const_iterator param = initialParameters.begin(); param != initialParameters.end(); ++param) {
         if (supportedParameters.contains(param.key()))
@@ -333,13 +333,13 @@ const QVariantMap &QSpeechRecognitionPluginEngine::parameters() const
   Extracts the locale from engine parameters.
   If not set, returns the default value.
 
-  Key "locale" should be listed in the supported engine parameters.
+  Key QSpeechRecognitionEngine::Locale should be listed in the supported engine parameters.
 */
 QLocale QSpeechRecognitionPluginEngine::locale() const
 {
     Q_D(const QSpeechRecognitionPluginEngine);
-    if (d->m_parameters.contains(QLatin1String("locale"))) {
-        const QVariant &locale = d->m_parameters[QLatin1String("locale")];
+    if (d->m_parameters.contains(QSpeechRecognitionEngine::Locale)) {
+        const QVariant &locale = d->m_parameters[QSpeechRecognitionEngine::Locale];
         if (locale.userType() == QMetaType::QLocale)
             return locale.toLocale();
     }
@@ -350,13 +350,14 @@ QLocale QSpeechRecognitionPluginEngine::locale() const
   Extracts the engine resource directory from engine parameters.
   If not set, returns the default value.
 
-  Key "resourceDirectory" should be listed in the supported engine parameters.
+  Key QSpeechRecognitionEngine::ResourceDirectory should be listed in the supported
+  engine parameters.
 */
 QDir QSpeechRecognitionPluginEngine::resourceDirectory() const
 {
     Q_D(const QSpeechRecognitionPluginEngine);
-    if (d->m_parameters.contains(QLatin1String("resourceDirectory"))) {
-        const QVariant &resourceDirectory = d->m_parameters[QLatin1String("resourceDirectory")];
+    if (d->m_parameters.contains(QSpeechRecognitionEngine::ResourceDirectory)) {
+        const QVariant &resourceDirectory = d->m_parameters[QSpeechRecognitionEngine::ResourceDirectory];
         if (resourceDirectory.userType() == QMetaType::QString)
             return QDir(resourceDirectory.toString());
     }
@@ -367,13 +368,13 @@ QDir QSpeechRecognitionPluginEngine::resourceDirectory() const
   Extracts the writable data directory from engine parameters.
   If not set, returns the default value.
 
-  Key "dataDirectory" should be listed in the supported engine parameters.
+  Key QSpeechRecognitionEngine::DataDirectory should be listed in the supported engine parameters.
 */
 QDir QSpeechRecognitionPluginEngine::dataDirectory() const
 {
     Q_D(const QSpeechRecognitionPluginEngine);
-    if (d->m_parameters.contains(QLatin1String("dataDirectory"))) {
-        const QVariant &dataDirectory = d->m_parameters[QLatin1String("dataDirectory")];
+    if (d->m_parameters.contains(QSpeechRecognitionEngine::DataDirectory)) {
+        const QVariant &dataDirectory = d->m_parameters[QSpeechRecognitionEngine::DataDirectory];
         if (dataDirectory.userType() == QMetaType::QString) {
             return QDir(dataDirectory.toString());
         }
@@ -385,13 +386,13 @@ QDir QSpeechRecognitionPluginEngine::dataDirectory() const
   Extracts the dictionary URL from the engine parameters.
   If not set, returns the default value.
 
-  Key "dictionary" should be listed in the supported engine parameters.
+  Key QSpeechRecognitionEngine::Dictionary should be listed in the supported engine parameters.
 */
 QUrl QSpeechRecognitionPluginEngine::dictionaryLocation() const
 {
     Q_D(const QSpeechRecognitionPluginEngine);
-    if (d->m_parameters.contains(QLatin1String("dictionary"))) {
-        const QVariant &dictionaryLocation = d->m_parameters[QLatin1String("dictionary")];
+    if (d->m_parameters.contains(QSpeechRecognitionEngine::Dictionary)) {
+        const QVariant &dictionaryLocation = d->m_parameters[QSpeechRecognitionEngine::Dictionary];
         if (dictionaryLocation.userType() == QMetaType::QUrl) {
             return dictionaryLocation.toUrl();
         }
@@ -403,13 +404,14 @@ QUrl QSpeechRecognitionPluginEngine::dictionaryLocation() const
   Extracts the audio sample rate from the engine parameters.
   If not set, returns the default value.
 
-  Key "audioSampleRate" should be listed in the supported engine parameters.
+  Key QSpeechRecognitionEngine::AudioSampleRate should be listed in the supported
+  engine parameters.
 */
 int QSpeechRecognitionPluginEngine::audioSampleRate() const
 {
     Q_D(const QSpeechRecognitionPluginEngine);
-    if (d->m_parameters.contains(QLatin1String("audioSampleRate"))) {
-        const QVariant &audioSampleRate = d->m_parameters[QLatin1String("audioSampleRate")];
+    if (d->m_parameters.contains(QSpeechRecognitionEngine::AudioSampleRate)) {
+        const QVariant &audioSampleRate = d->m_parameters[QSpeechRecognitionEngine::AudioSampleRate];
         if (audioSampleRate.userType() == QMetaType::Int)
             return audioSampleRate.toInt();
     }
@@ -420,13 +422,13 @@ int QSpeechRecognitionPluginEngine::audioSampleRate() const
   Extracts the audio input file path from the engine parameters.
   If not set, returns an empty string.
 
-  Key "audioInputFile" should be listed in the supported engine parameters.
+  Key QSpeechRecognitionEngine::AudioInputFile should be listed in the supported engine parameters.
 */
 QString QSpeechRecognitionPluginEngine::audioInputFile() const
 {
     Q_D(const QSpeechRecognitionPluginEngine);
-    if (d->m_parameters.contains(QLatin1String("audioInputFile"))) {
-        const QVariant &audioInputFile = d->m_parameters[QLatin1String("audioInputFile")];
+    if (d->m_parameters.contains(QSpeechRecognitionEngine::AudioInputFile)) {
+        const QVariant &audioInputFile = d->m_parameters[QSpeechRecognitionEngine::AudioInputFile];
         if (audioInputFile.userType() == QMetaType::QString) {
             return audioInputFile.toString();
         }
@@ -478,8 +480,9 @@ QString QSpeechRecognitionPluginEngine::localizedFilePath(const QString &filePat
   Creates a WAV-file for writing debug audio.
 
   If \a filePath is an absolute path, always attempts to create the file. If a relative
-  file path is given, only creates the file if engine parameter "debugAudioDirectory" has
-  been set (see QSpeechRecognition::createEngine()).
+  file path is given, only creates the file if engine parameter
+  QSpeechRecognitionEngine::DebugAudioDirectory has been set (see
+  QSpeechRecognition::createEngine()).
 
   Parameters \a sampleRate, \a sampleSize and \a channelCount specify the type of audio data
   that will be written to the file. Sample size should be expressed in bits.
@@ -496,8 +499,8 @@ QFile *QSpeechRecognitionPluginEngine::openDebugWavFile(const QString &filePath,
     QString finalPath;
     if (QDir::isAbsolutePath(filePath)) {
         finalPath = filePath;
-    } else if (d->m_parameters.contains(QLatin1String("debugAudioDirectory"))) {
-        QString audioDirPath = d->m_parameters.value(QLatin1String("debugAudioDirectory")).toString();
+    } else if (d->m_parameters.contains(QSpeechRecognitionEngine::DebugAudioDirectory)) {
+        QString audioDirPath = d->m_parameters.value(QSpeechRecognitionEngine::DebugAudioDirectory).toString();
         if (!audioDirPath.isEmpty()) {
             QDir audioDir(audioDirPath);
             if (audioDir.exists())

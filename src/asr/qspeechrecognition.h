@@ -100,6 +100,17 @@ public:
     Q_INVOKABLE void reset();
     Q_INVOKABLE void dispatchMessage(const QString &message, const QVariantMap &parameters = QVariantMap());
 
+    // Common attribute keys:
+    static const QString AudioLevel;
+
+    // Common error parameter keys:
+    static const QString Reason;
+    static const QString Engine;
+    static const QString Grammar;
+
+    // Common result parameter keys:
+    static const QString Transcription;
+
 Q_SIGNALS:
     void stateChanged();
     void muteChanged();
