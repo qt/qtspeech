@@ -625,7 +625,6 @@ QSpeechRecognitionPrivate::QSpeechRecognitionPrivate():
     m_unmuteTimer.setSingleShot(true);
     QObject::connect(m_managerThread, &QThread::started, m_manager, &QSpeechRecognitionManager::init);
     QObject::connect(m_managerThread, &QThread::finished, m_manager, &QSpeechRecognitionManager::deleteLater);
-    QObject::connect(m_managerThread, &QThread::finished, m_managerThread, &QThread::deleteLater);
     QObject::connect(&m_unmuteTimer, &QTimer::timeout, m_managerInterface, &QSpeechRecognitionManagerInterface::onUnmuteTimeout);
     m_manager->moveToThread(m_managerThread);
 
@@ -665,8 +664,13 @@ QSpeechRecognitionPrivate::QSpeechRecognitionPrivate():
 
 QSpeechRecognitionPrivate::~QSpeechRecognitionPrivate()
 {
-    m_managerThread->exit();
     delete m_managerInterface;
+    m_managerThread->exit();
+    if (!m_managerThread->wait(5000)) {
+        m_managerThread->terminate();
+        m_managerThread->wait();
+    }
+    delete m_managerThread;
 }
 
 void QSpeechRecognitionPrivate::onEngineCreated(const QString &engineName)
