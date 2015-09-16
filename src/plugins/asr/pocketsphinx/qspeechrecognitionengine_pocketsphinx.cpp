@@ -66,8 +66,8 @@ void PocketShpinxErrorCb(void *user_data, err_lvl_t lvl, const char *fmt, ...)
 }
 
 QSpeechRecognitionEnginePocketSphinx::QSpeechRecognitionEnginePocketSphinx(const QString &name,
-    const QVariantMap &parameters, const QAudioDeviceInfo &defaultDevice, QObject *parent)
-        : QSpeechRecognitionPluginEngine(name, parameters,
+    const QVariantMap &parameters, QObject *parent)
+        : QSpeechRecognitionPluginEngine(name, createEngineParameters(parameters),
             QStringList() << "locale"
                           << "dictionary"
                           << "resourceDirectory"
@@ -80,7 +80,7 @@ QSpeechRecognitionEnginePocketSphinx::QSpeechRecognitionEnginePocketSphinx(const
             parent),
         m_session(0),
         m_decoder(0),
-        m_device(defaultDevice),
+        m_device(QAudioDeviceInfo::defaultInputDevice()),
         m_audioInput(0),
         m_grammar(0),
         m_audioBuffer(0),
@@ -90,6 +90,15 @@ QSpeechRecognitionEnginePocketSphinx::QSpeechRecognitionEnginePocketSphinx(const
         m_cmnVec(0),
         m_cmnSize(0)
 {
+    const QVariantMap &engineParams = QSpeechRecognitionPluginEngine::parameters();
+    QString inputDeviceName = engineParams["audioInputDevice"].toString();
+    QList<QAudioDeviceInfo> audioDevices = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
+    foreach (QAudioDeviceInfo device, audioDevices) {
+        if (!inputDeviceName.isEmpty() && device.deviceName() == inputDeviceName) {
+            m_device = device;
+            break;
+        }
+    }
 }
 
 QSpeechRecognitionEnginePocketSphinx::~QSpeechRecognitionEnginePocketSphinx()
@@ -450,6 +459,25 @@ void QSpeechRecognitionEnginePocketSphinx::deleteGrammar(const QString &name)
 QString QSpeechRecognitionEnginePocketSphinx::localizedFilePath(const QString &filePath) const
 {
     return QSpeechRecognitionPluginEngine::localizedFilePath(filePath);
+}
+
+QVariantMap QSpeechRecognitionEnginePocketSphinx::createEngineParameters(const QVariantMap &inputParameters)
+{
+    QVariantMap newParameters = inputParameters;
+    QStringList audioDeviceNames;
+    QString inputDeviceName;
+    QAudioDeviceInfo inputDevice = QAudioDeviceInfo::defaultInputDevice();
+    if (inputParameters.contains("audioInputDevice"))
+        inputDeviceName = inputParameters["audioInputDevice"].toString();
+    QList<QAudioDeviceInfo> audioDevices = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
+    foreach (QAudioDeviceInfo device, audioDevices) {
+        audioDeviceNames.append(device.deviceName());
+        if (!inputDeviceName.isEmpty() && device.deviceName() == inputDeviceName)
+            inputDevice = device;
+    }
+    newParameters.insert("audioInputDevices", audioDeviceNames);
+    newParameters.insert("audioInputDevice", inputDevice.deviceName());
+    return newParameters;
 }
 
 bool QSpeechRecognitionEnginePocketSphinx::processNextAudio()

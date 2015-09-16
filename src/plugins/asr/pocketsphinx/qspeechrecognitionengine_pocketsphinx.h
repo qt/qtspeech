@@ -55,7 +55,7 @@ class QSpeechRecognitionEnginePocketSphinx : public QSpeechRecognitionPluginEngi
 {
     Q_OBJECT
 public:
-    QSpeechRecognitionEnginePocketSphinx(const QString &name, const QVariantMap &parameters, const QAudioDeviceInfo &defaultDevice, QObject *parent);
+    QSpeechRecognitionEnginePocketSphinx(const QString &name, const QVariantMap &parameters, QObject *parent);
     virtual ~QSpeechRecognitionEnginePocketSphinx();
 
     // Plug-in API:
@@ -84,6 +84,7 @@ public slots:
     void onAudioDecoderBufferReady();
     void onAudioDecoderFinished();
 private:
+    static QVariantMap createEngineParameters(const QVariantMap &inputParameters);
     bool processNextAudio();
     void processAudio(const void *data, size_t dataSize);
     void storeCmn();

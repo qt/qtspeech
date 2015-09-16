@@ -47,21 +47,7 @@ Q_LOGGING_CATEGORY(lcSpeechAsrPocketSphinx, "qt.speech.asr.pocketsphinx")
 QSpeechRecognitionPluginEngine *QSpeechRecognitionPluginPocketSphinx::createSpeechRecognitionEngine(const QString &name,
         const QVariantMap &parameters, QObject *parent, QString *errorString) const
 {
-    QVariantMap newParameters = parameters;
-    QStringList audioDeviceNames;
-    QString inputDeviceName;
-    QAudioDeviceInfo inputDevice = QAudioDeviceInfo::defaultInputDevice();
-    if (parameters.contains("audioInputDevice"))
-        inputDeviceName = parameters["audioInputDevice"].toString();
-    QList<QAudioDeviceInfo> audioDevices = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
-    foreach (QAudioDeviceInfo device, audioDevices) {
-        audioDeviceNames.append(device.deviceName());
-        if (!inputDeviceName.isEmpty() && device.deviceName() == inputDeviceName)
-            inputDevice = device;
-    }
-    newParameters.insert("audioInputDevices", audioDeviceNames);
-    newParameters.insert("audioInputDevice", inputDevice.deviceName());
-    QSpeechRecognitionEnginePocketSphinx *ps = new QSpeechRecognitionEnginePocketSphinx(name, newParameters, inputDevice, parent);
+    QSpeechRecognitionEnginePocketSphinx *ps = new QSpeechRecognitionEnginePocketSphinx(name, parameters, parent);
     if (ps && ps->init(errorString)) {
         return ps;
     }
