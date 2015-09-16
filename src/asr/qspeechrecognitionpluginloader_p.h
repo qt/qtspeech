@@ -59,7 +59,6 @@ public:
 
 private:
     static QMutex m_mutex;
-    static QFactoryLoader m_loader;
     QString m_provider;
     QJsonObject m_metaData;
     QSpeechRecognitionPlugin *m_plugin;

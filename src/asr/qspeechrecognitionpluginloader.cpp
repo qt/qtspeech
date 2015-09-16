@@ -45,8 +45,11 @@
 
 QT_BEGIN_NAMESPACE
 
+Q_GLOBAL_STATIC_WITH_ARGS(QFactoryLoader, loader,
+        ("org.qt-project.qt.speech.asr.plugin/5.0",
+         QLatin1String("/speechrecognition")))
+
 QMutex QSpeechRecognitionPluginLoader::m_mutex;
-QFactoryLoader QSpeechRecognitionPluginLoader::m_loader("org.qt-project.qt.speech.asr.plugin/5.0", QLatin1String("/speechrecognition"));
 
 QSpeechRecognitionPluginLoader::QSpeechRecognitionPluginLoader(const QString &provider, QObject *parent, bool allowExperimental)
     : QObject(parent),
@@ -66,8 +69,7 @@ QSpeechRecognitionPluginEngine *QSpeechRecognitionPluginLoader::createEngine(con
         return 0;
     }
     int idx = int(m_metaData.value(QLatin1String("index")).toDouble());
-    QObject *inst = m_loader.instance(idx);
-    m_plugin = qobject_cast<QSpeechRecognitionPlugin *>(inst);
+    m_plugin = qobject_cast<QSpeechRecognitionPlugin *>(loader->instance(idx));
     if (m_plugin)
         return m_plugin->createSpeechRecognitionEngine(name, parameters, this, errorString);
     else if (errorString)
@@ -129,7 +131,7 @@ QHash<QString, QJsonObject> QSpeechRecognitionPluginLoader::plugins(bool reload)
 
 void QSpeechRecognitionPluginLoader::loadPluginMetadata(QHash<QString, QJsonObject> &list)
 {
-    QList<QJsonObject> meta = m_loader.metaData();
+    QList<QJsonObject> meta = loader->metaData();
     for (int i = 0; i < meta.size(); ++i) {
         QJsonObject obj = meta.at(i).value(QLatin1String("MetaData")).toObject();
         obj.insert(QLatin1String("index"), i);
