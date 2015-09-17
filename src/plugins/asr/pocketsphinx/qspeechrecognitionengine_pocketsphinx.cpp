@@ -156,6 +156,8 @@ bool QSpeechRecognitionEnginePocketSphinx::init(QString *errorString)
     feat_t *feat = ps_get_feat(m_decoder);
     m_cmnSize = feat_cepsize(feat);
     m_cmnVec = new mfcc_t[m_cmnSize];
+    m_cmnFilePath = dataDirectory().absoluteFilePath(QLatin1String("pocketsphinx_")
+                                                     + name() + QLatin1String("_cmn"));
     // Attempt to load adapted cepstrum means from the data file. The default values are not
     // optimal for any specific audio path, often causing bad results from the first few utterances.
     loadCmn();
@@ -474,7 +476,7 @@ void QSpeechRecognitionEnginePocketSphinx::processAudio(const void *data, size_t
 // Store cepstrum mean values to file
 void QSpeechRecognitionEnginePocketSphinx::storeCmn()
 {
-    QFile dataFile(dataDirectory().absoluteFilePath("pocketsphinx_cmn"));
+    QFile dataFile(m_cmnFilePath);
     feat_t *feat = ps_get_feat(m_decoder);
     if (dataFile.open(QIODevice::WriteOnly)) {
         QVector<double> dataVec;
@@ -491,7 +493,7 @@ void QSpeechRecognitionEnginePocketSphinx::storeCmn()
 void QSpeechRecognitionEnginePocketSphinx::loadCmn()
 {
     QVector<double> dataVec;
-    QFile dataFile(dataDirectory().absoluteFilePath("pocketsphinx_cmn"));
+    QFile dataFile(m_cmnFilePath);
     if (dataFile.exists() && dataFile.open(QIODevice::ReadOnly)) {
         QDataStream dataStream(&dataFile);
         dataStream >> dataVec;

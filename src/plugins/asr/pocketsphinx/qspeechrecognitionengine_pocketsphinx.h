@@ -101,6 +101,7 @@ private:
     int m_audioBufferLimit;
     QFile *m_debugAudioFile;
     bool m_sessionStarted;
+    QString m_cmnFilePath;
     mfcc_t *m_cmnVec;
     int m_cmnSize;
 };

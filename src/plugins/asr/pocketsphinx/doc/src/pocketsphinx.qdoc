@@ -46,6 +46,15 @@
     \li \c acmodel
   \endlist
 
+  The engine continuously adapts to certain audio path features and stores the
+  adaptation state in the configured data directory. Separate adaptation states are
+  stored for engines with different names (given in QSpeechRecognition::createEngine()).
+
+  When an engine is created, the adaptation state is automatically restored from the
+  file that was previously created. If the file does not exist, a default initial
+  state is used. In this case, it may take a few utterances until the speech
+  recognition starts returning good results.
+
   The following table lists the supported engine parameters.
   See QSpeechRecognitionEngine::supportedParameters() for generic details of the
   parameters.
