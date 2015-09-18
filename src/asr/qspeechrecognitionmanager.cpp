@@ -50,6 +50,7 @@ QSpeechRecognitionManager::QSpeechRecognitionManager():
     m_session(0),
     m_listening(false),
     m_muted(false),
+    m_exiting(false),
     m_grammar()
 {
 }
@@ -58,6 +59,17 @@ QSpeechRecognitionManager::~QSpeechRecognitionManager()
 {
     foreach (QSpeechRecognitionPluginEngine* engine, m_engines)
         engine->reset();
+    // Clear the containers and set the exiting flag to prevent access to the objects
+    // while they are being destroyed. This could happen if any of the children allow
+    // the events to be processed during destruction, which in turn may cause calls to
+    // QSpeechRecognitionManager API (e.g. createGrammar()).
+    m_engineLoaders.clear();
+    m_engines.clear();
+    m_grammars.clear();
+    m_grammar = GrammarInfo();
+    m_listening = false;
+    m_exiting = true;
+    qDeleteAll(findChildren<QSpeechRecognitionPluginLoader*>());
 }
 
 QSpeechRecognitionManager::AttributeData QSpeechRecognitionManager::getAttribute(const QString &key)
@@ -92,6 +104,8 @@ void QSpeechRecognitionManager::createEngine(const QString &engineName, const QS
 {
     QVariantMap errorParams;
     errorParams.insert(QSpeechRecognition::Engine, engineName);
+    if (m_exiting)
+        return;
     if (!m_engines.contains(engineName)) {
         QSpeechRecognitionPluginEngine *engine = 0;
         QSpeechRecognitionPluginLoader *engineLoader = m_engineLoaders.value(provider, 0);

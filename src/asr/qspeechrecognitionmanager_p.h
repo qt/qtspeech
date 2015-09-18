@@ -119,7 +119,7 @@ private:
     int m_session;
     bool m_listening;
     bool m_muted;
-    bool m_statChanged;
+    bool m_exiting;
     GrammarInfo m_grammar;
     QMap<QString, AttributeData> m_attributes;
     QSet<QString> m_updatedAttributes;
