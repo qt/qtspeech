@@ -742,11 +742,6 @@ void QSpeechRecognitionPrivate::onUnmuteTimeout()
     }
 }
 
-void QSpeechRecognitionPrivate::onSetEngineParameter(QSpeechRecognitionEngineImpl *engine, const QString &key, const QVariant &value)
-{
-    emit m_managerInterface->setEngineParameter(engine->name(), key, value);
-}
-
 void QSpeechRecognitionPrivate::setState(QSpeechRecognition::State state)
 {
     Q_Q(QSpeechRecognition);

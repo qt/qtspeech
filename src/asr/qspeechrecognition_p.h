@@ -86,7 +86,6 @@ public:
     void onError(int session, QSpeechRecognition::Error errorCode, const QVariantMap &parameters);
     void onAttributeUpdated(const QString &key);
     void onUnmuteTimeout();
-    void onSetEngineParameter(QSpeechRecognitionEngineImpl *engine, const QString &key, const QVariant &value);
     void onEngineParameterUpdated(const QString &engineName, const QString &key, const QVariant &value);
 
 private:
@@ -164,7 +163,7 @@ public slots:
     {
         QSpeechRecognitionEngineImpl *engine = qobject_cast<QSpeechRecognitionEngineImpl *>(QObject::sender());
         if (engine)
-            m_speech->onSetEngineParameter(engine, key, value);
+            emit setEngineParameter(engine->name(), key, value);
     }
 
 signals:
