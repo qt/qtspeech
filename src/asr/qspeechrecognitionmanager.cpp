@@ -326,6 +326,12 @@ void QSpeechRecognitionManager::setEngineParameter(const QString &engineName, co
     }
 }
 
+void QSpeechRecognitionManager::resetEngineAdaptationState(const QString &engineName)
+{
+    if (QSpeechRecognitionPluginEngine *engine = m_engines.value(engineName, 0))
+        engine->resetAdaptationState();
+}
+
 void QSpeechRecognitionManager::onProcess()
 {
     QSet<QSpeechRecognitionPluginEngine*> engines = m_enginesToProcess;

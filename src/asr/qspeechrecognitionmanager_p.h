@@ -99,6 +99,7 @@ public slots:
     void reset();
     void dispatchMessage(const QString &engineName, const QString &message, const QVariantMap &parameters);
     void setEngineParameter(const QString &engineName, const QString &key, const QVariant &value);
+    void resetEngineAdaptationState(const QString &engineName);
 
 private slots:
     void onProcess();

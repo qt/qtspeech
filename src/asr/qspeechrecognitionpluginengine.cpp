@@ -161,6 +161,13 @@ QT_BEGIN_NAMESPACE
   if \l stopListening() was called before this method.
 */
 
+/*! \fn void QSpeechRecognitionPluginEngine::resetAdaptationState()
+
+  Reset engine adaptation state to its initial value.
+
+  See QSpeechRecognitionEngine::resetAdaptationState().
+*/
+
 /*! \fn bool QSpeechRecognitionPluginEngine::process()
 
   Performs any run-time tasks the engine needs to do, like audio processing.

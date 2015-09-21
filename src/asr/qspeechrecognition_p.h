@@ -166,6 +166,12 @@ public slots:
         if (engine)
             emit setEngineParameter(engine->name(), key, value);
     }
+    void onResetEngineAdaptationState()
+    {
+        QSpeechRecognitionEngineImpl *engine = qobject_cast<QSpeechRecognitionEngineImpl *>(QObject::sender());
+        if (engine)
+            emit resetEngineAdaptationState(engine->name());
+    }
 
 signals:
     void setSession(int session);
@@ -181,6 +187,7 @@ signals:
     void reset();
     void dispatchMessage(const QString &engineName, const QString &message, const QVariantMap &parameters);
     void setEngineParameter(const QString &engineName, const QString &key, const QVariant &value);
+    void resetEngineAdaptationState(const QString &engineName);
 
 private:
     QSpeechRecognitionPrivate *m_speech;

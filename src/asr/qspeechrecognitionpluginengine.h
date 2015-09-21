@@ -71,6 +71,7 @@ public:
     virtual void abortListening() = 0;
     virtual void unmute(qint64 timestamp) = 0;
     virtual void reset() = 0;
+    virtual void resetAdaptationState() = 0;
     virtual bool process() = 0;
 
 Q_SIGNALS:

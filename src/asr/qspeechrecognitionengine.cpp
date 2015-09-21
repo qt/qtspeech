@@ -250,6 +250,17 @@ Q_DEFINE_ASR_ENGINE_PARAMETER(AudioInputDevices);
   \sa supportedParameters()
 */
 
+/*!
+  \fn void QSpeechRecognitionEngine::resetAdaptationState()
+
+  Reset engine adaptation state to its initial value.
+
+  If the engine has been adapted to user speech or audio path features,
+  the adaptation state is returned where it was after the first initialization,
+  before any audio data was fed to it. Any files that are used for storing the
+  adaptation data are deleted.
+*/
+
 QSpeechRecognitionEngine::QSpeechRecognitionEngine(QObject *parent):
     QObject(parent)
 {
@@ -289,6 +300,11 @@ QList<QString> QSpeechRecognitionEngineImpl::supportedParameters() const
 QVariant QSpeechRecognitionEngineImpl::parameter(const QString &key) const
 {
     return m_parameters.value(key);
+}
+
+void QSpeechRecognitionEngineImpl::resetAdaptationState()
+{
+    emit requestResetAdaptationState();
 }
 
 bool QSpeechRecognitionEngineImpl::isCreated()

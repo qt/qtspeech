@@ -67,6 +67,7 @@ public:
     void abortListening();
     void unmute(qint64 timestamp);
     void reset();
+    void resetAdaptationState();
     bool process();
 
     // Internal API:
@@ -89,6 +90,7 @@ private:
     void processAudio(const void *data, size_t dataSize);
     void storeCmn();
     void loadCmn();
+    void resetCmn();
     int m_session;
     bool m_muted;
     ps_decoder_t *m_decoder;
@@ -104,6 +106,7 @@ private:
     bool m_sessionStarted;
     QString m_cmnFilePath;
     mfcc_t *m_cmnVec;
+    mfcc_t *m_initialCmnVec;
     int m_cmnSize;
 };
 

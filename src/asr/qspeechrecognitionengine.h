@@ -61,6 +61,7 @@ public:
     Q_INVOKABLE virtual bool setParameter(const QString &key, const QVariant &value) = 0;
     Q_INVOKABLE virtual QVariant parameter(const QString &key) const = 0;
     Q_INVOKABLE virtual QList<QString> supportedParameters() const = 0;
+    Q_INVOKABLE virtual void resetAdaptationState() = 0;
     virtual bool isCreated() = 0;
 
     // Common engine parameter keys:

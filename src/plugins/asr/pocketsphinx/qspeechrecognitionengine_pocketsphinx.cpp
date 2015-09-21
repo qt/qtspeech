@@ -88,6 +88,7 @@ QSpeechRecognitionEnginePocketSphinx::QSpeechRecognitionEnginePocketSphinx(const
         m_debugAudioFile(0),
         m_sessionStarted(false),
         m_cmnVec(0),
+        m_initialCmnVec(0),
         m_cmnSize(0)
 {
     const QVariantMap &engineParams = QSpeechRecognitionPluginEngine::parameters();
@@ -108,6 +109,7 @@ QSpeechRecognitionEnginePocketSphinx::~QSpeechRecognitionEnginePocketSphinx()
     disconnect(&m_inputFileDecoder);
     ps_free(m_decoder);
     delete[] m_cmnVec;
+    delete[] m_initialCmnVec;
 }
 
 bool QSpeechRecognitionEnginePocketSphinx::init(QString *errorString)
@@ -166,6 +168,8 @@ bool QSpeechRecognitionEnginePocketSphinx::init(QString *errorString)
     feat_t *feat = ps_get_feat(m_decoder);
     m_cmnSize = feat_cepsize(feat);
     m_cmnVec = new mfcc_t[m_cmnSize];
+    m_initialCmnVec = new mfcc_t[m_cmnSize];
+    cmn_prior_get(feat->cmn_struct, m_initialCmnVec);
     m_cmnFilePath = dataDirectory().absoluteFilePath(QLatin1String("pocketsphinx_")
                                                      + name() + QLatin1String("_cmn"));
     // Attempt to load adapted cepstrum means from the data file. The default values are not
@@ -375,6 +379,11 @@ void QSpeechRecognitionEnginePocketSphinx::reset()
     m_grammar = 0;
 }
 
+void QSpeechRecognitionEnginePocketSphinx::resetAdaptationState()
+{
+    resetCmn();
+}
+
 bool QSpeechRecognitionEnginePocketSphinx::process()
 {
     if (m_sessionStarted && !m_muted)
@@ -543,6 +552,15 @@ void QSpeechRecognitionEnginePocketSphinx::loadCmn()
         cmn_prior_get(feat->cmn_struct, m_cmnVec);
     }
     dataFile.close();
+}
+
+// Reset cepstrum means to their default values
+void QSpeechRecognitionEnginePocketSphinx::resetCmn()
+{
+    feat_t *feat = ps_get_feat(m_decoder);
+    cmn_prior_set(feat->cmn_struct, m_initialCmnVec);
+    QFile dataFile(m_cmnFilePath);
+    dataFile.remove();
 }
 
 QT_END_NAMESPACE

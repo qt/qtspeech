@@ -56,6 +56,7 @@ public:
     bool setParameter(const QString &key, const QVariant &value);
     QList<QString> supportedParameters() const;
     QVariant parameter(const QString &key) const;
+    void resetAdaptationState();
     bool isCreated();
     // Internal API:
     void setCreated(bool created);
@@ -65,6 +66,7 @@ public:
     QVariantMap m_parameters;
 signals:
     void requestSetParameter(const QString &key, const QVariant &value);
+    void requestResetAdaptationState();
 };
 
 QT_END_NAMESPACE

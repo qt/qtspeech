@@ -343,6 +343,7 @@ QSpeechRecognitionEngine *QSpeechRecognition::createEngine(const QString &name, 
         return 0; // Already exists
     QSpeechRecognitionEngineImpl *engine = new QSpeechRecognitionEngineImpl(name, this);
     connect(engine, &QSpeechRecognitionEngineImpl::requestSetParameter, d->m_managerInterface, &QSpeechRecognitionManagerInterface::onSetEngineParameter);
+    connect(engine, &QSpeechRecognitionEngineImpl::requestResetAdaptationState, d->m_managerInterface, &QSpeechRecognitionManagerInterface::onResetEngineAdaptationState);
     d->m_engines.insert(name, engine);
     emit d->m_managerInterface->createEngine(name, providerName, parameters);
     return engine;
@@ -657,6 +658,7 @@ QSpeechRecognitionPrivate::QSpeechRecognitionPrivate():
     QObject::connect(m_managerInterface, &QSpeechRecognitionManagerInterface::reset, m_manager, &QSpeechRecognitionManager::reset, Qt::QueuedConnection);
     QObject::connect(m_managerInterface, &QSpeechRecognitionManagerInterface::dispatchMessage, m_manager, &QSpeechRecognitionManager::dispatchMessage, Qt::QueuedConnection);
     QObject::connect(m_managerInterface, &QSpeechRecognitionManagerInterface::setEngineParameter, m_manager, &QSpeechRecognitionManager::setEngineParameter, Qt::QueuedConnection);
+    QObject::connect(m_managerInterface, &QSpeechRecognitionManagerInterface::resetEngineAdaptationState, m_manager, &QSpeechRecognitionManager::resetEngineAdaptationState, Qt::QueuedConnection);
 
     m_managerThread->start();
 }
