@@ -40,7 +40,7 @@ QT_BEGIN_NAMESPACE
 
 /*!
   \class QSpeechRecognitionPlugin
-  \inmodule QtSpeech
+  \inmodule QtSpeechRecognition
   \brief The QSpeechRecognitionPlugin class is the base for all speech recognition plug-ins.
 
   A plug-in implementation should derive from QSpeechRecognitionPlugin and re-implement

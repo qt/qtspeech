@@ -45,7 +45,7 @@ QT_BEGIN_NAMESPACE
 
 /*!
   \class QSpeechRecognitionPluginEngine
-  \inmodule QtSpeech
+  \inmodule QtSpeechRecognition
   \brief The QSpeechRecognitionPluginEngine class is the base for all speech recognition engine integrations.
 
   An engine implementation should derive from QSpeechRecognitionPluginEngine and implement all

@@ -109,7 +109,7 @@ Q_DEFINE_ASR_RESULT_PARAMETER(Transcription);
 
 /*!
   \class QSpeechRecognition
-  \inmodule QtSpeech
+  \inmodule QtSpeechRecognition
   \brief The QSpeechRecognition class provides access to speech recognition engines
 
   \reentrant
@@ -187,7 +187,7 @@ Q_DEFINE_ASR_RESULT_PARAMETER(Transcription);
   \property QSpeechRecognition::state
   The current state of the speech recognizer.
 
-  The notification signal \l stateChanged() is always emitted asynchronously (through
+  The notification signal stateChanged() is always emitted asynchronously (through
   queued connection).
 */
 

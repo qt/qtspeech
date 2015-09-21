@@ -46,7 +46,7 @@ QT_BEGIN_NAMESPACE
 
 /*!
   \class QSpeechRecognitionAudioBuffer
-  \inmodule QtSpeech
+  \inmodule QtSpeechRecognition
   \brief The QSpeechRecognitionAudioBuffer class can be used to implement audio buffering
   for speech recognition engines.
 

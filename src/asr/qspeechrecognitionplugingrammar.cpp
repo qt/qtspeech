@@ -41,7 +41,7 @@ QT_BEGIN_NAMESPACE
 
 /*!
   \class QSpeechRecognitionPluginGrammar
-  \inmodule QtSpeech
+  \inmodule QtSpeechRecognition
   \brief The QSpeechRecognitionPluginGrammar class is the base for all speech recognition grammar integrations.
 
   A grammar implementation should derive from QSpeechRecognitionPluginGrammar. The grammar instance is

@@ -121,7 +121,7 @@ Q_DEFINE_ASR_ENGINE_PARAMETER(AudioInputDevices);
 
 /*!
   \class QSpeechRecognitionEngine
-  \inmodule QtSpeech
+  \inmodule QtSpeechRecognition
   \brief The QSpeechRecognitionEngine class is a handle to a speech recognition engine.
 
   A speech recognition engine can be created with \l QSpeechRecognition::createEngine().

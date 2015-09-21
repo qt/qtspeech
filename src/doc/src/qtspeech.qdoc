@@ -26,8 +26,27 @@
 ****************************************************************************/
 
 /*!
-   \module QtSpeech
-   \title Qt Speech C++ Classes
-   \brief Provides C++ API to access text-to-speech and speech recognition engines
-   \qtvariable texttospeech
+    \module QtTextToSpeech
+    \title Qt Text-to-speech C++ Classes
+    \brief Provides C++ API to access text-to-speech engines.
+    \qtvariable texttospeech
+*/
+
+/*!
+    \module QtSpeechRecognition
+    \title Qt Speech Recognition C++ Classes
+    \brief Provides C++ API to access speech recognition engines.
+    \qtvariable speechrecognition
+*/
+
+/*!
+    \page qtspeech-modules.html
+    \title Qt Speech C++ Classes
+    \ingroup modules
+
+    \section1 Qt Text-to-speech
+    \generatelist classesbymodule QtTextToSpeech
+
+    \section1 Qt Speech Recognition
+    \generatelist classesbymodule QtSpeechRecognition
 */

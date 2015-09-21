@@ -81,10 +81,10 @@
 
    \section2 Available Plugins
 
-   \list
-    \li \l {PocketSphinx Speech Recognition Plugin}
-    \li Nuance VoCon Hybrid Plugin is available. Please contact The Qt Company for details.
-   \endlist
+   \table
+    \row \li \e {PocketSphinx} \li PocketSphinx Speech Recognition Plugin
+    \row \li \e {Nuance VoCon® Hybrid} \li Contact The Qt Company for details
+   \endtable
 
    \section2 Examples
 

@@ -40,7 +40,7 @@ QT_BEGIN_NAMESPACE
 
 /*!
   \class QSpeechRecognitionGrammar
-  \inmodule QtSpeech
+  \inmodule QtSpeechRecognition
   \brief The QSpeechRecognitionGrammar class is a handle to a speech recognition grammar.
 
   A speech recognition grammar can be created with \l QSpeechRecognition::createGrammar()
