@@ -328,7 +328,6 @@ void QSpeechRecognitionManager::setEngineParameter(const QString &engineName, co
 
 void QSpeechRecognitionManager::onProcess()
 {
-    //qCDebug(lcSpeechAsr) << "QSpeechRecognitionManager::onProcess()";
     QSet<QSpeechRecognitionPluginEngine*> engines = m_enginesToProcess;
     m_enginesToProcess.clear();
     foreach (QSpeechRecognitionPluginEngine* engine, engines) {

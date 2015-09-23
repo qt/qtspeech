@@ -51,8 +51,8 @@ QSpeechRecognitionGrammarPocketSphinx::QSpeechRecognitionGrammarPocketSphinx(con
 {
     if (m_engine && m_fileLocation.isLocalFile())
         m_localFilePath = m_engine->localizedFilePath(m_fileLocation.toLocalFile());
-    else if (m_fileLocation.scheme() == "qrc")
-        m_resourcePath = ":" + m_fileLocation.toString(QUrl::RemoveScheme);
+    else if (m_fileLocation.scheme() == QLatin1String("qrc"))
+        m_resourcePath = QLatin1Char(':') + m_fileLocation.toString(QUrl::RemoveScheme);
 }
 
 bool QSpeechRecognitionGrammarPocketSphinx::exists()

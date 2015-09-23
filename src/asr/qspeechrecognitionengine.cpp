@@ -305,7 +305,7 @@ void QSpeechRecognitionEngineImpl::setCreated(bool created)
 
 void QSpeechRecognitionEngineImpl::saveParameter(const QString &key, const QVariant &value)
 {
-    qCDebug(lcSpeechAsr) << QLatin1String("QSpeechRecognitionEngine (") + m_name + QLatin1String("): Parameter") << key << "<--" << value;
+    qCDebug(lcSpeechAsr) << "QSpeechRecognitionEngine" << m_name << "Parameter" << key << "<--" << value;
     m_parameters.insert(key, value);
 }
 

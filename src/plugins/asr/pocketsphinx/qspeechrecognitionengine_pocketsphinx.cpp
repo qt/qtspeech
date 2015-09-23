@@ -119,7 +119,7 @@ bool QSpeechRecognitionEnginePocketSphinx::init(QString *errorString)
     m_format.setSampleSize(16);
     m_format.setSampleType(QAudioFormat::SignedInt);
     m_format.setByteOrder(QAudioFormat::LittleEndian);
-    m_format.setCodec("audio/pcm");
+    m_format.setCodec(QStringLiteral("audio/pcm"));
     m_audioBuffer = new QSpeechRecognitionAudioBuffer(this);
     m_audioBuffer->setFreeLimit(5000);
     m_audioBuffer->setSampleRate(m_format.sampleRate());
@@ -127,12 +127,10 @@ bool QSpeechRecognitionEnginePocketSphinx::init(QString *errorString)
     m_audioBuffer->setSampleSize(m_format.sampleSize());
     m_audioBufferLimit = m_format.bytesPerFrame() * m_format.sampleRate() * AUDIO_BUFFER_LIMIT_SEC;
     connect(m_audioBuffer, &QSpeechRecognitionAudioBuffer::dataAvailable, this, &QSpeechRecognitionEnginePocketSphinx::onAudioDataAvailable);
-    QString acmodelName = "acmodel";
-    acmodelName += "_" + QString::number(m_format.sampleRate());
-    QString acmodelPath = localizedFilePath(acmodelName);
+    QString acmodelPath = localizedFilePath(QLatin1String("acmodel_") + QString::number(m_format.sampleRate()));
     // Fallback: no sample rate specification
     if (acmodelPath.isEmpty())
-        acmodelPath = localizedFilePath("acmodel");
+        acmodelPath = localizedFilePath(QStringLiteral("acmodel"));
     if (!acmodelPath.isEmpty()) {
         cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), TRUE,
                                        "-hmm", acmodelPath.toUtf8().constData(),
@@ -140,12 +138,12 @@ bool QSpeechRecognitionEnginePocketSphinx::init(QString *errorString)
                                        NULL);
         m_decoder = ps_init(config);
         if (!m_decoder) {
-            *errorString = QString("PocketSphinx initialization failed.");
+            *errorString = QLatin1String("PocketSphinx initialization failed.");
             return false;
         }
         err_set_callback(PocketShpinxErrorCb, this);
     } else {
-        *errorString = QString("Acoustic model not found.");
+        *errorString = QLatin1String("Acoustic model not found.");
         return false;
     }
     QString dictionaryPath;
@@ -154,15 +152,15 @@ bool QSpeechRecognitionEnginePocketSphinx::init(QString *errorString)
         if (dictionaryLoc.isLocalFile()) {
             dictionaryPath = localizedFilePath(dictionaryLoc.toLocalFile());
         } else {
-            *errorString = QString("Dictionary must be a local file.");
+            *errorString = QLatin1String("Dictionary must be a local file.");
             return false;
         }
     } else {
-        dictionaryPath = localizedFilePath("lexicon.dict");
+        dictionaryPath = localizedFilePath(QStringLiteral("lexicon.dict"));
     }
     if (dictionaryPath.isEmpty()
     || ps_load_dict(m_decoder, dictionaryPath.toUtf8().constData(), NULL, NULL) != 0) {
-        *errorString = QString("Dictionary could not be loaded.");
+        *errorString = QLatin1String("Dictionary could not be loaded.");
         return false;
     }
     feat_t *feat = ps_get_feat(m_decoder);
@@ -196,11 +194,11 @@ QSpeechRecognition::Error QSpeechRecognitionEnginePocketSphinx::updateParameter(
 {
     if (key == QSpeechRecognitionEngine::AudioInputDevice) {
         if (m_sessionStarted) {
-            *errorString = "Cannot set audio input device while the engine is busy";
+            *errorString = QLatin1String("Cannot set audio input device while the engine is busy");
             return QSpeechRecognition::EngineParameterError;
         }
         if (value.type() != QVariant::String) {
-            *errorString = QString("Parameter \"") + key + "\" has invalid type";
+            *errorString = QLatin1String("Parameter \"") + key + QLatin1String("\" has invalid type");
             return QSpeechRecognition::EngineParameterError;
         }
         QList<QAudioDeviceInfo> audioDevices = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
@@ -212,10 +210,10 @@ QSpeechRecognition::Error QSpeechRecognitionEnginePocketSphinx::updateParameter(
                 return QSpeechRecognition::NoError;
             }
         }
-        *errorString = QString("Audio input device with name \"") + value.toString() + "\" does not exist";
+        *errorString = QLatin1String("Audio input device with name \"") + value.toString() + QLatin1String("\" does not exist");
     } else if (key == QSpeechRecognitionEngine::AudioInputFile) {
         if (value.type() != QVariant::String) {
-            *errorString = QString("Parameter \"") + key + "\" has invalid type";
+            *errorString = QLatin1String("Parameter \"") + key + QLatin1String("\" has invalid type");
             return QSpeechRecognition::EngineParameterError;
         }
         m_inputFilePath = value.toString();
@@ -223,7 +221,7 @@ QSpeechRecognition::Error QSpeechRecognitionEnginePocketSphinx::updateParameter(
             createAudioInput();
         return QSpeechRecognition::NoError;
     } else {
-        *errorString = QString("Parameter \"") + key + "\" cannot be updated";
+        *errorString = QLatin1String("Parameter \"") + key + QLatin1String("\" cannot be updated");
     }
     return QSpeechRecognition::EngineParameterError;
 }
@@ -232,7 +230,7 @@ QSpeechRecognitionPluginGrammar *QSpeechRecognitionEnginePocketSphinx::createGra
 {
     QSpeechRecognitionGrammarPocketSphinx *grammar = new QSpeechRecognitionGrammarPocketSphinx(name, location, this);
     if (grammar && !grammar->exists()) {
-        *errorString = QString("Grammar file not found");
+        *errorString = QLatin1String("Grammar file not found");
         delete grammar;
         grammar = 0;
     }
@@ -244,10 +242,10 @@ QSpeechRecognition::Error QSpeechRecognitionEnginePocketSphinx::setGrammar(QSpee
     QSpeechRecognitionGrammarPocketSphinx *grammarPriv = qobject_cast<QSpeechRecognitionGrammarPocketSphinx*>(grammar);
     if (grammarPriv) {
         if (!grammarPriv->load()) {
-            *errorString = "Loading the grammar failed";
+            *errorString = QLatin1String("Loading the grammar failed");
             return QSpeechRecognition::GrammarInitError;
         } else if (ps_set_search(m_decoder, grammarPriv->name().toUtf8().constData()) != 0) {
-            *errorString = "Setting the grammar failed";
+            *errorString = QLatin1String("Setting the grammar failed");
             return QSpeechRecognition::GrammarInitError;
         } else {
             m_grammar = grammarPriv;
@@ -264,7 +262,7 @@ QSpeechRecognition::Error QSpeechRecognitionEnginePocketSphinx::startListening(i
     if (!m_audioBuffer)
         return QSpeechRecognition::EngineInitError;
     if (!m_device.isFormatSupported(m_format)) {
-        *errorString = QString("Required audio format not supported by the selected audio device");
+        *errorString = QLatin1String("Required audio format not supported by the selected audio device");
         return QSpeechRecognition::AudioError;
     }
     m_session = session;
@@ -298,7 +296,7 @@ QSpeechRecognition::Error QSpeechRecognitionEnginePocketSphinx::startListening(i
     }
     if (m_debugAudioFile)
         delete m_debugAudioFile;
-    m_debugAudioFile = openDebugWavFile("pocketsphinx_audio_" + QString::number(session) + ".wav",
+    m_debugAudioFile = openDebugWavFile(QLatin1String("pocketsphinx_audio_") + QString::number(session) + QLatin1String(".wav"),
                                         m_format.sampleRate(), m_format.sampleSize(),
                                         m_format.channelCount());
     m_sessionStarted = true;
@@ -320,7 +318,7 @@ void QSpeechRecognitionEnginePocketSphinx::stopListening(qint64 timestamp)
             const char* hyp = ps_get_hyp(m_decoder, &score);
             if (hyp) {
                 QString transcription(hyp);
-                qCDebug(lcSpeechAsrPocketSphinx) << "Result: " + transcription;
+                qCDebug(lcSpeechAsrPocketSphinx) << "Result:" << transcription;
                 QVariantMap params;
                 params.insert(QSpeechRecognition::Transcription, QVariant(transcription));
                 emit result(m_session, m_grammar, params);
@@ -401,7 +399,7 @@ void QSpeechRecognitionEnginePocketSphinx::onAudioStateChanged(QAudio::State sta
             break;
         case QAudio::StoppedState:
             if (m_audioInput->error() != QAudio::NoError) {
-                errorParams.insert(QSpeechRecognition::Reason, QString("Error (") + QString::number(m_audioInput->error()) + ") in QAudioInput");
+                errorParams.insert(QSpeechRecognition::Reason, QLatin1String("Error (") + QString::number(m_audioInput->error()) + QLatin1String(") in QAudioInput"));
                 emit error(m_session, QSpeechRecognition::AudioError, errorParams);
             }
             break;
@@ -418,7 +416,7 @@ void QSpeechRecognitionEnginePocketSphinx::onAudioDecoderError(QAudioDecoder::Er
         case QAudioDecoder::NoError:
             break;
         default:
-            errorParams.insert(QSpeechRecognition::Reason, QString("QAudioDecoder error (") + QString::number(errorCode) + "): " + m_inputFileDecoder.errorString());
+            errorParams.insert(QSpeechRecognition::Reason, QLatin1String("QAudioDecoder error (") + QString::number(errorCode) + QLatin1String("): ") + m_inputFileDecoder.errorString());
             emit error(m_session, QSpeechRecognition::AudioError, errorParams);
             break;
     }
