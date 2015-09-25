@@ -37,7 +37,7 @@
 #ifndef QTEXTTOSPEECHPLUGIN_H
 #define QTEXTTOSPEECHPLUGIN_H
 
-#include "qtexttospeechpluginengine.h"
+#include <QtTextToSpeech/qtexttospeechpluginengine.h>
 
 #include <QtCore/QtPlugin>
 #include <QtCore/QString>
