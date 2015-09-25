@@ -57,8 +57,7 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech, const QString 
     : m_engine(0),
       m_speech(speech),
       m_providerName(engine),
-      m_plugin(0),
-      m_allowExperimental(true)
+      m_plugin(0)
 {
     if (m_providerName.isEmpty()) {
         m_providerName = QTextToSpeech::availableEngines().value(0);
@@ -102,15 +101,12 @@ bool QTextToSpeechPrivate::loadMeta()
     int idx = -1;
 
     // figure out which version of the plugin we want
-    // (always latest unless experimental)
     for (int i = 0; i < candidates.size(); ++i) {
         QJsonObject meta = candidates[i];
         if (meta.contains(QLatin1String("Version"))
-                && meta.value(QLatin1String("Version")).isDouble()
-                && meta.contains(QLatin1String("Experimental"))
-                && meta.value(QLatin1String("Experimental")).isBool()) {
+                && meta.value(QLatin1String("Version")).isDouble()) {
             int ver = int(meta.value(QLatin1String("Version")).toDouble());
-            if (ver > versionFound && !(!m_allowExperimental && meta.value(QLatin1String("Experimental")).toBool())) {
+            if (ver > versionFound) {
                 versionFound = ver;
                 idx = i;
             }

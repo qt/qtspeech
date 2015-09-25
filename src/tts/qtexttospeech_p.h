@@ -63,7 +63,6 @@ private:
     QString m_providerName;
     QTextToSpeechPlugin *m_plugin;
     QJsonObject m_metaData;
-    bool m_allowExperimental;
     static QMutex m_mutex;
 };
 
