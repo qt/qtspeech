@@ -34,55 +34,63 @@
 **
 ****************************************************************************/
 
-// FIXME: rename to QTextToSpeechEngine
+#ifndef QTEXTTOSPEECHENGINE_SPEECHD_H
+#define QTEXTTOSPEECHENGINE_SPEECHD_H
 
-#ifndef QTEXTTOSPEECHPLUGINENGINE_H
-#define QTEXTTOSPEECHPLUGINENGINE_H
+#include "qtexttospeechpluginengine.h"
+#include "qvoice.h"
 
-#include <QtTextToSpeech/qtexttospeech.h>
-
-#include <QtCore/QObject>
-#include <QtCore/QLocale>
-#include <QtCore/QDir>
+#include <QtCore/qobject.h>
+#include <QtCore/qvector.h>
+#include <QtCore/qstring.h>
+#include <QtCore/qlocale.h>
+#include <speech-dispatcher/libspeechd.h>
 
 QT_BEGIN_NAMESPACE
 
-class QTEXTTOSPEECH_EXPORT QTextToSpeechPluginEngine : public QObject
+class QTextToSpeechEngineSpeechd : public QTextToSpeechPluginEngine
 {
     Q_OBJECT
 
 public:
-    explicit QTextToSpeechPluginEngine(QObject *parent = 0);
-    ~QTextToSpeechPluginEngine();
+    QTextToSpeechEngineSpeechd(const QVariantMap &parameters, QObject *parent);
+    ~QTextToSpeechEngineSpeechd();
 
-    virtual QVector<QLocale> availableLocales() const = 0;
-    virtual QVector<QVoice> availableVoices() const = 0;
+    // Plug-in API:
+    QVector<QLocale> availableLocales() const Q_DECL_OVERRIDE;
+    QVector<QVoice> availableVoices() const Q_DECL_OVERRIDE;
+    void say(const QString &text) Q_DECL_OVERRIDE;
+    void stop() Q_DECL_OVERRIDE;
+    void pause() Q_DECL_OVERRIDE;
+    void resume() Q_DECL_OVERRIDE;
+    double rate() const Q_DECL_OVERRIDE;
+    bool setRate(double rate) Q_DECL_OVERRIDE;
+    double pitch() const Q_DECL_OVERRIDE;
+    bool setPitch(double pitch) Q_DECL_OVERRIDE;
+    QLocale locale() const Q_DECL_OVERRIDE;
+    bool setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
+    int volume() const Q_DECL_OVERRIDE;
+    bool setVolume(int volume) Q_DECL_OVERRIDE;
+    QVoice voice() const Q_DECL_OVERRIDE;
+    bool setVoice(const QVoice &voice) Q_DECL_OVERRIDE;
+    QTextToSpeech::State state() const Q_DECL_OVERRIDE;
 
-    virtual void say(const QString &text) = 0;
-    virtual void stop() = 0;
-    virtual void pause() = 0;
-    virtual void resume() = 0;
+    void spdStateChanged(SPDNotificationType state);
 
-    virtual double rate() const = 0;
-    virtual bool setRate(double rate) = 0;
-    virtual double pitch() const = 0;
-    virtual bool setPitch(double pitch) = 0;
-    virtual QLocale locale() const = 0;
-    virtual bool setLocale(const QLocale &locale) = 0;
-    virtual int volume() const = 0;
-    virtual bool setVolume(int volume) = 0;
-    virtual QVoice voice() const = 0;
-    virtual bool setVoice(const QVoice &voice) = 0;
-    virtual QTextToSpeech::State state() const = 0;
+private:
 
-protected:
-    static QVoice createVoice(const QString &name, QVoice::Gender gender, QVoice::Age age, const QVariant &data);
-    static QVariant voiceData(const QVoice &voice);
+    QLocale localeForVoice(SPDVoice *voice) const;
+    bool connectToSpeechDispatcher();
+    void updateVoices();
 
-Q_SIGNALS:
-    void stateChanged(QTextToSpeech::State state);
+    QTextToSpeech::State m_state;
+    SPDConnection *speechDispatcher;
+    QLocale m_currentLocale;
+    QVector<QLocale> m_locales;
+    QVoice m_currentVoice;
+    // Voices mapped by their locale name.
+    QMultiMap<QString, QVoice> m_voices;
 };
-
 QT_END_NAMESPACE
 
 #endif

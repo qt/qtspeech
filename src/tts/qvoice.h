@@ -87,10 +87,6 @@ private:
     QVariant data() const;
 
     QSharedDataPointer<QVoicePrivate> d;
-
-    friend class QTextToSpeechPrivateSpeechDispatcher;
-    friend class QTextToSpeechPrivateMac;
-    friend class QTextToSpeechPrivateWindows;
     friend class QTextToSpeechPluginEngine;
 };
 
