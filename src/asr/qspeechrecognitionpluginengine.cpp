@@ -548,9 +548,11 @@ QSpeechRecognitionDebugAudioFile::~QSpeechRecognitionDebugAudioFile()
         onAboutToClose();
 }
 
-bool QSpeechRecognitionDebugAudioFile::open()
+bool QSpeechRecognitionDebugAudioFile::open(OpenMode flags)
 {
-    if (!QFile::open(QIODevice::WriteOnly))
+    if (flags != QIODevice::WriteOnly)
+        return false;
+    if (!QFile::open(flags))
         return false;
     if (!writeWavHeader()) {
         close();

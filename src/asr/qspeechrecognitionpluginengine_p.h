@@ -62,7 +62,7 @@ class QSpeechRecognitionDebugAudioFile : public QFile
 public:
     QSpeechRecognitionDebugAudioFile(const QString &filePath, int sampleRate, int sampleSize, int channelCount);
     ~QSpeechRecognitionDebugAudioFile();
-    bool open();
+    bool open(OpenMode flags = QIODevice::WriteOnly) Q_DECL_OVERRIDE;
 private slots:
     void onAboutToClose();
 private:
