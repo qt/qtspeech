@@ -285,8 +285,10 @@ bool QTextToSpeechEngineSpeechd::setVoice(const QVoice &voice)
         return false;
 
     const int result = spd_set_output_module(speechDispatcher, voiceData(voice).toString().toUtf8().data());
+    if (result != 0)
+        return false;
     const int result2 = spd_set_synthesis_voice(speechDispatcher, voice.name().toUtf8().data());
-    if (result == 0 && result2 == 0) {
+    if (result2 == 0) {
         m_currentVoice = voice;
         return true;
     }
