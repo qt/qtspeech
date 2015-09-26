@@ -37,7 +37,7 @@
 #ifndef QTEXTTOSPEECHENGINE_SPEECHD_H
 #define QTEXTTOSPEECHENGINE_SPEECHD_H
 
-#include "qtexttospeechpluginengine.h"
+#include "qtexttospeechengine.h"
 #include "qvoice.h"
 
 #include <QtCore/qobject.h>
@@ -48,7 +48,7 @@
 
 QT_BEGIN_NAMESPACE
 
-class QTextToSpeechEngineSpeechd : public QTextToSpeechPluginEngine
+class QTextToSpeechEngineSpeechd : public QTextToSpeechEngine
 {
     Q_OBJECT
 

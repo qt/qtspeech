@@ -203,7 +203,7 @@ QTextToSpeech::QTextToSpeech(QObject *parent, const QString &engine)
     qRegisterMetaType<QTextToSpeech::State>();
     // Connect state change signal directly from the engine to the public API signal
     if (d->m_engine)
-        connect(d->m_engine, &QTextToSpeechPluginEngine::stateChanged, this, &QTextToSpeech::stateChanged);
+        connect(d->m_engine, &QTextToSpeechEngine::stateChanged, this, &QTextToSpeech::stateChanged);
 }
 
 /*!

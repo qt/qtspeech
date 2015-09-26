@@ -87,7 +87,7 @@ private:
     QVariant data() const;
 
     QSharedDataPointer<QVoicePrivate> d;
-    friend class QTextToSpeechPluginEngine;
+    friend class QTextToSpeechEngine;
 };
 
 QT_END_NAMESPACE

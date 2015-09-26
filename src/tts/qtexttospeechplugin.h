@@ -37,7 +37,7 @@
 #ifndef QTEXTTOSPEECHPLUGIN_H
 #define QTEXTTOSPEECHPLUGIN_H
 
-#include <QtTextToSpeech/qtexttospeechpluginengine.h>
+#include <QtTextToSpeech/qtexttospeechengine.h>
 
 #include <QtCore/QtPlugin>
 #include <QtCore/QString>
@@ -50,7 +50,7 @@ class QTEXTTOSPEECH_EXPORT QTextToSpeechPlugin
 public:
     virtual ~QTextToSpeechPlugin() {}
 
-    virtual QTextToSpeechPluginEngine *createTextToSpeechEngine(
+    virtual QTextToSpeechEngine *createTextToSpeechEngine(
             const QVariantMap &parameters,
             QObject *parent,
             QString *errorString) const;

@@ -37,7 +37,7 @@
 #include "qtexttospeech_speechd_plugin.h"
 #include "qtexttospeech_speechd.h"
 
-QTextToSpeechPluginEngine *QTextToSpeechPluginSpeechd::createTextToSpeechEngine(const QVariantMap &parameters, QObject *parent, QString *errorString) const
+QTextToSpeechEngine *QTextToSpeechPluginSpeechd::createTextToSpeechEngine(const QVariantMap &parameters, QObject *parent, QString *errorString) const
 {
     Q_UNUSED(errorString)
     return new QTextToSpeechEngineSpeechd(parameters, parent);

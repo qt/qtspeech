@@ -38,7 +38,7 @@
 #define QTEXTTOSPEECHPLUGIN_SPEECHD_H
 
 #include "qtexttospeechplugin.h"
-#include "qtexttospeechpluginengine.h"
+#include "qtexttospeechengine.h"
 
 #include <QtCore/QObject>
 #include <QtCore/QLoggingCategory>
@@ -55,7 +55,7 @@ class QTextToSpeechPluginSpeechd : public QObject, public QTextToSpeechPlugin
                       FILE "speechd_plugin.json")
 
 public:
-    QTextToSpeechPluginEngine *createTextToSpeechEngine(
+    QTextToSpeechEngine *createTextToSpeechEngine(
                                 const QVariantMap &parameters,
                                 QObject *parent,
                                 QString *errorString) const;

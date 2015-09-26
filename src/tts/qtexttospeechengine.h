@@ -34,10 +34,8 @@
 **
 ****************************************************************************/
 
-// FIXME: rename to QTextToSpeechEngine
-
-#ifndef QTEXTTOSPEECHPLUGINENGINE_H
-#define QTEXTTOSPEECHPLUGINENGINE_H
+#ifndef QTEXTTOSPEECHENGINE_H
+#define QTEXTTOSPEECHENGINE_H
 
 #include <QtTextToSpeech/qtexttospeech.h>
 
@@ -47,13 +45,13 @@
 
 QT_BEGIN_NAMESPACE
 
-class QTEXTTOSPEECH_EXPORT QTextToSpeechPluginEngine : public QObject
+class QTEXTTOSPEECH_EXPORT QTextToSpeechEngine : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit QTextToSpeechPluginEngine(QObject *parent = 0);
-    ~QTextToSpeechPluginEngine();
+    explicit QTextToSpeechEngine(QObject *parent = 0);
+    ~QTextToSpeechEngine();
 
     virtual QVector<QLocale> availableLocales() const = 0;
     virtual QVector<QVoice> availableVoices() const = 0;

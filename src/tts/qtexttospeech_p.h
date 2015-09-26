@@ -54,7 +54,7 @@ public:
     ~QTextToSpeechPrivate();
     static QHash<QString, QJsonObject> plugins(bool reload = false);
 
-    QTextToSpeechPluginEngine *m_engine;
+    QTextToSpeechEngine *m_engine;
 private:
     bool loadMeta();
     void loadPlugin();

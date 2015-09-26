@@ -34,7 +34,7 @@
 **
 ****************************************************************************/
 
-#include "qtexttospeechpluginengine.h"
+#include "qtexttospeechengine.h"
 
 #include <QLoggingCategory>
 
@@ -156,12 +156,12 @@ QT_BEGIN_NAMESPACE
 /*!
   Constructs the text-to-speech engine base class.
 */
-QTextToSpeechPluginEngine::QTextToSpeechPluginEngine(QObject *parent):
+QTextToSpeechEngine::QTextToSpeechEngine(QObject *parent):
     QObject(parent)
 {
 }
 
-QTextToSpeechPluginEngine::~QTextToSpeechPluginEngine()
+QTextToSpeechEngine::~QTextToSpeechEngine()
 {
 }
 
@@ -170,7 +170,7 @@ QTextToSpeechPluginEngine::~QTextToSpeechPluginEngine()
 
   Parameters \a name, \a gender, \a age and \a data are directly stored in the QVoice instance.
 */
-QVoice QTextToSpeechPluginEngine::createVoice(const QString &name, QVoice::Gender gender, QVoice::Age age, const QVariant &data)
+QVoice QTextToSpeechEngine::createVoice(const QString &name, QVoice::Gender gender, QVoice::Age age, const QVariant &data)
 {
     return QVoice(name, gender, age, data);
 }
@@ -179,7 +179,7 @@ QVoice QTextToSpeechPluginEngine::createVoice(const QString &name, QVoice::Gende
   Returns the engine-specific private data for the given \a voice.
 
 */
-QVariant QTextToSpeechPluginEngine::voiceData(const QVoice &voice)
+QVariant QTextToSpeechEngine::voiceData(const QVoice &voice)
 {
     return voice.data();
 }

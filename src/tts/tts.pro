@@ -9,7 +9,7 @@ load(qt_module)
 HEADERS = \
     qtexttospeech.h \
     qtexttospeechplugin.h \
-    qtexttospeechpluginengine.h \
+    qtexttospeechengine.h \
     qtexttospeech_p.h \
     qtexttospeech_global.h \
     qvoice.h \
@@ -18,5 +18,5 @@ HEADERS = \
 SOURCES = \
     qtexttospeech.cpp \
     qtexttospeechplugin.cpp \
-    qtexttospeechpluginengine.cpp \
+    qtexttospeechengine.cpp \
     qvoice.cpp \

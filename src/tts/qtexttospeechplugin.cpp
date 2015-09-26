@@ -60,7 +60,7 @@ QT_BEGIN_NAMESPACE
 
   If \a parent is 0, the caller takes the ownership of the returned engine instance.
 */
-QTextToSpeechPluginEngine *QTextToSpeechPlugin::createTextToSpeechEngine(
+QTextToSpeechEngine *QTextToSpeechPlugin::createTextToSpeechEngine(
         const QVariantMap &parameters,
         QObject *parent,
         QString *errorString) const
