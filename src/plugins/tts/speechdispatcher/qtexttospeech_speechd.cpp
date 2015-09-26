@@ -112,11 +112,9 @@ bool QTextToSpeechEngineSpeechd::connectToSpeechDispatcher()
             m_state = QTextToSpeech::Ready;
         }
 
-        updateVoices();
         // Default to system locale, since there's no api to get this from spd yet.
         m_currentLocale = QLocale::system();
-        // TODO: Set m_currentVoice from spd once there's api to get it
-        m_currentVoice = QVoice();
+        updateVoices();
         return true;
     } else {
         qWarning() << "Connection to speech-dispatcher failed";
@@ -313,6 +311,7 @@ void QTextToSpeechEngineSpeechd::updateVoices()
 #else
     char *original_module = modules[0];
 #endif
+    QVoice originalVoice;
     char **module = modules;
     while (module != NULL && module[0] != NULL) {
         spd_set_output_module(speechDispatcher, module[0]);
@@ -327,6 +326,10 @@ void QTextToSpeechEngineSpeechd::updateVoices()
             // iterate over genders and ages, creating a voice for each one
             QVoice voice = createVoice(name, QVoice::Unknown, QVoice::Other, QLatin1String(module[0]));
             m_voices.insert(locale.name(), voice);
+            if (module[0] == original_module && i == 0) {
+                // in lack of better options, remember the first voice as default
+                originalVoice = voice;
+            }
             ++i;
         }
         // free voices.
@@ -335,8 +338,6 @@ void QTextToSpeechEngineSpeechd::updateVoices()
 #endif
         ++module;
     }
-    // go back to the default module
-    spd_set_output_module(speechDispatcher, modules[0]);
 
 #ifdef HAVE_SPD_090
     // Also free modules.
@@ -344,6 +345,7 @@ void QTextToSpeechEngineSpeechd::updateVoices()
 #endif
     // Set the output module back to what it was.
     spd_set_output_module(speechDispatcher, original_module);
+    setVoice(originalVoice);
 #ifdef HAVE_SPD_090
     free(original_module);
 #endif
