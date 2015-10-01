@@ -92,6 +92,7 @@ private:
     void setState(QSpeechRecognition::State state);
     QSpeechRecognitionManagerInterface *m_managerInterface;
     int m_session;
+    bool m_listening;
     bool m_muted;
     QSpeechRecognition::State m_state;
     QThread *m_managerThread;

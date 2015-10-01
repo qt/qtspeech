@@ -519,10 +519,9 @@ void QSpeechRecognition::abortListening()
     d->m_session++;
     emit d->m_managerInterface->setSession(d->m_session);
     emit d->m_managerInterface->abortListening();
-    if (d->m_state == QSpeechRecognition::ListeningState
-    || d->m_state == QSpeechRecognition::MutedState)
+    if (d->m_listening)
         d->setState(QSpeechRecognition::ListeningStoppingState);
-    else if (d->m_state != QSpeechRecognition::ListeningStoppingState)
+    else
         d->setState(QSpeechRecognition::IdleState);
 }
 
@@ -579,10 +578,9 @@ void QSpeechRecognition::reset()
     emit d->m_managerInterface->setSession(d->m_session);
     emit d->m_managerInterface->reset();
     d->m_grammar = 0;
-    if (d->m_state == QSpeechRecognition::ListeningState
-    || d->m_state == QSpeechRecognition::MutedState)
+    if (d->m_listening)
         d->setState(QSpeechRecognition::ListeningStoppingState);
-    else if (d->m_state != QSpeechRecognition::ListeningStoppingState)
+    else
         d->setState(QSpeechRecognition::IdleState);
 }
 
@@ -614,6 +612,7 @@ void QSpeechRecognition::dispatchMessage(const QString &message, const QVariantM
 QSpeechRecognitionPrivate::QSpeechRecognitionPrivate():
     m_managerInterface(new QSpeechRecognitionManagerInterface(this)),
     m_session(0),
+    m_listening(false),
     m_muted(false),
     m_state(QSpeechRecognition::IdleState),
     m_managerThread(new QThread()),
@@ -692,7 +691,9 @@ void QSpeechRecognitionPrivate::onListeningStarted(int session)
     Q_Q(QSpeechRecognition);
     qCDebug(lcSpeechAsr) << "QSpeechRecognitionPrivate::onListeningStarted()";
     if (session == m_session) {
-        setState(QSpeechRecognition::ListeningState);
+        if (m_state != QSpeechRecognition::ListeningStoppingState)
+            setState(QSpeechRecognition::ListeningState);
+        m_listening = true;
         emit q->listeningStarted(m_grammar->name());
     }
 }
@@ -703,7 +704,8 @@ void QSpeechRecognitionPrivate::onListeningMuted(int session)
     qCDebug(lcSpeechAsr) << "QSpeechRecognitionPrivate::onListeningMuted()";
     if (session == m_session) {
         QSpeechRecognition::State state = m_state;
-        setState(QSpeechRecognition::MutedState);
+        if (state != QSpeechRecognition::ListeningStoppingState)
+            setState(QSpeechRecognition::MutedState);
         if (state == QSpeechRecognition::ListeningState)
             emit q->listeningStopped(false);
     }
@@ -714,6 +716,7 @@ void QSpeechRecognitionPrivate::onProcessingStarted(int session)
     Q_Q(QSpeechRecognition);
     qCDebug(lcSpeechAsr) << "QSpeechRecognitionPrivate::onProcessingStarted()";
     if (session == m_session) {
+        Q_ASSERT(m_listening);
         setState(QSpeechRecognition::ProcessingState);
         emit q->listeningStopped(true);
     }
@@ -724,12 +727,12 @@ void QSpeechRecognitionPrivate::onNotListening(int session)
     Q_Q(QSpeechRecognition);
     qCDebug(lcSpeechAsr) << "QSpeechRecognitionPrivate::onNotListening()";
     if (session == m_session) {
-        QSpeechRecognition::State state = m_state;
+        bool wasListening = m_listening;
         setState(QSpeechRecognition::IdleState);
-        if (state == QSpeechRecognition::ListeningState
-        || state == QSpeechRecognition::ListeningStoppingState) {
+        // Signal listeningStarted() was never emitted if listening was started and stopped
+        // while muted. In this case listeningStopped() should not be emitted either.
+        if (wasListening)
             emit q->listeningStopped(false);
-        }
     }
 }
 
@@ -810,6 +813,9 @@ void QSpeechRecognitionPrivate::onUnmuteTimeout()
 void QSpeechRecognitionPrivate::setState(QSpeechRecognition::State state)
 {
     Q_Q(QSpeechRecognition);
+    if (state != QSpeechRecognition::ListeningState
+    && state != QSpeechRecognition::ListeningStoppingState)
+        m_listening = false;
     if (state != m_state) {
         m_state = state;
         qCDebug(lcSpeechAsr) << m_state;
