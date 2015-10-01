@@ -364,6 +364,10 @@ void QSpeechRecognitionEnginePocketSphinx::unmute(qint64 timestamp)
         m_audioBuffer->setFifoLimit(m_audioBufferLimit);
         ps_start_utt(m_decoder);
         m_muted = false;
+        // Immediately check if audio is available.
+        // For file input this is mandatory, as onAudioDecoderBufferReady() has
+        // probably been already called (and ignored).
+        emit requestProcess();
     }
 }
 
