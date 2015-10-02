@@ -124,4 +124,6 @@ Q_SIGNALS:
 
 QT_END_NAMESPACE
 
+Q_DECLARE_METATYPE(QSpeechRecognition::Error)
+
 #endif

@@ -119,7 +119,6 @@ void QSpeechRecognitionManager::createEngine(const QString &engineName, const QS
             connect(engine, &QSpeechRecognitionPluginEngine::attributeUpdated, this, &QSpeechRecognitionManager::onAttributeUpdated);
             // Force handling of the following signals to be asynchronous
             connect(engine, &QSpeechRecognitionPluginEngine::requestStop, this, &QSpeechRecognitionManager::onRequestStop, Qt::QueuedConnection);
-            qRegisterMetaType<QSpeechRecognition::Error>("QSpeechRecognition::Error");
             connect(engine, &QSpeechRecognitionPluginEngine::error, this, &QSpeechRecognitionManager::onError, Qt::QueuedConnection);
             m_engines.insert(engineName, engine);
             m_engineLoaders.insert(provider, engineLoader);

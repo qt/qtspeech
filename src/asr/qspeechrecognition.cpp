@@ -630,7 +630,7 @@ QSpeechRecognitionPrivate::QSpeechRecognitionPrivate():
     m_manager->moveToThread(m_managerThread);
 
     /*** Results and notifications from the manager: ***/
-    qRegisterMetaType<QSpeechRecognition::Error>("QSpeechRecognition::Error");
+    qRegisterMetaType<QSpeechRecognition::Error>();
     QObject::connect(m_manager, &QSpeechRecognitionManager::notListening, m_managerInterface, &QSpeechRecognitionManagerInterface::onNotListening);
     QObject::connect(m_manager, &QSpeechRecognitionManager::error, m_managerInterface, &QSpeechRecognitionManagerInterface::onError);
     QObject::connect(m_manager, &QSpeechRecognitionManager::attributeUpdated, m_managerInterface, &QSpeechRecognitionManagerInterface::onAttributeUpdated);
