@@ -110,8 +110,11 @@ void MainWindow::engineSelected(int index)
     QVector<QLocale> locales = m_speech->availableLocales();
     QLocale current = m_speech->locale();
     foreach (const QLocale &locale, locales) {
+        QString name(QString("%1 (%2)")
+                     .arg(QLocale::languageToString(locale.language()))
+                     .arg(QLocale::countryToString(locale.country())));
         QVariant localeVariant(locale);
-        ui.language->addItem(QLocale::languageToString(locale.language()), localeVariant);
+        ui.language->addItem(name, localeVariant);
         if (locale.name() == current.name())
             current = locale;
     }
