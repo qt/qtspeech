@@ -54,8 +54,6 @@ public:
     const QString &name() const;
 };
 
-Q_DECLARE_METATYPE(QSpeechRecognitionPluginGrammar*)
-
 QT_END_NAMESPACE
 
 #endif // QSPEECHRECOGNITIONPLUGINGRAMMAR_H
