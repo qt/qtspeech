@@ -55,9 +55,14 @@
   state is used. In this case, it may take a few utterances until the speech
   recognition starts returning good results.
 
+  \section1 Supported Parameters
+
   The following table lists the supported engine parameters.
   See QSpeechRecognitionEngine::supportedParameters() for generic details of the
-  parameters.
+  parameters. The minimally needed parameters are \l {QSpeechRecognitionEngine::}{ResourceDirectory}
+  and \l {QSpeechRecognitionEngine::}{Locale}.
+  Parameter \l {QSpeechRecognitionEngine::}{Dictionary} is needed if the default
+  dictionary name is not used.
 
   \table
   \header
@@ -65,43 +70,104 @@
     \li Value type
     \li Description
   \row
-    \li Locale
+    \li \l {QSpeechRecognitionEngine::}{Locale}
     \li QLocale
     \li
   \row
-    \li Dictionary
+    \li \l {QSpeechRecognitionEngine::}{Dictionary}
     \li QUrl
     \li PocketSphinx (CMU) format dictionary file.
         If not given, file "lexicon.dict" in the locale-specific resource directory is used.
         Loading the dictionary from Qt resources is not supported.
   \row
-    \li ResourceDirectory
+    \li \l {QSpeechRecognitionEngine::}{ResourceDirectory}
     \li QString
     \li
   \row
-    \li DataDirectory
+    \li \l {QSpeechRecognitionEngine::}{DataDirectory}
     \li QString
     \li
   \row
-    \li DebugAudioDirectory
+    \li \l {QSpeechRecognitionEngine::}{DebugAudioDirectory}
     \li QString
     \li
   \row
-    \li AudioSampleRate
+    \li \l {QSpeechRecognitionEngine::}{AudioSampleRate}
     \li int
     \li
   \row
-    \li AudioInputFile
+    \li \l {QSpeechRecognitionEngine::}{AudioInputFile}
     \li QString
     \li
   \row
-    \li AudioInputDevices
+    \li \l {QSpeechRecognitionEngine::}{AudioInputDevices}
     \li QStringList
     \li
   \row
-    \li AudioInputDevice
+    \li \l {QSpeechRecognitionEngine::}{AudioInputDevice}
     \li QString
     \li
   \endtable
 
+  \section1 Quick Start Guide
+
+  The following instructions are for setting up the PocketSphinx engine for US English.
+
+  \section2 1. Make sure you have the PocketSphinx plug-in for QtSpeechRecognition
+
+  In directory plugins/speechrecognition in your Qt installation directory you should
+  have a library file that contains "pocketsphinx" in the name. If you compiled Qt from
+  the source, you may need to manually compile PocketSphinx libraries by following
+  the instructions in QtSpeech source directory.
+
+  \section2 2. Set up a resource directory for PocketSphinx
+
+  Create a directory into which PocketSphinx resources can be copied. Path to this directory will
+  be given to QSpeechRecognition::createEngine() in parameter \l {QSpeechRecognitionEngine::}{ResourceDirectory}.
+
+  Under this directory, create subdirectory "en" for US English resources.
+
+  \section2 3. Download US English acoustic model
+
+  One of the \l {http://sourceforge.net/projects/cmusphinx/files/Acoustic%20and%20Language%20Models/US%20English%20Generic%20Acoustic%20Model/}
+  {CMU Sphinx US English Acoustic Models} needs to be downloaded and extracted in the US English resource
+  directory created above. The extracted directory should be renamed to "acmodel".
+  After this step, the directory \e{ResourceDirectory}/en/acmodel should contain all the individual
+  acoustic model files, like "mdef".
+
+  The default audio sampling rate supported by the models is 16Khz. The 8KHz models should only be used if
+  no higher sampling rate is available in the audio input. In this case, the audio sampling rate also
+  needs to be changed in the engine parameters.
+
+  Currently the best acoustic model is \l {http://sourceforge.net/projects/cmusphinx/files/Acoustic%20and%20Language%20Models/US%20English%20Generic%20Acoustic%20Model/cmusphinx-en-us-5.2.tar.gz}
+  {the continuous model version 5.2}. PTM models are smaller but slightly less accurate.
+
+  \section2 4. Download CMU Pronouncing Dictionary
+
+  The \l {http://svn.code.sf.net/p/cmusphinx/code/trunk/cmudict/sphinxdict/cmudict_SPHINX_40}
+  {Sphinx-compatible version of CMUdict} should be downloaded and copied to the US English
+  resource directory created above. The file should be renamed to "lexicon.dict".
+  After this step, file \e{ResourceDirectory}/en/lexicon.dict should contain close to 130k
+  lines, with each line containing a pronunciation rule for one English word.
+
+  \section2 5. Configuring the engine
+
+  For US English speech recognition with 16KHz audio input, at least the following
+  parameters should be given to QSpeechRecognition::createEngine():
+
+  \table
+  \header
+    \li Key
+    \li Value type
+    \li Value
+  \row
+    \li QSpeechRecognitionEngine::Locale
+    \li QLocale
+    \li \c QLocale("en_US")
+  \row
+    \li QSpeechRecognitionEngine::ResourceDirectory
+    \li QString
+    \li Path to the PocketSphinx resource directory created in step 2 above.
+  \endtable
 */
+

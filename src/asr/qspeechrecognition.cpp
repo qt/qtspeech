@@ -121,7 +121,10 @@ Q_DEFINE_ASR_RESULT_PARAMETER(Transcription);
   end-of-command.
 
   Unless otherwise mentioned, all the methods in this API return immediately and are handled
-  asynchronously (in the call order).
+  asynchronously (in the call order). All the engines belonging to the same QSpeechRecognition
+  instance live in the single thread that runs the recognizer task queue. As only one grammar
+  can be active at any given moment, setting the active grammar automatically selects the active
+  engine.
 
   \section1 Initialization
 
@@ -222,6 +225,29 @@ Q_DEFINE_ASR_RESULT_PARAMETER(Transcription);
     \li QString
     \li any
     \li Human-readable description of the error
+  \row
+    \li \l Engine
+    \li QString
+    \li \list
+        \li EngineInitError
+        \li EngineParameterError
+        \li EngineError
+        \li GrammarInitError
+        \li GrammarError
+        \li AudioError
+        \li ConnectionError
+        \li NoResultError
+        \endlist
+    \li Name of the engine that caused the error
+  \row
+    \li \l Grammar
+    \li QString
+    \li \list
+        \li GrammarInitError
+        \li GrammarError
+        \li NoResultError
+        \endlist
+    \li Name of the grammar that caused the error
   \endtable
 
 */
@@ -333,8 +359,9 @@ QSpeechRecognition::State QSpeechRecognition::state() const
   ignored. See QSpeechRecognitionEngine::supportedParameters() for the list of some commonly used
   parameters.
 
-  Returns a pointer to the engine handle. QSpeechRecognition retains
-  ownership of the returned pointer. The same pointer can be later retrieved with \l engine().
+  Returns a pointer to the engine handle, or 0 if an engine with the given name already exists.
+  QSpeechRecognition retains ownership of the returned pointer. The same pointer can be later
+  retrieved with \l engine().
 
   See availablePlugins()
 */
