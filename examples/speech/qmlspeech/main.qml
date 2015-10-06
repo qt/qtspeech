@@ -53,7 +53,7 @@ ApplicationWindow {
         property url mainGrammarFile: "qrc:grammar/main"
         property url yesNoGrammarFile: "qrc:grammar/yesno"
         property var engine: createEngine("local", "pocketsphinx",
-                                        { "Locale" : "en_US",
+                                        { "Locale" : Qt.locale("en_US"),
                                           "ResourceDirectory" : resourceDir,
                                           //"DebugAudioDirectory" : "/tmp",
                                           "Dictionary" : dictionaryFile })
