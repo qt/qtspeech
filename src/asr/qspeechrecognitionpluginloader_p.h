@@ -56,6 +56,7 @@ public:
     QSpeechRecognitionPluginLoader(const QString &provider, QObject *parent = 0, bool allowExperimental = false);
     ~QSpeechRecognitionPluginLoader();
     QSpeechRecognitionPluginEngine *createEngine(const QString &name, const QVariantMap &parameters, QString *errorString);
+    static QList<QString> availableProviders();
 
 private:
     static QMutex m_mutex;

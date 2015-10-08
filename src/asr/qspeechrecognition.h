@@ -42,6 +42,8 @@
 #include "qspeechrecognitionengine.h"
 #include <QtCore/QObject>
 #include <QtCore/QUrl>
+#include <QtCore/QList>
+#include <QtCore/QString>
 #include <QtCore/QVariantMap>
 
 QT_BEGIN_NAMESPACE
@@ -55,6 +57,7 @@ class QSPEECHRECOGNITION_EXPORT QSpeechRecognition : public QObject
     Q_PROPERTY(State state READ state NOTIFY stateChanged)
     Q_PROPERTY(bool muted READ isMuted WRITE setMuted NOTIFY muteChanged)
     Q_PROPERTY(QSpeechRecognitionGrammar *activeGrammar READ activeGrammar WRITE setActiveGrammar)
+    Q_PROPERTY(QList<QString> availablePlugins READ availablePlugins)
 
 public:
     enum Error {
@@ -84,7 +87,7 @@ public:
     QSpeechRecognition(QObject *parent = 0);
     ~QSpeechRecognition();
     State state() const;
-    Q_INVOKABLE QSpeechRecognitionEngine *createEngine(const QString &name, const QString &providerName, const QVariantMap &parameters = QVariantMap());
+    Q_INVOKABLE QSpeechRecognitionEngine *createEngine(const QString &name, const QString &pluginName, const QVariantMap &parameters = QVariantMap());
     Q_INVOKABLE QSpeechRecognitionEngine *engine(const QString &name) const;
     Q_INVOKABLE QSpeechRecognitionGrammar *createGrammar(QSpeechRecognitionEngine *engine, const QString &name, const QUrl &location);
     Q_INVOKABLE QSpeechRecognitionGrammar *grammar(const QString &name) const;
@@ -99,6 +102,8 @@ public:
     Q_INVOKABLE void unmuteAfter(int millisec);
     Q_INVOKABLE void reset();
     Q_INVOKABLE void dispatchMessage(const QString &message, const QVariantMap &parameters = QVariantMap());
+
+    static QList<QString> availablePlugins();
 
     // Common attribute keys:
     static const QString AudioLevel;

@@ -61,6 +61,7 @@ ApplicationWindow {
         property var yesNoGrammar: createGrammar(engine, "yesno", yesNoGrammarFile)
 
         Component.onCompleted: {
+            console.log("Available plugins: " + availablePlugins)
         }
 
         onResult: {

@@ -81,6 +81,11 @@ QSpeechRecognitionPluginLoader::~QSpeechRecognitionPluginLoader()
 {
 }
 
+QList<QString> QSpeechRecognitionPluginLoader::availableProviders()
+{
+    return plugins().keys();
+}
+
 void QSpeechRecognitionPluginLoader::loadMeta(const QString &providerName)
 {
     m_plugin = 0;

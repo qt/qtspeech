@@ -79,6 +79,11 @@ QSpeechRecognitionManager::AttributeData QSpeechRecognitionManager::getAttribute
     return m_attributes.value(key, AttributeData());
 }
 
+QList<QString> QSpeechRecognitionManager::availablePlugins()
+{
+    return QSpeechRecognitionPluginLoader::availableProviders();
+}
+
 void QSpeechRecognitionManager::init()
 {
 }
@@ -100,7 +105,7 @@ void QSpeechRecognitionManager::setSession(int session)
     }
 }
 
-void QSpeechRecognitionManager::createEngine(const QString &engineName, const QString &provider, const QVariantMap &parameters)
+void QSpeechRecognitionManager::createEngine(const QString &engineName, const QString &pluginName, const QVariantMap &parameters)
 {
     QVariantMap errorParams;
     errorParams.insert(QSpeechRecognition::Engine, engineName);
@@ -108,9 +113,9 @@ void QSpeechRecognitionManager::createEngine(const QString &engineName, const QS
         return;
     if (!m_engines.contains(engineName)) {
         QSpeechRecognitionPluginEngine *engine = 0;
-        QSpeechRecognitionPluginLoader *engineLoader = m_engineLoaders.value(provider, 0);
+        QSpeechRecognitionPluginLoader *engineLoader = m_engineLoaders.value(pluginName, 0);
         if (!engineLoader) {
-            engineLoader = new QSpeechRecognitionPluginLoader(provider, this, true);
+            engineLoader = new QSpeechRecognitionPluginLoader(pluginName, this, true);
         }
         QString errorString;
         if (engineLoader && (engine = engineLoader->createEngine(engineName, parameters, &errorString)) != 0) {
@@ -121,7 +126,7 @@ void QSpeechRecognitionManager::createEngine(const QString &engineName, const QS
             connect(engine, &QSpeechRecognitionPluginEngine::requestStop, this, &QSpeechRecognitionManager::onRequestStop, Qt::QueuedConnection);
             connect(engine, &QSpeechRecognitionPluginEngine::error, this, &QSpeechRecognitionManager::onError, Qt::QueuedConnection);
             m_engines.insert(engineName, engine);
-            m_engineLoaders.insert(provider, engineLoader);
+            m_engineLoaders.insert(pluginName, engineLoader);
             const QVariantMap &engineParams = engine->parameters();
             // Set initial values of all the engine parameters
             for (QVariantMap::const_iterator param = engineParams.begin(); param != engineParams.end(); ++param)

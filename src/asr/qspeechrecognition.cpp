@@ -326,7 +326,7 @@ QSpeechRecognition::State QSpeechRecognition::state() const
 }
 
 /*!
-  Creates new recognizer engine using the plug-in that matches \a providerName.
+  Creates new recognizer engine using the plug-in that matches \a pluginName.
   The engine must be given a user-defined \a name.
 
   The engine may require \a parameters, some of which may be engine-specific. Unknown parameters are silently
@@ -335,8 +335,10 @@ QSpeechRecognition::State QSpeechRecognition::state() const
 
   Returns a pointer to the engine handle. QSpeechRecognition retains
   ownership of the returned pointer. The same pointer can be later retrieved with \l engine().
+
+  See availablePlugins()
 */
-QSpeechRecognitionEngine *QSpeechRecognition::createEngine(const QString &name, const QString &providerName, const QVariantMap &parameters)
+QSpeechRecognitionEngine *QSpeechRecognition::createEngine(const QString &name, const QString &pluginName, const QVariantMap &parameters)
 {
     Q_D(QSpeechRecognition);
     if (d->m_engines.contains(name))
@@ -345,7 +347,7 @@ QSpeechRecognitionEngine *QSpeechRecognition::createEngine(const QString &name, 
     connect(engine, &QSpeechRecognitionEngineImpl::requestSetParameter, d->m_managerInterface, &QSpeechRecognitionManagerInterface::onSetEngineParameter);
     connect(engine, &QSpeechRecognitionEngineImpl::requestResetAdaptationState, d->m_managerInterface, &QSpeechRecognitionManagerInterface::onResetEngineAdaptationState);
     d->m_engines.insert(name, engine);
-    emit d->m_managerInterface->createEngine(name, providerName, parameters);
+    emit d->m_managerInterface->createEngine(name, pluginName, parameters);
     return engine;
 }
 
@@ -605,6 +607,16 @@ void QSpeechRecognition::dispatchMessage(const QString &message, const QVariantM
 {
     Q_D(QSpeechRecognition);
     emit d->m_managerInterface->dispatchMessage(QString(), message, parameters);
+}
+
+/*!
+  Returns the names of the supported speech recognition plug-ins.
+
+  See createEngine()
+*/
+QList<QString> QSpeechRecognition::availablePlugins()
+{
+    return QSpeechRecognitionManager::availablePlugins();
 }
 
 /*******************************************************************************

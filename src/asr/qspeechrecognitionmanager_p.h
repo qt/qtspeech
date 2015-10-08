@@ -42,6 +42,7 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QString>
+#include <QtCore/QList>
 #include <QtCore/QMap>
 #include <QtCore/QVariantMap>
 #include <QtCore/QSet>
@@ -70,6 +71,7 @@ public:
     explicit QSpeechRecognitionManager();
     ~QSpeechRecognitionManager();
     AttributeData getAttribute(const QString &key);
+    static QList<QString> availablePlugins();
 
 signals:
     void engineCreated(const QString &engineName);
@@ -87,7 +89,7 @@ signals:
 public slots:
     void init();
     void setSession(int session);
-    void createEngine(const QString &engineName, const QString &provider, const QVariantMap &parameters);
+    void createEngine(const QString &engineName, const QString &pluginName, const QVariantMap &parameters);
     void createGrammar(const QString &engineName, const QString &grammarName, const QUrl &location);
     void deleteGrammar(const QString &grammarName);
     void setGrammar(const QString &grammarName);
