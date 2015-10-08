@@ -72,7 +72,6 @@ QSpeechRecognitionEnginePocketSphinx::QSpeechRecognitionEnginePocketSphinx(const
                           << QSpeechRecognitionEngine::Dictionary
                           << QSpeechRecognitionEngine::ResourceDirectory
                           << QSpeechRecognitionEngine::DataDirectory
-                          << QSpeechRecognitionEngine::DebugAudioDirectory
                           << QSpeechRecognitionEngine::AudioSampleRate
                           << QSpeechRecognitionEngine::AudioInputFile
                           << QSpeechRecognitionEngine::AudioInputDevices

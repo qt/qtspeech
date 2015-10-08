@@ -84,13 +84,6 @@ Q_DEFINE_ASR_ENGINE_PARAMETER(ResourceDirectory);
 */
 Q_DEFINE_ASR_ENGINE_PARAMETER(DataDirectory);
 
-/*! \variable QSpeechRecognitionEngine::DebugAudioDirectory
-
-    This constant is used as the key for a speech recognition engine parameter.
-    See supportedParameters().
-*/
-Q_DEFINE_ASR_ENGINE_PARAMETER(DebugAudioDirectory);
-
 /*! \variable QSpeechRecognitionEngine::AudioSampleRate
 
     This constant is used as the key for a speech recognition engine parameter.
@@ -201,12 +194,6 @@ Q_DEFINE_ASR_ENGINE_PARAMETER(AudioInputDevices);
     \li Path to a persistent directory where any engine-specific data
         can be stored between application restarts. If not given, the program's
         working directory is used.
-  \row
-    \li \l DebugAudioDirectory
-    \li QString
-    \li Path to a directory where the engine should write all the audio clips that go
-        to the recognizer. If not given (or empty), no audio clips will be produced.
-        This feature is meant to be used only for debugging purposes.
   \row
     \li \l AudioSampleRate
     \li int

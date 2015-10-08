@@ -53,6 +53,7 @@ class QSpeechRecognitionPluginEnginePrivate : public QObjectPrivate
 public:
     static QStringList findFilesWithWildcards(const QString &filePath);
     QString m_name;
+    QString m_debugDirectory;
     QVariantMap m_parameters;
 };
 

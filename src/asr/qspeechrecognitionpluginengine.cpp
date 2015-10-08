@@ -40,6 +40,8 @@
 #include <QFileInfo>
 #include <QDataStream>
 #include <QLoggingCategory>
+#include <QCoreApplication>
+#include <QCommandLineParser>
 
 QT_BEGIN_NAMESPACE
 
@@ -274,6 +276,14 @@ QSpeechRecognitionPluginEngine::QSpeechRecognitionPluginEngine(const QString &na
     QVariantMap initialParameters = parameters;
     QVariantMap knownParameters;
     Q_D(QSpeechRecognitionPluginEngine);
+    QCommandLineParser parser;
+    QCommandLineOption debugDirectory(QLatin1String("speechrecognition-debug-directory"),
+            QLatin1String("Write speech recognition debug output to <directory>."),
+            QLatin1String("directory"));
+    parser.addOption(debugDirectory);
+    parser.process(QCoreApplication::arguments());
+    if (parser.isSet(debugDirectory))
+        d->m_debugDirectory = parser.value(debugDirectory);
     // Initialize built-in parameters to their default values if the value is not set:
     if (!initialParameters.contains(QSpeechRecognitionEngine::Locale))
         initialParameters.insert(QSpeechRecognitionEngine::Locale, locale());
@@ -484,12 +494,21 @@ QString QSpeechRecognitionPluginEngine::localizedFilePath(const QString &filePat
 }
 
 /*!
+  Gets the debug directory path from application command line parameter
+  "--speechrecognition-debug-directory". If not set, returns an empty string.
+*/
+QString QSpeechRecognitionPluginEngine::debugDirectory() const
+{
+    Q_D(const QSpeechRecognitionPluginEngine);
+    return d->m_debugDirectory;
+}
+
+/*!
   Creates a WAV-file for writing debug audio.
 
   If \a filePath is an absolute path, always attempts to create the file. If a relative
-  file path is given, only creates the file if engine parameter
-  QSpeechRecognitionEngine::DebugAudioDirectory has been set (see
-  QSpeechRecognition::createEngine()).
+  file path is given, only creates the file if command line parameter
+  "--speechrecognition-debug-directory" has been set to a valid directory path.
 
   Parameters \a sampleRate, \a sampleSize and \a channelCount specify the type of audio data
   that will be written to the file. Sample size should be expressed in bits.
@@ -502,17 +521,14 @@ QString QSpeechRecognitionPluginEngine::localizedFilePath(const QString &filePat
 */
 QFile *QSpeechRecognitionPluginEngine::openDebugWavFile(const QString &filePath, int sampleRate, int sampleSize, int channelCount)
 {
-    Q_D(const QSpeechRecognitionPluginEngine);
     QString finalPath;
+    QString debugDirectoryPath = debugDirectory();
     if (QDir::isAbsolutePath(filePath)) {
         finalPath = filePath;
-    } else if (d->m_parameters.contains(QSpeechRecognitionEngine::DebugAudioDirectory)) {
-        QString audioDirPath = d->m_parameters.value(QSpeechRecognitionEngine::DebugAudioDirectory).toString();
-        if (!audioDirPath.isEmpty()) {
-            QDir audioDir(audioDirPath);
-            if (audioDir.exists())
-                finalPath = audioDir.absoluteFilePath(filePath);
-        }
+    } else if (!debugDirectoryPath.isEmpty()) {
+        QDir audioDir(debugDirectoryPath);
+        if (audioDir.exists())
+            finalPath = audioDir.absoluteFilePath(filePath);
     }
     if (!finalPath.isEmpty()) {
         qCDebug(lcSpeechAsr) << "QSpeechRecognitionPluginEngine: Writing debug audio to file" << finalPath;

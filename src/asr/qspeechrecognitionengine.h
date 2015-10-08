@@ -69,7 +69,6 @@ public:
     static const QString Dictionary;
     static const QString ResourceDirectory;
     static const QString DataDirectory;
-    static const QString DebugAudioDirectory;
     static const QString AudioSampleRate;
     static const QString AudioInputFile;
     static const QString AudioInputDevice;

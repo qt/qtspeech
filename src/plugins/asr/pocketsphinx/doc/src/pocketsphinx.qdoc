@@ -32,7 +32,8 @@
 
    \keyword PocketSphinx
 
-   The engine provider name for this plug-in is "pocketsphinx".
+   The name of this plug-in is "pocketsphinx". The name should be given as a
+   parameter to QSpeechRecognition::createEngine().
 
    The plug-in only supports JSGF-format grammars (loading from Qt resources is supported).
 
@@ -88,10 +89,6 @@
     \li QString
     \li
   \row
-    \li \l {QSpeechRecognitionEngine::}{DebugAudioDirectory}
-    \li QString
-    \li
-  \row
     \li \l {QSpeechRecognitionEngine::}{AudioSampleRate}
     \li int
     \li
@@ -107,6 +104,20 @@
     \li \l {QSpeechRecognitionEngine::}{AudioInputDevice}
     \li QString
     \li
+  \endtable
+
+  The following table lists the command line parameters that affect the plug-in behavior:
+
+  \table
+  \header
+    \li Parameter
+    \li Value type
+    \li Description
+  \row
+    \li --speechrecognition-debug-directory
+    \li Path to an existing directory
+    \li Path to a directory where the engine should write all the audio clips that go
+        to the recognizer. This feature is meant to be used only for debugging purposes.
   \endtable
 
   \section1 Quick Start Guide
