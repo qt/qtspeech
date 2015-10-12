@@ -505,3 +505,5 @@ qint64 QSpeechRecognitionAudioBufferPrivate::recordingTime(qint64 streamOffset) 
     return m_streamStartTime + ((streamOffset * 1000)
                                 / (m_sampleSize / 8 * m_channelCount * m_sampleRate));
 }
+
+QT_END_NAMESPACE
