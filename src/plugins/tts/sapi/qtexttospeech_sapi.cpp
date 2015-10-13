@@ -34,9 +34,7 @@
 **
 ****************************************************************************/
 
-
-
-#include "qtexttospeech_p.h"
+#include "qtexttospeech_sapi.h"
 
 #include <windows.h>
 #include <sapi.h>
@@ -45,92 +43,43 @@
 
 QT_BEGIN_NAMESPACE
 
-
-class QTextToSpeechPrivateWindows : public QTextToSpeechPrivate, public ISpNotifyCallback
+QTextToSpeechEngineSapi::QTextToSpeechEngineSapi(const QVariantMap &, QObject *)
+    : m_pitch(0.0), m_pauseCount(0), m_state(QTextToSpeech::BackendError)
 {
-public:
-    QTextToSpeechPrivateWindows(QTextToSpeech *speech);
-    ~QTextToSpeechPrivateWindows();
-
-    QVector<QLocale> availableLocales() const Q_DECL_OVERRIDE;
-    QVector<QVoice> availableVoices() const Q_DECL_OVERRIDE;
-
-    void say(const QString &text) Q_DECL_OVERRIDE;
-    void stop() Q_DECL_OVERRIDE;
-    void pause() Q_DECL_OVERRIDE;
-    void resume() Q_DECL_OVERRIDE;
-
-
-    double rate() const Q_DECL_OVERRIDE;
-    void setRate(double rate) Q_DECL_OVERRIDE;
-    double pitch() const Q_DECL_OVERRIDE;
-    void setPitch(double pitch) Q_DECL_OVERRIDE;
-    int volume() const Q_DECL_OVERRIDE;
-    void setVolume(int volume) Q_DECL_OVERRIDE;
-    void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
-    QLocale locale() const Q_DECL_OVERRIDE;
-    void setVoice(const QVoice &voiceName) Q_DECL_OVERRIDE;
-    QVoice voice() const Q_DECL_OVERRIDE;
-    QTextToSpeech::State state() const Q_DECL_OVERRIDE;
-
-    bool isPaused() const { return m_pauseCount; }
-    bool isSpeaking() const;
-
-    HRESULT STDMETHODCALLTYPE NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/);
-
-private:
-    QMap<QString, QString> voiceAttributes(ISpObjectToken *speechToken) const;
-    QString voiceId(ISpObjectToken *speechToken) const;
-    QLocale lcidToLocale(const QString &lcid) const;
-    void updateVoices();
-
-    ISpVoice *m_voice;
-    double m_pitch;
-    int m_pauseCount;
-    QVector<QLocale> m_locales;
-    QVoice m_currentVoice;
-    QMultiMap<QString, QVoice> m_voices;
-};
-
-
-QTextToSpeech::QTextToSpeech(QObject *parent)
-    : QObject(*new QTextToSpeechPrivateWindows(this), parent)
-{
-    qRegisterMetaType<QTextToSpeech::State>();
+    init();
 }
 
-QTextToSpeechPrivateWindows::QTextToSpeechPrivateWindows(QTextToSpeech *speech)
-    : QTextToSpeechPrivate(speech), m_pitch(0.0), m_pauseCount(0) //, m_voices(0)
+QTextToSpeechEngineSapi::~QTextToSpeechEngineSapi()
 {
-    if (FAILED(::CoInitialize(NULL)))
+}
+
+void QTextToSpeechEngineSapi::init()
+{
+    if (FAILED(::CoInitialize(NULL))) {
         qWarning() << "Init of COM failed";
+        return;
+    }
 
     HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&m_voice);
-    if (!SUCCEEDED(hr))
+    if (!SUCCEEDED(hr)) {
         qWarning() << "Could not init voice";
+        return;
+    }
 
     m_voice->SetInterest(SPFEI_ALL_TTS_EVENTS, SPFEI_ALL_TTS_EVENTS);
     m_voice->SetNotifyCallbackInterface(this, 0, 0);
     updateVoices();
+    m_state = QTextToSpeech::Ready;
 }
 
-QTextToSpeechPrivateWindows::~QTextToSpeechPrivateWindows()
-{
-}
-
-QTextToSpeech::State QTextToSpeechPrivate::state() const
-{
-    return m_state;
-}
-
-bool QTextToSpeechPrivateWindows::isSpeaking() const
+bool QTextToSpeechEngineSapi::isSpeaking() const
 {
     SPVOICESTATUS eventStatus;
     m_voice->GetStatus(&eventStatus, NULL);
     return eventStatus.dwRunningState == SPRS_IS_SPEAKING;
 }
 
-void QTextToSpeechPrivateWindows::say(const QString &text)
+void QTextToSpeechEngineSapi::say(const QString &text)
 {
     if (text.isEmpty())
         return;
@@ -140,20 +89,19 @@ void QTextToSpeechPrivateWindows::say(const QString &text)
         stop();
 
     textString.prepend(QString::fromLatin1("<pitch absmiddle=\"%1\"/>").arg(m_pitch * 10));
-    qDebug() << "say: " << textString;
 
     std::wstring wtext = textString.toStdWString();
     m_voice->Speak(wtext.data(), SPF_ASYNC, NULL);
 }
 
-void QTextToSpeechPrivateWindows::stop()
+void QTextToSpeechEngineSapi::stop()
 {
-    if (isPaused())
+    if (m_state == QTextToSpeech::Paused)
         resume();
     m_voice->Speak(NULL, SPF_PURGEBEFORESPEAK, 0);
 }
 
-void QTextToSpeechPrivateWindows::pause()
+void QTextToSpeechEngineSapi::pause()
 {
     if (!isSpeaking())
         return;
@@ -162,11 +110,11 @@ void QTextToSpeechPrivateWindows::pause()
         ++m_pauseCount;
         m_voice->Pause();
         m_state = QTextToSpeech::Paused;
-        emitStateChanged(m_state);
+        emit stateChanged(m_state);
     }
 }
 
-void QTextToSpeechPrivateWindows::resume()
+void QTextToSpeechEngineSapi::resume()
 {
     if (m_pauseCount > 0) {
         --m_pauseCount;
@@ -176,27 +124,29 @@ void QTextToSpeechPrivateWindows::resume()
         } else {
             m_state = QTextToSpeech::Ready;
         }
-        emitStateChanged(m_state);
+        emit stateChanged(m_state);
     }
 }
 
-void QTextToSpeechPrivateWindows::setPitch(double pitch)
+bool QTextToSpeechEngineSapi::setPitch(double pitch)
 {
     m_pitch = pitch;
+    return true;
 }
 
-double QTextToSpeechPrivateWindows::pitch() const
+double QTextToSpeechEngineSapi::pitch() const
 {
     return m_pitch;
 }
 
-void QTextToSpeechPrivateWindows::setRate(double rate)
+bool QTextToSpeechEngineSapi::setRate(double rate)
 {
     // -10 to 10
     m_voice->SetRate(long(rate*10));
+    return true;
 }
 
-double QTextToSpeechPrivateWindows::rate() const
+double QTextToSpeechEngineSapi::rate() const
 {
     long rateValue;
     if (m_voice->GetRate(&rateValue) == S_OK)
@@ -204,13 +154,14 @@ double QTextToSpeechPrivateWindows::rate() const
     return -1;
 }
 
-void QTextToSpeechPrivateWindows::setVolume(int volume)
+bool QTextToSpeechEngineSapi::setVolume(int volume)
 {
     // 0 to 100
     m_voice->SetVolume(volume);
+    return true;
 }
 
-int QTextToSpeechPrivateWindows::volume() const
+int QTextToSpeechEngineSapi::volume() const
 {
     USHORT baseVolume;
     if (m_voice->GetVolume(&baseVolume) == S_OK)
@@ -220,7 +171,7 @@ int QTextToSpeechPrivateWindows::volume() const
     return -1;
 }
 
-QString QTextToSpeechPrivateWindows::voiceId(ISpObjectToken *speechToken) const
+QString QTextToSpeechEngineSapi::voiceId(ISpObjectToken *speechToken) const
 {
     HRESULT hr = S_OK;
     LPWSTR vId = nullptr;
@@ -232,7 +183,7 @@ QString QTextToSpeechPrivateWindows::voiceId(ISpObjectToken *speechToken) const
     return QString::fromWCharArray(vId);
 }
 
-QMap<QString, QString> QTextToSpeechPrivateWindows::voiceAttributes(ISpObjectToken *speechToken) const
+QMap<QString, QString> QTextToSpeechEngineSapi::voiceAttributes(ISpObjectToken *speechToken) const
 {
     HRESULT hr = S_OK;
     QMap<QString, QString> result;
@@ -276,7 +227,7 @@ QMap<QString, QString> QTextToSpeechPrivateWindows::voiceAttributes(ISpObjectTok
     return result;
 }
 
-QLocale QTextToSpeechPrivateWindows::lcidToLocale(const QString &lcid) const
+QLocale QTextToSpeechEngineSapi::lcidToLocale(const QString &lcid) const
 {
     bool ok;
     LCID locale = lcid.toInt(&ok, 16);
@@ -292,7 +243,7 @@ QLocale QTextToSpeechPrivateWindows::lcidToLocale(const QString &lcid) const
     return QLocale(iso);
 }
 
-void QTextToSpeechPrivateWindows::updateVoices()
+void QTextToSpeechEngineSapi::updateVoices()
 {
     HRESULT hr = S_OK;
     CComPtr<ISpObjectToken> cpVoiceToken;
@@ -318,37 +269,37 @@ void QTextToSpeechPrivateWindows::updateVoices()
             m_locales.append(vLocale);
 
         // Create voice
-        QVoice voice;
-        voice.setName(vAttr["Name"]);
-        voice.setAge(vAttr["Age"] == "Adult" ?  QVoice::Adult : QVoice::Other);
-        voice.setGender(vAttr["Gender"] == "Male" ? QVoice::Male :
-                        vAttr["Gender"] == "Female" ? QVoice::Female :
-                        QVoice::Unknown);
+
+        QString name = vAttr["Name"];
+        QVoice::Age age = vAttr["Age"] == "Adult" ?  QVoice::Adult : QVoice::Other;
+        QVoice::Gender gender = vAttr["Gender"] == "Male" ? QVoice::Male :
+                                vAttr["Gender"] == "Female" ? QVoice::Female :
+                                QVoice::Unknown;
         // Getting the ID of the voice to set the voice later
         QString vId = voiceId(cpVoiceToken);
-        voice.setData(vId);
+        QVoice voice = createVoice(name, gender, age, vId);
         m_voices.insert(vLocale.name(), voice);
     }
 }
 
-QVector<QLocale> QTextToSpeechPrivateWindows::availableLocales() const
+QVector<QLocale> QTextToSpeechEngineSapi::availableLocales() const
 {
     return m_locales;
 }
 
-void QTextToSpeechPrivateWindows::setLocale(const QLocale &locale)
+bool QTextToSpeechEngineSapi::setLocale(const QLocale &locale)
 {
     QList<QVoice> voicesForLocale = m_voices.values(locale.name());
     if (voicesForLocale.length() > 0) {
         setVoice(voicesForLocale[0]);
-        emitLocaleChanged(locale);
-        emitVoiceChanged(voicesForLocale[0]);
+        return true;
     } else {
         qWarning() << "No voice found for given locale";
     }
+    return false;
 }
 
-QLocale QTextToSpeechPrivateWindows::locale() const
+QLocale QTextToSpeechEngineSapi::locale() const
 {
     // Get current voice id
     CComPtr<ISpObjectToken> cpVoiceToken;
@@ -358,15 +309,15 @@ QLocale QTextToSpeechPrivateWindows::locale() const
     return lcidToLocale(vAttr["Language"]);
 }
 
-QVector<QVoice> QTextToSpeechPrivateWindows::availableVoices() const
+QVector<QVoice> QTextToSpeechEngineSapi::availableVoices() const
 {
     return m_voices.values(locale().name()).toVector();
 }
 
-void QTextToSpeechPrivateWindows::setVoice(const QVoice &voice)
+bool QTextToSpeechEngineSapi::setVoice(const QVoice &voice)
 {
     // Convert voice id to null-terminated wide char string
-    QString vId = voice.data().toString();
+    QString vId = voiceData(voice).toString();
     wchar_t* tokenId = new wchar_t[vId.size()+1];
     vId.toWCharArray(tokenId);
     tokenId[vId.size()] = 0;
@@ -378,39 +329,39 @@ void QTextToSpeechPrivateWindows::setVoice(const QVoice &voice)
     if (FAILED(hr)) {
         qWarning() << "Creating the voice token from ID failed";
         m_state = QTextToSpeech::BackendError;
-        emitStateChanged(m_state);
-        return;
+        emit stateChanged(m_state);
+        return false;
     }
 
     if (m_state != QTextToSpeech::Ready) {
         m_state = QTextToSpeech::Ready;
-        emitStateChanged(m_state);
+        emit stateChanged(m_state);
     }
 
     delete[] tokenId;
     m_voice->SetVoice(cpVoiceToken);
-    emitVoiceChanged(voice);
+    return true;
 }
 
-QVoice QTextToSpeechPrivateWindows::voice() const
+QVoice QTextToSpeechEngineSapi::voice() const
 {
     CComPtr<ISpObjectToken> cpVoiceToken;
     m_voice->GetVoice(&cpVoiceToken);
     QString vId = voiceId(cpVoiceToken);
     foreach (const QVoice &voice, m_voices.values()) {
-        if (voice.data().toString() == vId) {
+        if (voiceData(voice).toString() == vId) {
             return voice;
         }
     }
     return QVoice();
 }
 
-QTextToSpeech::State QTextToSpeechPrivateWindows::state() const
+QTextToSpeech::State QTextToSpeechEngineSapi::state() const
 {
     return m_state;
 }
 
-HRESULT QTextToSpeechPrivateWindows::NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/)
+HRESULT QTextToSpeechEngineSapi::NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/)
 {
     QTextToSpeech::State newState = QTextToSpeech::Ready;
     if (isPaused()) {
@@ -423,7 +374,7 @@ HRESULT QTextToSpeechPrivateWindows::NotifyCallback(WPARAM /*wParam*/, LPARAM /*
 
     if (m_state != newState) {
         m_state = newState;
-        emitStateChanged(newState);
+        emit stateChanged(newState);
     }
 
     return S_OK;

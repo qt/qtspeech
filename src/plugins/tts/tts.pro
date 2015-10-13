@@ -7,6 +7,8 @@ unix {
     }
 }
 
+windows: SUBDIRS += sapi
+
 config_flite {
     SUBDIRS += flite
 }
