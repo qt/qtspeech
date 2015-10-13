@@ -1,2 +1,7 @@
 TEMPLATE = subdirs
-SUBDIRS = hello_speak qmlspeech
+SUBDIRS = hello_speak
+
+qtHaveModule(quick) {
+    SUBDIRS += qmlspeech
+}
+
