@@ -41,16 +41,120 @@
 
 #include <qdebug.h>
 
+#include <QtCore/private/qfactoryloader_p.h>
+
 QT_BEGIN_NAMESPACE
 
+#ifndef QT_NO_LIBRARY
+Q_GLOBAL_STATIC_WITH_ARGS(QFactoryLoader, loader,
+        ("org.qt-project.qt.speech.tts.plugin/5.0",
+         QLatin1String("/texttospeech")))
+#endif
 
-// FIXME: check that the private copying actually works
-// FIXME: disentangle SPD from the generic stuff
+QMutex QTextToSpeechPrivate::m_mutex;
 
-
-QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech)
-    : m_speech(speech), m_state(QTextToSpeech::Ready)
+QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine)
+    : m_engine(0),
+      m_speech(speech),
+      m_providerName(engine),
+      m_plugin(0)
 {
+    if (m_providerName.isEmpty()) {
+        m_providerName = QTextToSpeech::availableEngines().value(0);
+        if (m_providerName.isEmpty()) {
+            qCritical() << "No text-to-speech plug-ins were found.";
+            return;
+        }
+    }
+    if (!loadMeta()) {
+        qCritical() << "Text-to-speech plug-in" << m_providerName << "is not supported.";
+        return;
+    }
+    loadPlugin();
+    if (m_plugin) {
+        QString errorString;
+        m_engine = m_plugin->createTextToSpeechEngine(QVariantMap(), 0, &errorString);
+        if (!m_engine) {
+            qCritical() << "Error creating text-to-speech engine" << m_providerName
+                        << (errorString.isEmpty() ? QStringLiteral("") : (QStringLiteral(": ") + errorString));
+        }
+    } else {
+        qCritical() << "Error loading text-to-speech plug-in" << m_providerName;
+    }
+}
+
+QTextToSpeechPrivate::~QTextToSpeechPrivate()
+{
+    m_speech->stop();
+    delete m_engine;
+}
+
+bool QTextToSpeechPrivate::loadMeta()
+{
+    m_plugin = 0;
+    m_metaData = QJsonObject();
+    m_metaData.insert(QLatin1String("index"), -1);
+
+    QList<QJsonObject> candidates = QTextToSpeechPrivate::plugins().values(m_providerName);
+
+    int versionFound = -1;
+    int idx = -1;
+
+    // figure out which version of the plugin we want
+    for (int i = 0; i < candidates.size(); ++i) {
+        QJsonObject meta = candidates[i];
+        if (meta.contains(QLatin1String("Version"))
+                && meta.value(QLatin1String("Version")).isDouble()) {
+            int ver = int(meta.value(QLatin1String("Version")).toDouble());
+            if (ver > versionFound) {
+                versionFound = ver;
+                idx = i;
+            }
+        }
+    }
+
+    if (idx != -1) {
+        m_metaData = candidates[idx];
+        return true;
+    }
+    return false;
+}
+
+void QTextToSpeechPrivate::loadPlugin()
+{
+    if (int(m_metaData.value(QLatin1String("index")).toDouble()) < 0) {
+        m_plugin = 0;
+        return;
+    }
+    int idx = int(m_metaData.value(QLatin1String("index")).toDouble());
+    m_plugin = qobject_cast<QTextToSpeechPlugin *>(loader()->instance(idx));
+}
+
+QHash<QString, QJsonObject> QTextToSpeechPrivate::plugins(bool reload)
+{
+    static QHash<QString, QJsonObject> plugins;
+    static bool alreadyDiscovered = false;
+    QMutexLocker lock(&m_mutex);
+
+    if (reload == true)
+        alreadyDiscovered = false;
+
+    if (!alreadyDiscovered) {
+        loadPluginMetadata(plugins);
+        alreadyDiscovered = true;
+    }
+    return plugins;
+}
+
+void QTextToSpeechPrivate::loadPluginMetadata(QHash<QString, QJsonObject> &list)
+{
+    QFactoryLoader *l = loader();
+    QList<QJsonObject> meta = l->metaData();
+    for (int i = 0; i < meta.size(); ++i) {
+        QJsonObject obj = meta.at(i).value(QLatin1String("MetaData")).toObject();
+        obj.insert(QLatin1String("index"), i);
+        list.insertMulti(obj.value(QLatin1String("Provider")).toString(), obj);
+    }
 }
 
 /*!
@@ -63,12 +167,6 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech)
   To select between the available voices use \l setVoice().
   The languages and voices depend on the available synthesizers on each platform.
   On Linux by default speech-dispatcher is used.
-*/
-
-/*!
-  \fn explicit QTextToSpeech::QTextToSpeech(QObject *parent=0)
-
-  Constructs a QTextToSpeech object as the child of \a parent.
 */
 
 /*!
@@ -87,10 +185,41 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech)
 
 */
 
+/*!
+  Loads a text-to-speech engine from a plug-in that matches parameter \a engine and
+  constructs a QTextToSpeech object as the child of \a parent.
+
+  If \a engine is empty, the default engine plug-in is used. The default
+  engine may be platform-specific.
+
+  If loading the plug-in fails, QTextToSpeech::state() will return QTextToSpeech::BackendError.
+
+  \sa availableEngines()
+*/
+QTextToSpeech::QTextToSpeech(QObject *parent, const QString &engine)
+    : QObject(*new QTextToSpeechPrivate(this, engine), parent)
+{
+    Q_D(QTextToSpeech);
+    qRegisterMetaType<QTextToSpeech::State>();
+    // Connect state change signal directly from the engine to the public API signal
+    if (d->m_engine)
+        connect(d->m_engine, &QTextToSpeechEngine::stateChanged, this, &QTextToSpeech::stateChanged);
+}
+
+/*!
+ Gets the list of supported text-to-speech engine plug-ins.
+*/
+QStringList QTextToSpeech::availableEngines()
+{
+    return QTextToSpeechPrivate::plugins().keys();
+}
+
 QTextToSpeech::State QTextToSpeech::state() const
 {
     Q_D(const QTextToSpeech);
-    return d->state();
+    if (d->m_engine)
+        return d->m_engine->state();
+    return QTextToSpeech::BackendError;
 }
 
 /*!
@@ -103,7 +232,8 @@ QTextToSpeech::State QTextToSpeech::state() const
 void QTextToSpeech::say(const QString &text)
 {
     Q_D(QTextToSpeech);
-    d->say(text);
+    if (d->m_engine)
+        d->m_engine->say(text);
 }
 
 /*!
@@ -112,7 +242,8 @@ void QTextToSpeech::say(const QString &text)
 void QTextToSpeech::stop()
 {
     Q_D(QTextToSpeech);
-    d->stop();
+    if (d->m_engine)
+        d->m_engine->stop();
 }
 
 /*!
@@ -128,7 +259,8 @@ void QTextToSpeech::stop()
 void QTextToSpeech::pause()
 {
     Q_D(QTextToSpeech);
-    d->pause();
+    if (d->m_engine)
+        d->m_engine->pause();
 }
 
 /*!
@@ -138,7 +270,8 @@ void QTextToSpeech::pause()
 void QTextToSpeech::resume()
 {
     Q_D(QTextToSpeech);
-    d->resume();
+    if (d->m_engine)
+        d->m_engine->resume();
 }
 
 //QVector<QString> QTextToSpeech::availableVoiceTypes() const
@@ -168,13 +301,16 @@ void QTextToSpeech::resume()
 void QTextToSpeech::setPitch(double pitch)
 {
     Q_D(QTextToSpeech);
-    d->setPitch(pitch);
+    if (d->m_engine && d->m_engine->setPitch(pitch))
+        emit pitchChanged(pitch);
 }
 
 double QTextToSpeech::pitch() const
 {
     Q_D(const QTextToSpeech);
-    return d->pitch();
+    if (d->m_engine)
+        return d->m_engine->pitch();
+    return 0.0;
 }
 
 /*!
@@ -185,13 +321,16 @@ double QTextToSpeech::pitch() const
 void QTextToSpeech::setRate(double rate)
 {
     Q_D(QTextToSpeech);
-    d->setRate(rate);
+    if (d->m_engine && d->m_engine->setRate(rate))
+        emit rateChanged(rate);
 }
 
 double QTextToSpeech::rate() const
 {
     Q_D(const QTextToSpeech);
-    return d->rate();
+    if (d->m_engine)
+        return d->m_engine->rate();
+    return 0.0;
 }
 
 /*!
@@ -204,13 +343,16 @@ void QTextToSpeech::setVolume(int volume)
 {
     Q_D(QTextToSpeech);
     volume = qMin(qMax(volume, 0), 100);
-    d->setVolume(volume);
+    if (d->m_engine && d->m_engine->setVolume(volume))
+        emit volumeChanged(volume);
 }
 
 int QTextToSpeech::volume() const
 {
     Q_D(const QTextToSpeech);
-    return d->volume();
+    if (d->m_engine)
+        return d->m_engine->volume();
+    return 0;
 }
 
 /*!
@@ -220,7 +362,10 @@ int QTextToSpeech::volume() const
 void QTextToSpeech::setLocale(const QLocale &locale)
 {
     Q_D(QTextToSpeech);
-    d->setLocale(locale);
+    if (d->m_engine && d->m_engine->setLocale(locale)) {
+        emit localeChanged(locale);
+        emit voiceChanged(d->m_engine->voice());
+    }
 }
 
 /*!
@@ -231,7 +376,9 @@ void QTextToSpeech::setLocale(const QLocale &locale)
 QLocale QTextToSpeech::locale() const
 {
     Q_D(const QTextToSpeech);
-    return d->locale();
+    if (d->m_engine)
+        return d->m_engine->locale();
+    return QLocale();
 }
 
 /*!
@@ -241,7 +388,9 @@ QLocale QTextToSpeech::locale() const
 QVector<QLocale> QTextToSpeech::availableLocales() const
 {
     Q_D(const QTextToSpeech);
-    return d->availableLocales();
+    if (d->m_engine)
+        return d->m_engine->availableLocales();
+    return QVector<QLocale>();
 }
 
 /*!
@@ -254,7 +403,8 @@ QVector<QLocale> QTextToSpeech::availableLocales() const
 void QTextToSpeech::setVoice(const QVoice &voice)
 {
     Q_D(QTextToSpeech);
-    d->setVoice(voice);
+    if (d->m_engine && d->m_engine->setVoice(voice))
+        emit voiceChanged(voice);
 }
 
 /*!
@@ -264,7 +414,9 @@ void QTextToSpeech::setVoice(const QVoice &voice)
 QVoice QTextToSpeech::voice() const
 {
     Q_D(const QTextToSpeech);
-    return d->voice();
+    if (d->m_engine)
+        return d->m_engine->voice();
+    return QVoice();
 }
 
 /*!
@@ -274,7 +426,9 @@ QVoice QTextToSpeech::voice() const
 QVector<QVoice> QTextToSpeech::availableVoices() const
 {
     Q_D(const QTextToSpeech);
-    return d->availableVoices();
+    if (d->m_engine)
+        return d->m_engine->availableVoices();
+    return QVector<QVoice>();
 }
 
 QT_END_NAMESPACE

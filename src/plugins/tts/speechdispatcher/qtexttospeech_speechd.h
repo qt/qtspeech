@@ -34,38 +34,63 @@
 **
 ****************************************************************************/
 
+#ifndef QTEXTTOSPEECHENGINE_SPEECHD_H
+#define QTEXTTOSPEECHENGINE_SPEECHD_H
 
+#include "qtexttospeechengine.h"
+#include "qvoice.h"
 
-#ifndef QTEXTTOSPEECH_P_H
-#define QTEXTTOSPEECH_P_H
-
-#include <qtexttospeech.h>
-#include <qtexttospeechplugin.h>
-#include <QMutex>
-#include <QtCore/private/qobject_p.h>
+#include <QtCore/qobject.h>
+#include <QtCore/qvector.h>
+#include <QtCore/qstring.h>
+#include <QtCore/qlocale.h>
+#include <speech-dispatcher/libspeechd.h>
 
 QT_BEGIN_NAMESPACE
 
-class QTextToSpeech;
-class QTextToSpeechPrivate : public QObjectPrivate
+class QTextToSpeechEngineSpeechd : public QTextToSpeechEngine
 {
+    Q_OBJECT
+
 public:
-    QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine);
-    ~QTextToSpeechPrivate();
-    static QHash<QString, QJsonObject> plugins(bool reload = false);
+    QTextToSpeechEngineSpeechd(const QVariantMap &parameters, QObject *parent);
+    ~QTextToSpeechEngineSpeechd();
 
-    QTextToSpeechEngine *m_engine;
+    // Plug-in API:
+    QVector<QLocale> availableLocales() const Q_DECL_OVERRIDE;
+    QVector<QVoice> availableVoices() const Q_DECL_OVERRIDE;
+    void say(const QString &text) Q_DECL_OVERRIDE;
+    void stop() Q_DECL_OVERRIDE;
+    void pause() Q_DECL_OVERRIDE;
+    void resume() Q_DECL_OVERRIDE;
+    double rate() const Q_DECL_OVERRIDE;
+    bool setRate(double rate) Q_DECL_OVERRIDE;
+    double pitch() const Q_DECL_OVERRIDE;
+    bool setPitch(double pitch) Q_DECL_OVERRIDE;
+    QLocale locale() const Q_DECL_OVERRIDE;
+    bool setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
+    int volume() const Q_DECL_OVERRIDE;
+    bool setVolume(int volume) Q_DECL_OVERRIDE;
+    QVoice voice() const Q_DECL_OVERRIDE;
+    bool setVoice(const QVoice &voice) Q_DECL_OVERRIDE;
+    QTextToSpeech::State state() const Q_DECL_OVERRIDE;
+
+    void spdStateChanged(SPDNotificationType state);
+
 private:
-    bool loadMeta();
-    void loadPlugin();
-    static void loadPluginMetadata(QHash<QString, QJsonObject> &list);
-    QTextToSpeech *m_speech;
-    QString m_providerName;
-    QTextToSpeechPlugin *m_plugin;
-    QJsonObject m_metaData;
-    static QMutex m_mutex;
-};
 
+    QLocale localeForVoice(SPDVoice *voice) const;
+    bool connectToSpeechDispatcher();
+    void updateVoices();
+
+    QTextToSpeech::State m_state;
+    SPDConnection *speechDispatcher;
+    QLocale m_currentLocale;
+    QVector<QLocale> m_locales;
+    QVoice m_currentVoice;
+    // Voices mapped by their locale name.
+    QMultiMap<QString, QVoice> m_voices;
+};
 QT_END_NAMESPACE
 
 #endif

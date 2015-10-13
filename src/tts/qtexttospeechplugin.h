@@ -34,37 +34,30 @@
 **
 ****************************************************************************/
 
+#ifndef QTEXTTOSPEECHPLUGIN_H
+#define QTEXTTOSPEECHPLUGIN_H
 
+#include <QtTextToSpeech/qtexttospeechengine.h>
 
-#ifndef QTEXTTOSPEECH_P_H
-#define QTEXTTOSPEECH_P_H
-
-#include <qtexttospeech.h>
-#include <qtexttospeechplugin.h>
-#include <QMutex>
-#include <QtCore/private/qobject_p.h>
+#include <QtCore/QtPlugin>
+#include <QtCore/QString>
+#include <QtCore/QVariantMap>
 
 QT_BEGIN_NAMESPACE
 
-class QTextToSpeech;
-class QTextToSpeechPrivate : public QObjectPrivate
+class QTEXTTOSPEECH_EXPORT QTextToSpeechPlugin
 {
 public:
-    QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine);
-    ~QTextToSpeechPrivate();
-    static QHash<QString, QJsonObject> plugins(bool reload = false);
+    virtual ~QTextToSpeechPlugin() {}
 
-    QTextToSpeechEngine *m_engine;
-private:
-    bool loadMeta();
-    void loadPlugin();
-    static void loadPluginMetadata(QHash<QString, QJsonObject> &list);
-    QTextToSpeech *m_speech;
-    QString m_providerName;
-    QTextToSpeechPlugin *m_plugin;
-    QJsonObject m_metaData;
-    static QMutex m_mutex;
+    virtual QTextToSpeechEngine *createTextToSpeechEngine(
+            const QVariantMap &parameters,
+            QObject *parent,
+            QString *errorString) const;
 };
+
+Q_DECLARE_INTERFACE(QTextToSpeechPlugin,
+                    "org.qt-project.qt.speech.tts.plugin/5.0")
 
 QT_END_NAMESPACE
 

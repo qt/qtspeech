@@ -121,6 +121,7 @@ void tst_QTextToSpeech::set_voice()
     // Choose a voice
     QVector<QVoice> voices = tts.availableVoices();
     int vId = 0;
+    QVERIFY(voices.length()); // have at least one voice
     if (voices.length() > 1) {
         vId = 1;
     }

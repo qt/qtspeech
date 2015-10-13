@@ -70,7 +70,7 @@ public:
         BackendError
     };
 
-    explicit QTextToSpeech(QObject *parent = 0);
+    explicit QTextToSpeech(QObject *parent = 0, const QString &engine = QString());
     State state() const;
 
     QVector<QLocale> availableLocales() const;
@@ -82,6 +82,8 @@ public:
     double rate() const;
     double pitch() const;
     int volume() const;
+
+    static QStringList availableEngines();
 
 public Q_SLOTS:
     void say(const QString &text);

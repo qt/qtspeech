@@ -34,38 +34,11 @@
 **
 ****************************************************************************/
 
+#include "qtexttospeech_speechd_plugin.h"
+#include "qtexttospeech_speechd.h"
 
-
-#ifndef QTEXTTOSPEECH_P_H
-#define QTEXTTOSPEECH_P_H
-
-#include <qtexttospeech.h>
-#include <qtexttospeechplugin.h>
-#include <QMutex>
-#include <QtCore/private/qobject_p.h>
-
-QT_BEGIN_NAMESPACE
-
-class QTextToSpeech;
-class QTextToSpeechPrivate : public QObjectPrivate
+QTextToSpeechEngine *QTextToSpeechPluginSpeechd::createTextToSpeechEngine(const QVariantMap &parameters, QObject *parent, QString *errorString) const
 {
-public:
-    QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine);
-    ~QTextToSpeechPrivate();
-    static QHash<QString, QJsonObject> plugins(bool reload = false);
-
-    QTextToSpeechEngine *m_engine;
-private:
-    bool loadMeta();
-    void loadPlugin();
-    static void loadPluginMetadata(QHash<QString, QJsonObject> &list);
-    QTextToSpeech *m_speech;
-    QString m_providerName;
-    QTextToSpeechPlugin *m_plugin;
-    QJsonObject m_metaData;
-    static QMutex m_mutex;
-};
-
-QT_END_NAMESPACE
-
-#endif
+    Q_UNUSED(errorString)
+    return new QTextToSpeechEngineSpeechd(parameters, parent);
+}
