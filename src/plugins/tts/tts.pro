@@ -11,6 +11,8 @@ unix {
 # until those are written, disable the sapi plugin for mingw
 windows: !mingw: SUBDIRS += sapi
 
+osx: SUBDIRS += osx
+
 config_flite {
     SUBDIRS += flite
 }
