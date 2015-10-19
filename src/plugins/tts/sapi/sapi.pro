@@ -1,4 +1,4 @@
-TARGET = qtexttospeech_speechd
+TARGET = qtexttospeech_sapi
 PLUGIN_TYPE = texttospeech
 PLUGIN_CLASS_NAME = QTextToSpeechPluginSapi
 
