@@ -5,3 +5,5 @@ load(qt_docs)
 
 SUBDIRS = tts plugins
 android:SUBDIRS += tts/android
+
+plugins.depends = tts
