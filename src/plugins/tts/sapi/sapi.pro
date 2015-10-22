@@ -2,6 +2,12 @@ TARGET = qtexttospeech_speechd
 PLUGIN_TYPE = texttospeech
 PLUGIN_CLASS_NAME = QTextToSpeechPluginSapi
 
+# sapi.h contains some parts that fail with "strictStrings"
+QMAKE_CFLAGS_RELEASE -= -Zc:strictStrings
+QMAKE_CFLAGS_RELEASE_WITH_DEBUGINFO -= -Zc:strictStrings
+QMAKE_CXXFLAGS_RELEASE -= -Zc:strictStrings
+QMAKE_CXXFLAGS_RELEASE_WITH_DEBUGINFO -= -Zc:strictStrings
+
 load(qt_plugin)
 
 QT += core texttospeech
