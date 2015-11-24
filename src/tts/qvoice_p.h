@@ -64,7 +64,7 @@ public:
     QVoicePrivate();
     QVoicePrivate(const QVoicePrivate &other);
     QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, const QVariant &d);
-    ~QVoicePrivate() {};
+    ~QVoicePrivate() {}
 
     QString name;
     QVoice::Gender gender;
