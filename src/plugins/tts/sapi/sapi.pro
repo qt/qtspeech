@@ -21,5 +21,4 @@ SOURCES += \
     qtexttospeech_sapi_plugin.cpp \
 
 OTHER_FILES += \
-    sapi_plugin.json \
     sapi_plugin.json
