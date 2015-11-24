@@ -9,7 +9,7 @@ unix {
 
 # mingw needs copies of the structures defined in sapi.h
 # until those are written, disable the sapi plugin for mingw
-windows: !mingw: SUBDIRS += sapi
+windows:!winrt:!mingw: SUBDIRS += sapi
 
 osx: SUBDIRS += osx
 
