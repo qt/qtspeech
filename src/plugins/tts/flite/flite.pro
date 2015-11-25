@@ -6,12 +6,12 @@ PLUGIN_CLASS_NAME = QTextToSpeechEngineFlite
 load(qt_plugin)
 
 HEADERS += \
-    qtexttospeechengine_flite.h \
-    qtexttospeechplugin_flite.h
+    qtexttospeech_flite.h \
+    qtexttospeech_flite_plugin.h
 
 SOURCES += \
-    qtexttospeechengine_flite.cpp \
-    qtexttospeechplugin_flite.cpp
+    qtexttospeech_flite.cpp \
+    qtexttospeech_flite_plugin.cpp
 
 OTHER_FILES += \
     flite_plugin.json

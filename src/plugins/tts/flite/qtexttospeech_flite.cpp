@@ -34,7 +34,7 @@
 **
 ****************************************************************************/
 
-#include "qtexttospeechengine_flite.h"
+#include "qtexttospeech_flite.h"
 
 #include <QGlobalStatic>
 #include <QIODevice>

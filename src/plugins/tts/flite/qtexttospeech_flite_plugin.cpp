@@ -34,8 +34,8 @@
 **
 ****************************************************************************/
 
-#include "qtexttospeechplugin_flite.h"
-#include "qtexttospeechengine_flite.h"
+#include "qtexttospeech_flite_plugin.h"
+#include "qtexttospeech_flite.h"
 
 QT_BEGIN_NAMESPACE
 
