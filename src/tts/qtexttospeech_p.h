@@ -61,7 +61,7 @@ class QTextToSpeech;
 class QTextToSpeechPrivate : public QObjectPrivate
 {
 public:
-    QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine);
+    QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine, const QVariantMap &parameters);
     ~QTextToSpeechPrivate();
     static QHash<QString, QJsonObject> plugins(bool reload = false);
 
