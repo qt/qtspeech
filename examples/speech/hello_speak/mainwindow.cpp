@@ -41,12 +41,14 @@
 
 
 #include "mainwindow.h"
+#include <QLoggingCategory>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
-    m_speech(new QTextToSpeech(this))
+    m_speech(0)
 {
     ui.setupUi(this);
+    QLoggingCategory::setFilterRules(QStringLiteral("qt.speech.tts=true \n qt.speech.tts.*=true"));
 
     // Populate engine selection list
     ui.engine->addItem("Default", QString("default"));
@@ -118,6 +120,9 @@ void MainWindow::engineSelected(int index)
         if (locale.name() == current.name())
             current = locale;
     }
+    setRate(ui.volume->value());
+    setPitch(ui.pitch->value());
+    m_speech->setVolume(ui.volume->value());
     connect(ui.stopButton, &QPushButton::clicked, m_speech, &QTextToSpeech::stop);
     connect(ui.pauseButton, &QPushButton::clicked, m_speech, &QTextToSpeech::pause);
     connect(ui.resumeButton, &QPushButton::clicked, m_speech, &QTextToSpeech::resume);
