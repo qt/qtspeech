@@ -71,6 +71,9 @@ public:
 
     void operator=(const QVoice &other);
 
+    bool operator==(const QVoice &other);
+    bool operator!=(const QVoice &other);
+
     QString name() const;
     Gender gender() const;
     Age age() const;
