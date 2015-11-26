@@ -34,63 +34,60 @@
 **
 ****************************************************************************/
 
-#ifndef QTEXTTOSPEECHENGINE_FLITE_H
-#define QTEXTTOSPEECHENGINE_FLITE_H
+#ifndef QTEXTTOSPEECHPROCESSOR_FLITE_H
+#define QTEXTTOSPEECHPROCESSOR_FLITE_H
 
-#include "qtexttospeech_flite_processor.h"
+#include "../common/qtexttospeechprocessor_p.h"
+
 #include "qtexttospeechengine.h"
 #include "qvoice.h"
 
 #include <QtCore/QString>
-#include <QtCore/QLocale>
 #include <QtCore/QVector>
 #include <QtCore/QSharedPointer>
+#include <QtCore/QMutex>
 
 #include <flite/flite.h>
 
 QT_BEGIN_NAMESPACE
 
-class QTextToSpeechEngineFlite : public QTextToSpeechEngine
-{
+// This is a reference counted singleton class.
+// The instance is automatically deleted when no users remain.
+class QTextToSpeechProcessorFlite : public QTextToSpeechProcessor {
     Q_OBJECT
 
 public:
-    QTextToSpeechEngineFlite(const QVariantMap &parameters, QObject *parent);
-    virtual ~QTextToSpeechEngineFlite();
-
-    // Plug-in API:
-    QVector<QLocale> availableLocales() const Q_DECL_OVERRIDE;
-    QVector<QVoice> availableVoices() const Q_DECL_OVERRIDE;
-    void say(const QString &text) Q_DECL_OVERRIDE;
-    void stop() Q_DECL_OVERRIDE;
-    void pause() Q_DECL_OVERRIDE;
-    void resume() Q_DECL_OVERRIDE;
-    double rate() const Q_DECL_OVERRIDE;
-    bool setRate(double rate) Q_DECL_OVERRIDE;
-    double pitch() const Q_DECL_OVERRIDE;
-    bool setPitch(double pitch) Q_DECL_OVERRIDE;
-    QLocale locale() const Q_DECL_OVERRIDE;
-    bool setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
-    int volume() const Q_DECL_OVERRIDE;
-    bool setVolume(int volume) Q_DECL_OVERRIDE;
-    QVoice voice() const Q_DECL_OVERRIDE;
-    bool setVoice(const QVoice &voice) Q_DECL_OVERRIDE;
-    QTextToSpeech::State state() const Q_DECL_OVERRIDE;
-
-    // Internal API:
-    bool init(QString *errorString);
-
-public slots:
-    void onNotSpeaking(int statusCode);
+    static QSharedPointer<QTextToSpeechProcessorFlite> instance();
+    ~QTextToSpeechProcessorFlite();
+    const QVector<VoiceInfo> &voices() const Q_DECL_OVERRIDE;
 
 private:
-    QTextToSpeech::State m_state;
-    QSharedPointer<QTextToSpeechProcessorFlite> m_processor;
-    QLocale m_currentLocale;
-    QVector<QLocale> m_locales;
-    QVoice m_currentVoice;
-    // Voices mapped by their locale name.
-    QMultiMap<QString, QVoice> m_voices;
+    QTextToSpeechProcessorFlite();
+    static int fliteOutputCb(const cst_wave *w, int start, int size,
+                            int last, cst_audio_streaming_info *asi);
+    int fliteOutput(const cst_wave *w, int start, int size,
+                    int last, cst_audio_streaming_info *asi);
+    int processText(const QString &text, int voiceId) Q_DECL_OVERRIDE;
+    void setRateForVoice(cst_voice *voice, float rate);
+    void setPitchForVoice(cst_voice *voice, float pitch);
+    bool init();
+    void deinit();
+
+private:
+    struct FliteVoice {
+        cst_voice *vox;
+        void (*unregister_func)(cst_voice *vox);
+        QString name;
+        QString locale;
+        QVoice::Gender gender;
+        QVoice::Age age;
+    };
+    static QWeakPointer<QTextToSpeechProcessorFlite> m_instance;
+    static QMutex m_instanceLock;
+    bool m_initialized;
+    QVector<VoiceInfo> m_voices;
+    QVector<FliteVoice> m_fliteVoices;
+    int m_currentVoice;
 };
 
 QT_END_NAMESPACE

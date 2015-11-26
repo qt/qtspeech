@@ -7,11 +7,15 @@ load(qt_plugin)
 
 HEADERS += \
     qtexttospeech_flite.h \
-    qtexttospeech_flite_plugin.h
+    qtexttospeech_flite_plugin.h \
+    qtexttospeech_flite_processor.h \
+    ../common/qtexttospeechprocessor_p.h
 
 SOURCES += \
     qtexttospeech_flite.cpp \
-    qtexttospeech_flite_plugin.cpp
+    qtexttospeech_flite_plugin.cpp \
+    qtexttospeech_flite_processor.cpp \
+    ../common/qtexttospeechprocessor.cpp
 
 OTHER_FILES += \
     flite_plugin.json
