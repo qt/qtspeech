@@ -5,3 +5,7 @@ exists( ../../3rdparty/pocketsphinx/src/libpocketsphinx/.libs ): exists ( ../../
 } else {
     message( "PocketSphinx and/or SphinxBase not built, skipping PocketSphinx plug-in compilation" )
 }
+
+config_voconhybrid: exists(voconhybrid) {
+    SUBDIRS += voconhybrid
+}
