@@ -17,3 +17,7 @@ osx: SUBDIRS += osx
 config_flite {
     SUBDIRS += flite
 }
+
+config_vocalizer: exists(vocalizer) {
+    SUBDIRS += vocalizer
+}
