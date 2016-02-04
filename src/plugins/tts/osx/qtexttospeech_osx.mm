@@ -38,18 +38,13 @@
 #include "qtexttospeech_osx.h"
 #include <qdebug.h>
 
-QT_BEGIN_NAMESPACE
-
-class QTextToSpeechEngineOsx;
-
-
-@interface StateDelegate : NSObject <NSSpeechSynthesizerDelegate>
+@interface QT_MANGLE_NAMESPACE(StateDelegate) : NSObject <NSSpeechSynthesizerDelegate>
 {
-    QTextToSpeechEngineOsx *speechPrivate;
+    QT_PREPEND_NAMESPACE(QTextToSpeechEngineOsx) *speechPrivate;
 }
 @end
 
-@implementation StateDelegate
+@implementation QT_MANGLE_NAMESPACE(StateDelegate)
 - (id)initWithSpeechPrivate:(QTextToSpeechEngineOsx *) priv {
     self = [super init];
     speechPrivate = priv;
@@ -61,11 +56,12 @@ class QTextToSpeechEngineOsx;
 }
 @end
 
+QT_BEGIN_NAMESPACE
 
 QTextToSpeechEngineOsx::QTextToSpeechEngineOsx(const QVariantMap &/*parameters*/, QObject *parent)
     : QTextToSpeechEngine(parent), m_state(QTextToSpeech::Ready)
 {
-    stateDelegate = [[StateDelegate alloc] initWithSpeechPrivate:this];
+    stateDelegate = [[QT_MANGLE_NAMESPACE(StateDelegate) alloc] initWithSpeechPrivate:this];
 
     speechSynthesizer = [[NSSpeechSynthesizer alloc] init];
     [speechSynthesizer setDelegate: stateDelegate];

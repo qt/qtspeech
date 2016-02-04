@@ -44,7 +44,7 @@
 #include <QtTextToSpeech/qtexttospeechengine.h>
 #include <QtTextToSpeech/qvoice.h>
 
-Q_FORWARD_DECLARE_OBJC_CLASS(StateDelegate);
+Q_FORWARD_DECLARE_OBJC_CLASS(QT_MANGLE_NAMESPACE(StateDelegate));
 Q_FORWARD_DECLARE_OBJC_CLASS(NSSpeechSynthesizer);
 Q_FORWARD_DECLARE_OBJC_CLASS(NSString);
 
@@ -89,7 +89,7 @@ private:
 
     QVoice voiceForNSVoice(NSString *voiceString) const;
     NSSpeechSynthesizer *speechSynthesizer;
-    StateDelegate *stateDelegate;
+    QT_MANGLE_NAMESPACE(StateDelegate) *stateDelegate;
     QVector<QLocale> m_locales;
     QMultiMap<QString, QVoice> m_voices;
 };
