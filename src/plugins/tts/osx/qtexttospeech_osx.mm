@@ -34,66 +34,18 @@
 **
 ****************************************************************************/
 
-
-
-#include "qtexttospeech.h"
-#include "qtexttospeech_p.h"
-
-#import <Cocoa/Cocoa.h>
+#include <Cocoa/Cocoa.h>
+#include "qtexttospeech_osx.h"
 #include <qdebug.h>
 
-
-QT_BEGIN_NAMESPACE
-
-class QTextToSpeechPrivateMac;
-
-@interface StateDelegate : NSObject <NSSpeechSynthesizerDelegate>
+@interface QT_MANGLE_NAMESPACE(StateDelegate) : NSObject <NSSpeechSynthesizerDelegate>
 {
-    QTextToSpeechPrivateMac *speechPrivate;
+    QT_PREPEND_NAMESPACE(QTextToSpeechEngineOsx) *speechPrivate;
 }
 @end
 
-class QTextToSpeechPrivateMac : public QTextToSpeechPrivate
-{
-public:
-    QTextToSpeechPrivateMac(QTextToSpeech *speech);
-    ~QTextToSpeechPrivateMac();
-
-    QVector<QLocale> availableLocales() const Q_DECL_OVERRIDE;
-    QVector<QVoice> availableVoices() const Q_DECL_OVERRIDE;
-    void say(const QString &text) Q_DECL_OVERRIDE;
-    void stop() Q_DECL_OVERRIDE;
-    void pause() Q_DECL_OVERRIDE;
-    void resume() Q_DECL_OVERRIDE;
-
-    double rate() const Q_DECL_OVERRIDE;
-    void setRate(double rate) Q_DECL_OVERRIDE;
-    double pitch() const Q_DECL_OVERRIDE;
-    void setPitch(double pitch) Q_DECL_OVERRIDE;
-    int volume() const Q_DECL_OVERRIDE;
-    void setVolume(int volume) Q_DECL_OVERRIDE;
-    void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
-    QLocale locale() const Q_DECL_OVERRIDE;
-    void setVoice(const QVoice &voice) Q_DECL_OVERRIDE;
-    QVoice voice() const Q_DECL_OVERRIDE;
-    QTextToSpeech::State state() const Q_DECL_OVERRIDE;
-
-    bool isPaused() const;
-    bool isSpeaking() const;
-
-    void speechStopped(bool success);
-
-private:
-    void updateVoices();
-    QVoice voiceForNSVoice(NSString *voiceString) const;
-    NSSpeechSynthesizer *speechSynthesizer;
-    StateDelegate *stateDelegate;
-    QVector<QLocale> m_locales;
-    QMultiMap<QString, QVoice> m_voices;
-};
-
-@implementation StateDelegate
-- (id)initWithSpeechPrivate:(QTextToSpeechPrivateMac *) priv {
+@implementation QT_MANGLE_NAMESPACE(StateDelegate)
+- (id)initWithSpeechPrivate:(QTextToSpeechEngineOsx *) priv {
     self = [super init];
     speechPrivate = priv;
     return self;
@@ -102,52 +54,47 @@ private:
     Q_UNUSED(sender);
     speechPrivate->speechStopped(success);
 }
-
 @end
 
-QTextToSpeech::QTextToSpeech(QObject *parent)
-    : QObject(*new QTextToSpeechPrivateMac(this), parent)
-{
-    qRegisterMetaType<QTextToSpeech::State>();
-}
+QT_BEGIN_NAMESPACE
 
-QTextToSpeechPrivateMac::QTextToSpeechPrivateMac(QTextToSpeech *speech)
-    : QTextToSpeechPrivate(speech)
+QTextToSpeechEngineOsx::QTextToSpeechEngineOsx(const QVariantMap &/*parameters*/, QObject *parent)
+    : QTextToSpeechEngine(parent), m_state(QTextToSpeech::Ready)
 {
-    stateDelegate = [[StateDelegate alloc] initWithSpeechPrivate:this];
+    stateDelegate = [[QT_MANGLE_NAMESPACE(StateDelegate) alloc] initWithSpeechPrivate:this];
 
     speechSynthesizer = [[NSSpeechSynthesizer alloc] init];
     [speechSynthesizer setDelegate: stateDelegate];
     updateVoices();
 }
 
-QTextToSpeechPrivateMac::~QTextToSpeechPrivateMac()
+QTextToSpeechEngineOsx::~QTextToSpeechEngineOsx()
 {
     [speechSynthesizer release];
     [stateDelegate release];
 }
 
 
-QTextToSpeech::State QTextToSpeechPrivate::state() const
+QTextToSpeech::State QTextToSpeechEngineOsx::state() const
 {
     return m_state;
 }
 
-bool QTextToSpeechPrivateMac::isSpeaking() const
+bool QTextToSpeechEngineOsx::isSpeaking() const
 {
     return [speechSynthesizer isSpeaking];
 }
 
-void QTextToSpeechPrivateMac::speechStopped(bool success)
+void QTextToSpeechEngineOsx::speechStopped(bool success)
 {
     Q_UNUSED(success);
     if (m_state != QTextToSpeech::Ready) {
         m_state = QTextToSpeech::Ready;
-        emitStateChanged(m_state);
+        emit stateChanged(m_state);
     }
 }
 
-void QTextToSpeechPrivateMac::say(const QString &text)
+void QTextToSpeechEngineOsx::say(const QString &text)
 {
     if (text.isEmpty())
         return;
@@ -164,70 +111,73 @@ void QTextToSpeechPrivateMac::say(const QString &text)
 
     if (m_state != QTextToSpeech::Speaking) {
         m_state = QTextToSpeech::Speaking;
-        emitStateChanged(m_state);
+        emit stateChanged(m_state);
     }
 }
 
-void QTextToSpeechPrivateMac::stop()
+void QTextToSpeechEngineOsx::stop()
 {
     if([speechSynthesizer isSpeaking])
         [speechSynthesizer stopSpeaking];
 }
 
-void QTextToSpeechPrivateMac::pause()
+void QTextToSpeechEngineOsx::pause()
 {
     if ([speechSynthesizer isSpeaking]) {
         [speechSynthesizer pauseSpeakingAtBoundary: NSSpeechWordBoundary];
         m_state = QTextToSpeech::Paused;
-        emitStateChanged(m_state);
+        emit stateChanged(m_state);
     }
 }
 
-bool QTextToSpeechPrivateMac::isPaused() const
+bool QTextToSpeechEngineOsx::isPaused() const
 {
     return m_state == QTextToSpeech::Paused;
 }
 
-void QTextToSpeechPrivateMac::resume()
+void QTextToSpeechEngineOsx::resume()
 {
     m_state = QTextToSpeech::Speaking;
-    emitStateChanged(m_state);
+    emit stateChanged(m_state);
     [speechSynthesizer continueSpeaking];
 }
 
-double QTextToSpeechPrivateMac::rate() const
+double QTextToSpeechEngineOsx::rate() const
 {
     return ([speechSynthesizer rate] - 200) / 200.0;
 }
 
-void QTextToSpeechPrivateMac::setPitch(double pitch)
+bool QTextToSpeechEngineOsx::setPitch(double pitch)
 {
     // 30 to 65
     double p = 30.0 + ((pitch + 1.0) / 2.0) * 35.0;
     [speechSynthesizer setObject:[NSNumber numberWithFloat:p] forProperty:NSSpeechPitchBaseProperty error:nil];
+    return true;
 }
 
-double QTextToSpeechPrivateMac::pitch() const
+double QTextToSpeechEngineOsx::pitch() const
 {
     double pitch = [[speechSynthesizer objectForProperty:NSSpeechPitchBaseProperty error:nil] floatValue];
     return (pitch - 30.0) / 35.0 * 2.0 - 1.0;
 }
 
-int QTextToSpeechPrivateMac::volume() const
+int QTextToSpeechEngineOsx::volume() const
 {
     return [speechSynthesizer volume] * 100;
 }
 
-void QTextToSpeechPrivateMac::setRate(double rate)
+bool QTextToSpeechEngineOsx::setRate(double rate)
 {
     // NSSpeechSynthesizer supports words per minute,
     // human speech is 180 to 220 - use 0 to 400 as range here
     [speechSynthesizer setRate: 200 + (rate * 200)];
+    return true;
 }
 
-void QTextToSpeechPrivateMac::setVolume(int volume)
+bool QTextToSpeechEngineOsx::setVolume(int volume)
 {
     [speechSynthesizer setVolume: volume / 100.0];
+    return true;
 }
 
 QLocale localeForVoice(NSString *voice)
@@ -236,66 +186,59 @@ QLocale localeForVoice(NSString *voice)
     return QString::fromNSString(attrs[NSVoiceLocaleIdentifier]);
 }
 
-QVoice QTextToSpeechPrivateMac::voiceForNSVoice(NSString *voiceString) const
+QVoice QTextToSpeechEngineOsx::voiceForNSVoice(NSString *voiceString) const
 {
     NSDictionary *attrs = [NSSpeechSynthesizer attributesForVoice:voiceString];
-    QVoice voice;
     QString voiceName = QString::fromNSString(attrs[NSVoiceName]);
-    voice.setName(voiceName);
-    NSString *gender = attrs[NSVoiceGender];
-    voice.setGender([gender isEqualToString:NSVoiceGenderMale] ? QVoice::Male :
-                    [gender isEqualToString:NSVoiceGenderFemale] ? QVoice::Female :
-                    QVoice::Unknown);
-    NSNumber *age = attrs[NSVoiceAge];
-    int ageInt = age.intValue;
-    voice.setAge(ageInt < 13 ? QVoice::Child :
-                 ageInt < 20 ? QVoice::Teenager :
-                 ageInt < 45 ? QVoice::Adult :
-                 ageInt < 90 ? QVoice::Senior : QVoice::Other);
-    voice.setData(QVariant(QString::fromNSString(attrs[NSVoiceIdentifier])));
+
+    NSString *genderString = attrs[NSVoiceGender];
+    QVoice::Gender gender = [genderString isEqualToString:NSVoiceGenderMale] ? QVoice::Male :
+                            [genderString isEqualToString:NSVoiceGenderFemale] ? QVoice::Female :
+                            QVoice::Unknown;
+
+    NSNumber *ageNSNumber = attrs[NSVoiceAge];
+    int ageInt = ageNSNumber.intValue;
+    QVoice::Age age = (ageInt < 13 ? QVoice::Child :
+                       ageInt < 20 ? QVoice::Teenager :
+                       ageInt < 45 ? QVoice::Adult :
+                       ageInt < 90 ? QVoice::Senior : QVoice::Other);
+    QVariant data = QString::fromNSString(attrs[NSVoiceIdentifier]);
+    QVoice voice = createVoice(voiceName, gender, age, data);
     return voice;
 }
 
-QVector<QLocale> QTextToSpeechPrivateMac::availableLocales() const
+QVector<QLocale> QTextToSpeechEngineOsx::availableLocales() const
 {
     return m_locales;
 }
 
-void QTextToSpeechPrivateMac::setLocale(const QLocale &locale)
+bool QTextToSpeechEngineOsx::setLocale(const QLocale &locale)
 {
     NSArray *voices = [NSSpeechSynthesizer availableVoices];
     NSString *voice = [NSSpeechSynthesizer defaultVoice];
     // always prefer default
     if (locale == localeForVoice(voice)) {
         [speechSynthesizer setVoice:voice];
-        emitLocaleChanged(locale);
-        emitVoiceChanged(voiceForNSVoice(voice));
-        return;
+        return true;
     }
 
     for (voice in voices) {
         QLocale voiceLocale = localeForVoice(voice);
         if (locale == voiceLocale) {
             [speechSynthesizer setVoice:voice];
-            emitLocaleChanged(locale);
-            emitVoiceChanged(voiceForNSVoice(voice));
-            return;
+            return true;
         }
     }
+    return false;
 }
 
-QLocale QTextToSpeechPrivateMac::locale() const
+QLocale QTextToSpeechEngineOsx::locale() const
 {
     NSString *voice = [speechSynthesizer voice];
     return localeForVoice(voice);
 }
 
-QTextToSpeech::State QTextToSpeechPrivateMac::state() const
-{
-    return m_state;
-}
-
-void QTextToSpeechPrivateMac::updateVoices()
+void QTextToSpeechEngineOsx::updateVoices()
 {
     NSArray *voices = [NSSpeechSynthesizer availableVoices];
     for (NSString *voice in voices) {
@@ -307,21 +250,19 @@ void QTextToSpeechPrivateMac::updateVoices()
     }
 }
 
-QVector<QVoice> QTextToSpeechPrivateMac::availableVoices() const
+QVector<QVoice> QTextToSpeechEngineOsx::availableVoices() const
 {
     return m_voices.values(locale().name()).toVector();
 }
 
-void QTextToSpeechPrivateMac::setVoice(const QVoice &voice)
+bool QTextToSpeechEngineOsx::setVoice(const QVoice &voice)
 {
-    NSString *identifier = voice.data().toString().toNSString();
+    NSString *identifier = voiceData(voice).toString().toNSString();
     [speechSynthesizer setVoice:identifier];
-    QLocale newLocale = localeForVoice(identifier);
-    emitLocaleChanged(newLocale);
-    emitVoiceChanged(voice);
+    return true;
 }
 
-QVoice QTextToSpeechPrivateMac::voice() const
+QVoice QTextToSpeechEngineOsx::voice() const
 {
     NSString *voice = [speechSynthesizer voice];
     return voiceForNSVoice(voice);

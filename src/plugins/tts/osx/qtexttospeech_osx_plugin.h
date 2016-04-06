@@ -34,51 +34,28 @@
 **
 ****************************************************************************/
 
-#ifndef QTEXTTOSPEECHENGINE_H
-#define QTEXTTOSPEECHENGINE_H
-
-#include <QtTextToSpeech/qtexttospeech.h>
+#ifndef QTEXTTOSPEECHPLUGIN_OSX_H
+#define QTEXTTOSPEECHPLUGIN_OSX_H
 
 #include <QtCore/QObject>
-#include <QtCore/QLocale>
-#include <QtCore/QDir>
+#include <QtCore/QLoggingCategory>
+#include <QtTextToSpeech/qtexttospeechplugin.h>
+#include <QtTextToSpeech/qtexttospeechengine.h>
 
 QT_BEGIN_NAMESPACE
 
-class QTEXTTOSPEECH_EXPORT QTextToSpeechEngine : public QObject
+class QTextToSpeechPluginOsx : public QObject, public QTextToSpeechPlugin
 {
     Q_OBJECT
+    Q_INTERFACES(QTextToSpeechPlugin)
+    Q_PLUGIN_METADATA(IID "org.qt-project.qt.speech.tts.plugin/5.0"
+                      FILE "osx_plugin.json")
 
 public:
-    explicit QTextToSpeechEngine(QObject *parent = Q_NULLPTR);
-    ~QTextToSpeechEngine();
-
-    virtual QVector<QLocale> availableLocales() const = 0;
-    virtual QVector<QVoice> availableVoices() const = 0;
-
-    virtual void say(const QString &text) = 0;
-    virtual void stop() = 0;
-    virtual void pause() = 0;
-    virtual void resume() = 0;
-
-    virtual double rate() const = 0;
-    virtual bool setRate(double rate) = 0;
-    virtual double pitch() const = 0;
-    virtual bool setPitch(double pitch) = 0;
-    virtual QLocale locale() const = 0;
-    virtual bool setLocale(const QLocale &locale) = 0;
-    virtual int volume() const = 0;
-    virtual bool setVolume(int volume) = 0;
-    virtual QVoice voice() const = 0;
-    virtual bool setVoice(const QVoice &voice) = 0;
-    virtual QTextToSpeech::State state() const = 0;
-
-protected:
-    static QVoice createVoice(const QString &name, QVoice::Gender gender, QVoice::Age age, const QVariant &data);
-    static QVariant voiceData(const QVoice &voice);
-
-Q_SIGNALS:
-    void stateChanged(QTextToSpeech::State state);
+    QTextToSpeechEngine *createTextToSpeechEngine(
+                                const QVariantMap &parameters,
+                                QObject *parent,
+                                QString *errorString) const;
 };
 
 QT_END_NAMESPACE

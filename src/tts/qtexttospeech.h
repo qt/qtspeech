@@ -70,7 +70,8 @@ public:
         BackendError
     };
 
-    explicit QTextToSpeech(QObject *parent = 0, const QString &engine = QString());
+    explicit QTextToSpeech(QObject *parent = Q_NULLPTR);
+    explicit QTextToSpeech(const QString &engine, const QVariantMap &parameters = QVariantMap(), QObject *parent = Q_NULLPTR);
     State state() const;
 
     QVector<QLocale> availableLocales() const;

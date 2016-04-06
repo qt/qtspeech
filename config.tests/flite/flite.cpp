@@ -34,53 +34,22 @@
 **
 ****************************************************************************/
 
-#ifndef QTEXTTOSPEECHENGINE_H
-#define QTEXTTOSPEECHENGINE_H
+#include <flite/flite.h>
 
-#include <QtTextToSpeech/qtexttospeech.h>
-
-#include <QtCore/QObject>
-#include <QtCore/QLocale>
-#include <QtCore/QDir>
-
-QT_BEGIN_NAMESPACE
-
-class QTEXTTOSPEECH_EXPORT QTextToSpeechEngine : public QObject
+static int fliteAudioCb(const cst_wave *w, int start, int size,
+    int last, cst_audio_streaming_info *asi)
 {
-    Q_OBJECT
+    (void)w;
+    (void)start;
+    (void)size;
+    (void)last;
+    (void)asi;
+    return CST_AUDIO_STREAM_STOP;
+}
 
-public:
-    explicit QTextToSpeechEngine(QObject *parent = Q_NULLPTR);
-    ~QTextToSpeechEngine();
-
-    virtual QVector<QLocale> availableLocales() const = 0;
-    virtual QVector<QVoice> availableVoices() const = 0;
-
-    virtual void say(const QString &text) = 0;
-    virtual void stop() = 0;
-    virtual void pause() = 0;
-    virtual void resume() = 0;
-
-    virtual double rate() const = 0;
-    virtual bool setRate(double rate) = 0;
-    virtual double pitch() const = 0;
-    virtual bool setPitch(double pitch) = 0;
-    virtual QLocale locale() const = 0;
-    virtual bool setLocale(const QLocale &locale) = 0;
-    virtual int volume() const = 0;
-    virtual bool setVolume(int volume) = 0;
-    virtual QVoice voice() const = 0;
-    virtual bool setVoice(const QVoice &voice) = 0;
-    virtual QTextToSpeech::State state() const = 0;
-
-protected:
-    static QVoice createVoice(const QString &name, QVoice::Gender gender, QVoice::Age age, const QVariant &data);
-    static QVariant voiceData(const QVoice &voice);
-
-Q_SIGNALS:
-    void stateChanged(QTextToSpeech::State state);
-};
-
-QT_END_NAMESPACE
-
-#endif
+int main()
+{
+    cst_audio_streaming_info *asi = new_audio_streaming_info();
+    asi->asc = fliteAudioCb; // This fails for old Flite
+    return 0;
+}

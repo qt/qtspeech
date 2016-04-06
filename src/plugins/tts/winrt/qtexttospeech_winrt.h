@@ -34,51 +34,68 @@
 **
 ****************************************************************************/
 
-#ifndef QTEXTTOSPEECHENGINE_H
-#define QTEXTTOSPEECHENGINE_H
+#ifndef QTEXTTOSPEECHENGINE_WINRT_H
+#define QTEXTTOSPEECHENGINE_WINRT_H
 
-#include <QtTextToSpeech/qtexttospeech.h>
+#include <QtTextToSpeech/qtexttospeechengine.h>
+#include <QtTextToSpeech/qvoice.h>
 
 #include <QtCore/QObject>
+#include <QtCore/QVector>
+#include <QtCore/QString>
 #include <QtCore/QLocale>
-#include <QtCore/QDir>
+#include <QtCore/QScopedPointer>
+#include <QtCore/qt_windows.h>
+#include <wrl.h>
+
+namespace ABI {
+    namespace Windows {
+        namespace Media {
+            namespace SpeechSynthesis {
+                struct IVoiceInformation;
+            }
+        }
+    }
+}
 
 QT_BEGIN_NAMESPACE
 
-class QTEXTTOSPEECH_EXPORT QTextToSpeechEngine : public QObject
+class QTextToSpeechEngineWinRTPrivate;
+
+class QTextToSpeechEngineWinRT : public QTextToSpeechEngine
 {
     Q_OBJECT
 
 public:
-    explicit QTextToSpeechEngine(QObject *parent = Q_NULLPTR);
-    ~QTextToSpeechEngine();
+    QTextToSpeechEngineWinRT(const QVariantMap &parameters, QObject *parent);
+    ~QTextToSpeechEngineWinRT();
 
-    virtual QVector<QLocale> availableLocales() const = 0;
-    virtual QVector<QVoice> availableVoices() const = 0;
+    QVector<QLocale> availableLocales() const Q_DECL_OVERRIDE;
+    QVector<QVoice> availableVoices() const Q_DECL_OVERRIDE;
+    void say(const QString &text) Q_DECL_OVERRIDE;
+    void stop() Q_DECL_OVERRIDE;
+    void pause() Q_DECL_OVERRIDE;
+    void resume() Q_DECL_OVERRIDE;
+    double rate() const Q_DECL_OVERRIDE;
+    bool setRate(double rate) Q_DECL_OVERRIDE;
+    double pitch() const Q_DECL_OVERRIDE;
+    bool setPitch(double pitch) Q_DECL_OVERRIDE;
+    QLocale locale() const Q_DECL_OVERRIDE;
+    bool setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
+    int volume() const Q_DECL_OVERRIDE;
+    bool setVolume(int volume) Q_DECL_OVERRIDE;
+    QVoice voice() const Q_DECL_OVERRIDE;
+    bool setVoice(const QVoice &voice) Q_DECL_OVERRIDE;
+    QTextToSpeech::State state() const Q_DECL_OVERRIDE;
 
-    virtual void say(const QString &text) = 0;
-    virtual void stop() = 0;
-    virtual void pause() = 0;
-    virtual void resume() = 0;
+public slots:
+    void checkElementState();
+private:
+    void init();
+    QVoice createVoiceForInformation(Microsoft::WRL::ComPtr<ABI::Windows::Media::SpeechSynthesis::IVoiceInformation> info) const;
 
-    virtual double rate() const = 0;
-    virtual bool setRate(double rate) = 0;
-    virtual double pitch() const = 0;
-    virtual bool setPitch(double pitch) = 0;
-    virtual QLocale locale() const = 0;
-    virtual bool setLocale(const QLocale &locale) = 0;
-    virtual int volume() const = 0;
-    virtual bool setVolume(int volume) = 0;
-    virtual QVoice voice() const = 0;
-    virtual bool setVoice(const QVoice &voice) = 0;
-    virtual QTextToSpeech::State state() const = 0;
-
-protected:
-    static QVoice createVoice(const QString &name, QVoice::Gender gender, QVoice::Age age, const QVariant &data);
-    static QVariant voiceData(const QVoice &voice);
-
-Q_SIGNALS:
-    void stateChanged(QTextToSpeech::State state);
+    QScopedPointer<QTextToSpeechEngineWinRTPrivate> d_ptr;
+    Q_DECLARE_PRIVATE(QTextToSpeechEngineWinRT)
 };
 
 QT_END_NAMESPACE

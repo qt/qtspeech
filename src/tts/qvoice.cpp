@@ -69,6 +69,21 @@ void QVoice::operator=(const QVoice &other)
     d->data = other.d->data;
 }
 
+bool QVoice::operator==(const QVoice &other)
+{
+    if (d->name != other.d->name ||
+        d->gender != other.d->gender ||
+        d->age != other.d->age ||
+        d->data != other.d->data)
+        return false;
+    return true;
+}
+
+bool QVoice::operator!=(const QVoice &other)
+{
+    return !operator==(other);
+}
+
 void QVoice::setName(const QString &name)
 {
     d->name = name;

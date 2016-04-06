@@ -53,12 +53,13 @@ Q_GLOBAL_STATIC_WITH_ARGS(QFactoryLoader, loader,
 
 QMutex QTextToSpeechPrivate::m_mutex;
 
-QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine)
+QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine, const QVariantMap &parameters)
     : m_engine(0),
       m_speech(speech),
       m_providerName(engine),
       m_plugin(0)
 {
+    qRegisterMetaType<QTextToSpeech::State>();
     if (m_providerName.isEmpty()) {
         m_providerName = QTextToSpeech::availableEngines().value(0);
         if (m_providerName.isEmpty()) {
@@ -73,10 +74,9 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech, const QString 
     loadPlugin();
     if (m_plugin) {
         QString errorString;
-        m_engine = m_plugin->createTextToSpeechEngine(QVariantMap(), 0, &errorString);
+        m_engine = m_plugin->createTextToSpeechEngine(parameters, 0, &errorString);
         if (!m_engine) {
-            qCritical() << "Error creating text-to-speech engine" << m_providerName
-                        << (errorString.isEmpty() ? QStringLiteral("") : (QStringLiteral(": ") + errorString));
+            qCritical() << "Error creating text-to-speech engine" << m_providerName << errorString;
         }
     } else {
         qCritical() << "Error loading text-to-speech plug-in" << m_providerName;
@@ -186,21 +186,43 @@ void QTextToSpeechPrivate::loadPluginMetadata(QHash<QString, QJsonObject> &list)
 */
 
 /*!
+    Loads a text-to-speech engine from a plug-in that uses the default
+    engine plug-in and constructs a QTextToSpeech object as the child
+    of \a parent.
+
+    The default engine may be platform-specific.
+
+    If loading the plug-in fails, QTextToSpeech::state() will return
+    QTextToSpeech::BackendError.
+
+    \sa availableEngines()
+*/
+QTextToSpeech::QTextToSpeech(QObject *parent)
+    : QObject(*new QTextToSpeechPrivate(this, QString(), QVariantMap()), parent)
+{
+    Q_D(QTextToSpeech);
+    // Connect state change signal directly from the engine to the public API signal
+    if (d->m_engine)
+        connect(d->m_engine, &QTextToSpeechEngine::stateChanged, this, &QTextToSpeech::stateChanged);
+}
+
+/*!
   Loads a text-to-speech engine from a plug-in that matches parameter \a engine and
   constructs a QTextToSpeech object as the child of \a parent.
 
   If \a engine is empty, the default engine plug-in is used. The default
   engine may be platform-specific.
 
+  The method optionally accepts \a parameters that may be engine-specific.
+
   If loading the plug-in fails, QTextToSpeech::state() will return QTextToSpeech::BackendError.
 
   \sa availableEngines()
 */
-QTextToSpeech::QTextToSpeech(QObject *parent, const QString &engine)
-    : QObject(*new QTextToSpeechPrivate(this, engine), parent)
+QTextToSpeech::QTextToSpeech(const QString &engine, const QVariantMap &parameters, QObject *parent)
+    : QObject(*new QTextToSpeechPrivate(this, engine, parameters), parent)
 {
     Q_D(QTextToSpeech);
-    qRegisterMetaType<QTextToSpeech::State>();
     // Connect state change signal directly from the engine to the public API signal
     if (d->m_engine)
         connect(d->m_engine, &QTextToSpeechEngine::stateChanged, this, &QTextToSpeech::stateChanged);

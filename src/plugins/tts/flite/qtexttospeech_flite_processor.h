@@ -34,51 +34,60 @@
 **
 ****************************************************************************/
 
-#ifndef QTEXTTOSPEECHENGINE_H
-#define QTEXTTOSPEECHENGINE_H
+#ifndef QTEXTTOSPEECHPROCESSOR_FLITE_H
+#define QTEXTTOSPEECHPROCESSOR_FLITE_H
 
-#include <QtTextToSpeech/qtexttospeech.h>
+#include "../common/qtexttospeechprocessor_p.h"
 
-#include <QtCore/QObject>
-#include <QtCore/QLocale>
-#include <QtCore/QDir>
+#include "qtexttospeechengine.h"
+#include "qvoice.h"
+
+#include <QtCore/QString>
+#include <QtCore/QVector>
+#include <QtCore/QSharedPointer>
+#include <QtCore/QMutex>
+
+#include <flite/flite.h>
 
 QT_BEGIN_NAMESPACE
 
-class QTEXTTOSPEECH_EXPORT QTextToSpeechEngine : public QObject
-{
+// This is a reference counted singleton class.
+// The instance is automatically deleted when no users remain.
+class QTextToSpeechProcessorFlite : public QTextToSpeechProcessor {
     Q_OBJECT
 
 public:
-    explicit QTextToSpeechEngine(QObject *parent = Q_NULLPTR);
-    ~QTextToSpeechEngine();
+    static QSharedPointer<QTextToSpeechProcessorFlite> instance();
+    ~QTextToSpeechProcessorFlite();
+    const QVector<VoiceInfo> &voices() const Q_DECL_OVERRIDE;
 
-    virtual QVector<QLocale> availableLocales() const = 0;
-    virtual QVector<QVoice> availableVoices() const = 0;
+private:
+    QTextToSpeechProcessorFlite();
+    static int fliteOutputCb(const cst_wave *w, int start, int size,
+                            int last, cst_audio_streaming_info *asi);
+    int fliteOutput(const cst_wave *w, int start, int size,
+                    int last, cst_audio_streaming_info *asi);
+    int processText(const QString &text, int voiceId) Q_DECL_OVERRIDE;
+    void setRateForVoice(cst_voice *voice, float rate);
+    void setPitchForVoice(cst_voice *voice, float pitch);
+    bool init();
+    void deinit();
 
-    virtual void say(const QString &text) = 0;
-    virtual void stop() = 0;
-    virtual void pause() = 0;
-    virtual void resume() = 0;
-
-    virtual double rate() const = 0;
-    virtual bool setRate(double rate) = 0;
-    virtual double pitch() const = 0;
-    virtual bool setPitch(double pitch) = 0;
-    virtual QLocale locale() const = 0;
-    virtual bool setLocale(const QLocale &locale) = 0;
-    virtual int volume() const = 0;
-    virtual bool setVolume(int volume) = 0;
-    virtual QVoice voice() const = 0;
-    virtual bool setVoice(const QVoice &voice) = 0;
-    virtual QTextToSpeech::State state() const = 0;
-
-protected:
-    static QVoice createVoice(const QString &name, QVoice::Gender gender, QVoice::Age age, const QVariant &data);
-    static QVariant voiceData(const QVoice &voice);
-
-Q_SIGNALS:
-    void stateChanged(QTextToSpeech::State state);
+private:
+    struct FliteVoice {
+        cst_voice *vox;
+        void (*unregister_func)(cst_voice *vox);
+        QString name;
+        QString locale;
+        QVoice::Gender gender;
+        QVoice::Age age;
+    };
+    static QWeakPointer<QTextToSpeechProcessorFlite> m_instance;
+    static QMutex m_instanceLock;
+    bool m_initialized;
+    QVector<VoiceInfo> m_voices;
+    QVector<FliteVoice> m_fliteVoices;
+    int m_currentVoice;
 };
 
 QT_END_NAMESPACE
