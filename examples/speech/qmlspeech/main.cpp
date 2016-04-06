@@ -36,7 +36,7 @@
 
 #include "qspeechrecognition.h"
 
-#include <QApplication>
+#include <QGuiApplication>
 #include <QQmlContext>
 #include <QQmlApplicationEngine>
 #include <QLoggingCategory>
@@ -45,7 +45,7 @@
 
 int main(int argc, char *argv[])
 {
-    QApplication app(argc, argv);
+    QGuiApplication app(argc, argv);
     QLoggingCategory::setFilterRules(QStringLiteral("qt.speech.asr=true \n qt.speech.asr.*=true"));
 
     QQmlApplicationEngine engine;

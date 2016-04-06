@@ -1,6 +1,6 @@
 TEMPLATE = app
 
-QT += qml quick widgets speechrecognition
+QT += qml quick speechrecognition
 
 SOURCES += main.cpp
 
