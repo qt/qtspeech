@@ -53,7 +53,7 @@ Q_GLOBAL_STATIC_WITH_ARGS(QFactoryLoader, loader,
 
 QMutex QTextToSpeechPrivate::m_mutex;
 
-QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine, const QVariantMap &parameters)
+QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine)
     : m_engine(0),
       m_speech(speech),
       m_providerName(engine),
@@ -74,9 +74,10 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech, const QString 
     loadPlugin();
     if (m_plugin) {
         QString errorString;
-        m_engine = m_plugin->createTextToSpeechEngine(parameters, 0, &errorString);
+        m_engine = m_plugin->createTextToSpeechEngine(QVariantMap(), 0, &errorString);
         if (!m_engine) {
-            qCritical() << "Error creating text-to-speech engine" << m_providerName << errorString;
+            qCritical() << "Error creating text-to-speech engine" << m_providerName
+                        << (errorString.isEmpty() ? QStringLiteral("") : (QStringLiteral(": ") + errorString));
         }
     } else {
         qCritical() << "Error loading text-to-speech plug-in" << m_providerName;
@@ -198,7 +199,7 @@ void QTextToSpeechPrivate::loadPluginMetadata(QHash<QString, QJsonObject> &list)
     \sa availableEngines()
 */
 QTextToSpeech::QTextToSpeech(QObject *parent)
-    : QObject(*new QTextToSpeechPrivate(this, QString(), QVariantMap()), parent)
+    : QObject(*new QTextToSpeechPrivate(this, QString()), parent)
 {
     Q_D(QTextToSpeech);
     // Connect state change signal directly from the engine to the public API signal
@@ -213,14 +214,12 @@ QTextToSpeech::QTextToSpeech(QObject *parent)
   If \a engine is empty, the default engine plug-in is used. The default
   engine may be platform-specific.
 
-  The method optionally accepts \a parameters that may be engine-specific.
-
   If loading the plug-in fails, QTextToSpeech::state() will return QTextToSpeech::BackendError.
 
   \sa availableEngines()
 */
-QTextToSpeech::QTextToSpeech(const QString &engine, const QVariantMap &parameters, QObject *parent)
-    : QObject(*new QTextToSpeechPrivate(this, engine, parameters), parent)
+QTextToSpeech::QTextToSpeech(const QString &engine, QObject *parent)
+    : QObject(*new QTextToSpeechPrivate(this, engine), parent)
 {
     Q_D(QTextToSpeech);
     // Connect state change signal directly from the engine to the public API signal

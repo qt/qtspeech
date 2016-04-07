@@ -105,7 +105,7 @@ void MainWindow::engineSelected(int index)
     if (engineName == "default")
         m_speech = new QTextToSpeech(this);
     else
-        m_speech = new QTextToSpeech(engineName, QVariantMap(), this);
+        m_speech = new QTextToSpeech(engineName, this);
     disconnect(ui.language, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::languageSelected);
     ui.language->clear();
     // Populate the languages combobox before connecting its signal.
