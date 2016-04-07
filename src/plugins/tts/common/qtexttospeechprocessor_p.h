@@ -72,11 +72,11 @@ public:
     void pause();
     void resume();
     bool isIdle() const;
-    bool setRate(float rate);
-    bool setPitch(float pitch);
+    bool setRate(double rate);
+    bool setPitch(double pitch);
     bool setVolume(int volume);
-    float rate() const;
-    float pitch() const;
+    double rate() const;
+    double pitch() const;
     int volume() const;
     virtual const QVector<VoiceInfo> &voices() const = 0;
 
@@ -96,8 +96,8 @@ protected:
     // These methods should be re-implemented if the parameters need
     // to be changed while TTS is speaking. By default, updateVolume() just
     // changes the QAudioOutput volume. The other methods do nothing by default.
-    virtual bool updateRate(float rate);
-    virtual bool updatePitch(float pitch);
+    virtual bool updateRate(double rate);
+    virtual bool updatePitch(double pitch);
     virtual bool updateVolume(int volume);
 
     // This method is called from the internal processor thread, and should block
@@ -117,8 +117,8 @@ private:
     volatile bool m_stop;
     volatile bool m_idle;
     volatile bool m_paused;
-    float m_rate;
-    float m_pitch;
+    double m_rate;
+    double m_pitch;
     int m_volume;
     QSemaphore m_speakSem;
     QString m_nextText;

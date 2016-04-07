@@ -95,7 +95,7 @@ void QTextToSpeechProcessor::resume()
     m_speakSem.release();
 }
 
-bool QTextToSpeechProcessor::setRate(float rate)
+bool QTextToSpeechProcessor::setRate(double rate)
 {
     QMutexLocker lock(&m_lock);
     if (rate >= -1.0 && rate <= 1.0) {
@@ -107,7 +107,7 @@ bool QTextToSpeechProcessor::setRate(float rate)
     return false;
 }
 
-bool QTextToSpeechProcessor::setPitch(float pitch)
+bool QTextToSpeechProcessor::setPitch(double pitch)
 {
     QMutexLocker lock(&m_lock);
     if (pitch >= -1.0 && pitch <= 1.0) {
@@ -137,13 +137,13 @@ bool QTextToSpeechProcessor::isIdle() const
     return m_idle;
 }
 
-float QTextToSpeechProcessor::rate() const
+double QTextToSpeechProcessor::rate() const
 {
     QMutexLocker lock(&m_lock);
     return m_rate;
 }
 
-float QTextToSpeechProcessor::pitch() const
+double QTextToSpeechProcessor::pitch() const
 {
     QMutexLocker lock(&m_lock);
     return m_pitch;
@@ -287,13 +287,13 @@ void QTextToSpeechProcessor::audioStop(bool abort)
     }
 }
 
-bool QTextToSpeechProcessor::updateRate(float rate)
+bool QTextToSpeechProcessor::updateRate(double rate)
 {
     Q_UNUSED(rate);
     return true;
 }
 
-bool QTextToSpeechProcessor::updatePitch(float pitch)
+bool QTextToSpeechProcessor::updatePitch(double pitch)
 {
     Q_UNUSED(pitch);
     return true;
