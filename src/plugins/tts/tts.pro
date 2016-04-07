@@ -14,7 +14,7 @@ winrt: SUBDIRS += winrt
 
 osx: SUBDIRS += osx
 
-config_flite {
+config_flite | config_flite_alsa {
     SUBDIRS += flite
 }
 

@@ -51,5 +51,6 @@ int main()
 {
     cst_audio_streaming_info *asi = new_audio_streaming_info();
     asi->asc = fliteAudioCb; // This fails for old Flite
+    new_audio_streaming_info();
     return 0;
 }

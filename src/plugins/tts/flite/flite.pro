@@ -21,3 +21,5 @@ OTHER_FILES += \
     flite_plugin.json
 
 LIBS += -lflite_cmu_us_kal16 -lflite_usenglish -lflite_cmulex -lflite
+
+config_flite_alsa: LIBS += -lasound
