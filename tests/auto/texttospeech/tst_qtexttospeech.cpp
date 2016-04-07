@@ -40,7 +40,7 @@
 #include <QSignalSpy>
 
 #if defined(Q_OS_UNIX) && !(defined(Q_OS_MAC) || defined(Q_OS_ANDROID))
-    #include <libspeechd.h>
+    #include <speech-dispatcher/libspeechd.h>
     #if LIBSPEECHD_MAJOR_VERSION > 0 || LIBSPEECHD_MINOR_VERSION >= 9
         #define HAVE_SPD_090
     #endif
