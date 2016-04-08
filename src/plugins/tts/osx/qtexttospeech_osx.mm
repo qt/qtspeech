@@ -161,9 +161,9 @@ double QTextToSpeechEngineOsx::pitch() const
     return (pitch - 30.0) / 35.0 * 2.0 - 1.0;
 }
 
-int QTextToSpeechEngineOsx::volume() const
+double QTextToSpeechEngineOsx::volume() const
 {
-    return [speechSynthesizer volume] * 100;
+    return [speechSynthesizer volume];
 }
 
 bool QTextToSpeechEngineOsx::setRate(double rate)
@@ -174,9 +174,9 @@ bool QTextToSpeechEngineOsx::setRate(double rate)
     return true;
 }
 
-bool QTextToSpeechEngineOsx::setVolume(int volume)
+bool QTextToSpeechEngineOsx::setVolume(double volume)
 {
-    [speechSynthesizer setVolume: volume / 100.0];
+    [speechSynthesizer setVolume: volume];
     return true;
 }
 

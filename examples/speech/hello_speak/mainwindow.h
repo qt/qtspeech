@@ -61,6 +61,7 @@ public slots:
 
     void setRate(int);
     void setPitch(int);
+    void setVolume(int volume);
 
     void stateChanged(QTextToSpeech::State state);
     void engineSelected(int index);

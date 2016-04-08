@@ -154,21 +154,21 @@ double QTextToSpeechEngineSapi::rate() const
     return -1;
 }
 
-bool QTextToSpeechEngineSapi::setVolume(int volume)
+bool QTextToSpeechEngineSapi::setVolume(double volume)
 {
-    // 0 to 100
-    m_voice->SetVolume(volume);
+    // 0 to 1
+    m_voice->SetVolume(volume * 100);
     return true;
 }
 
-int QTextToSpeechEngineSapi::volume() const
+double QTextToSpeechEngineSapi::volume() const
 {
     USHORT baseVolume;
     if (m_voice->GetVolume(&baseVolume) == S_OK)
     {
-        return baseVolume;
+        return baseVolume / 100.0;
     }
-    return -1;
+    return 0.0;
 }
 
 QString QTextToSpeechEngineSapi::voiceId(ISpObjectToken *speechToken) const

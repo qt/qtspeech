@@ -227,24 +227,26 @@ double QTextToSpeechEngineSpeechd::rate() const
     return rate;
 }
 
-bool QTextToSpeechEngineSpeechd::setVolume(int volume)
+bool QTextToSpeechEngineSpeechd::setVolume(double volume)
 {
     if (!connectToSpeechDispatcher())
         return false;
 
-    int result = spd_set_volume(speechDispatcher, ( -100 + volume * 2) );
+    // convert from 0.0..1.0 to -100..100
+    int result = spd_set_volume(speechDispatcher, (volume - 0.5) * 200);
     if (result == 0)
         return true;
     return false;
 }
 
-int QTextToSpeechEngineSpeechd::volume() const
+double QTextToSpeechEngineSpeechd::volume() const
 {
-    int volume = 0;
+    double volume = 0.0;
 #ifdef HAVE_SPD_090
     if (speechDispatcher != 0) {
         int result = spd_get_volume(speechDispatcher);
-        volume = (result + 100) / 2;
+        // -100..100 to 0.0..1.0
+        volume = (result + 100) / 200.0;
     }
 #endif
     return volume;

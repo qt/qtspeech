@@ -82,7 +82,7 @@ public:
 
     double rate() const;
     double pitch() const;
-    int volume() const;
+    double volume() const;
 
     static QStringList availableEngines();
 
@@ -96,7 +96,7 @@ public Q_SLOTS:
 
     void setRate(double rate);
     void setPitch(double pitch);
-    void setVolume(int volume);
+    void setVolume(double volume);
     void setVoice(const QVoice &voice);
 
 Q_SIGNALS:

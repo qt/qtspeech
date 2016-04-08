@@ -95,7 +95,7 @@ QTextToSpeechEngineWinRT::QTextToSpeechEngineWinRT(const QVariantMap &, QObject 
     , d_ptr(new QTextToSpeechEngineWinRTPrivate)
 {
     d_ptr->rate = 0;
-    d_ptr->volume = 100;
+    d_ptr->volume = 1.0;
     d_ptr->timer.setInterval(100);
     connect(&d_ptr->timer, &QTimer::timeout, this, &QTextToSpeechEngineWinRT::checkElementState);
 
@@ -159,7 +159,7 @@ void QTextToSpeechEngineWinRT::say(const QString &text)
         if (FAILED(hr))
             qWarning("Could not set playback rate.");
 
-        const DOUBLE vol = DOUBLE(d->volume) / 100.;
+        const DOUBLE vol = DOUBLE(d->volume);
         hr = d->media->put_Volume(vol);
         if (FAILED(hr))
             qWarning("Could not set volume.");
@@ -302,14 +302,14 @@ bool QTextToSpeechEngineWinRT::setLocale(const QLocale &locale)
     return setVoice(d->voices.at(index));
 }
 
-int QTextToSpeechEngineWinRT::volume() const
+double QTextToSpeechEngineWinRT::volume() const
 {
     Q_D(const QTextToSpeechEngineWinRT);
 
     return d->volume;
 }
 
-bool QTextToSpeechEngineWinRT::setVolume(int volume)
+bool QTextToSpeechEngineWinRT::setVolume(double volume)
 {
     Q_D(QTextToSpeechEngineWinRT);
 

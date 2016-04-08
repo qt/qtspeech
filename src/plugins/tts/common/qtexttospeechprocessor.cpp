@@ -149,7 +149,7 @@ double QTextToSpeechProcessor::pitch() const
     return m_pitch;
 }
 
-int QTextToSpeechProcessor::volume() const
+double QTextToSpeechProcessor::volume() const
 {
     QMutexLocker lock(&m_lock);
     return m_volume;
@@ -299,10 +299,10 @@ bool QTextToSpeechProcessor::updatePitch(double pitch)
     return true;
 }
 
-bool QTextToSpeechProcessor::updateVolume(int volume)
+bool QTextToSpeechProcessor::updateVolume(double volume)
 {
     if (m_audio)
-        m_audio->setVolume(((qreal)volume) / 100.0);
+        m_audio->setVolume(volume);
     return true;
 }
 

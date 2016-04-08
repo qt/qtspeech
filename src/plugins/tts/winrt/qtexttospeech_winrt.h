@@ -82,8 +82,8 @@ public:
     bool setPitch(double pitch) Q_DECL_OVERRIDE;
     QLocale locale() const Q_DECL_OVERRIDE;
     bool setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
-    int volume() const Q_DECL_OVERRIDE;
-    bool setVolume(int volume) Q_DECL_OVERRIDE;
+    double volume() const Q_DECL_OVERRIDE;
+    bool setVolume(double volume) Q_DECL_OVERRIDE;
     QVoice voice() const Q_DECL_OVERRIDE;
     bool setVoice(const QVoice &voice) Q_DECL_OVERRIDE;
     QTextToSpeech::State state() const Q_DECL_OVERRIDE;

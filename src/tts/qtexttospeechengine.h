@@ -67,8 +67,8 @@ public:
     virtual bool setPitch(double pitch) = 0;
     virtual QLocale locale() const = 0;
     virtual bool setLocale(const QLocale &locale) = 0;
-    virtual int volume() const = 0;
-    virtual bool setVolume(int volume) = 0;
+    virtual double volume() const = 0;
+    virtual bool setVolume(double volume) = 0;
     virtual QVoice voice() const = 0;
     virtual bool setVoice(const QVoice &voice) = 0;
     virtual QTextToSpeech::State state() const = 0;

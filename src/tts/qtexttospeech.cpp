@@ -356,24 +356,23 @@ double QTextToSpeech::rate() const
 
 /*!
  \property QTextToSpeech::volume
- This property holds the current volume in the range 0 to 100.
- The default value depends on the platform's default volume.
+ This property holds the current volume in the range 0.0 to 1.0.
+ The default value is the platform's default volume.
 */
-
-void QTextToSpeech::setVolume(int volume)
+void QTextToSpeech::setVolume(double volume)
 {
     Q_D(QTextToSpeech);
-    volume = qMin(qMax(volume, 0), 100);
+    volume = qMin(qMax(volume, 0.0), 1.0);
     if (d->m_engine && d->m_engine->setVolume(volume))
         emit volumeChanged(volume);
 }
 
-int QTextToSpeech::volume() const
+double QTextToSpeech::volume() const
 {
     Q_D(const QTextToSpeech);
     if (d->m_engine)
         return d->m_engine->volume();
-    return 0;
+    return 0.0;
 }
 
 /*!

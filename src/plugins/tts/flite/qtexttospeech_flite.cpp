@@ -137,12 +137,12 @@ bool QTextToSpeechEngineFlite::setLocale(const QLocale &locale)
     return true;
 }
 
-int QTextToSpeechEngineFlite::volume() const
+double QTextToSpeechEngineFlite::volume() const
 {
     return m_processor->volume();
 }
 
-bool QTextToSpeechEngineFlite::setVolume(int volume)
+bool QTextToSpeechEngineFlite::setVolume(double volume)
 {
     return m_processor->setVolume(volume);
 }

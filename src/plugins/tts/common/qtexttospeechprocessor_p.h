@@ -74,10 +74,10 @@ public:
     bool isIdle() const;
     bool setRate(double rate);
     bool setPitch(double pitch);
-    bool setVolume(int volume);
+    bool setVolume(double volume);
     double rate() const;
     double pitch() const;
-    int volume() const;
+    double volume() const;
     virtual const QVector<VoiceInfo> &voices() const = 0;
 
 protected:
@@ -98,7 +98,7 @@ protected:
     // changes the QAudioOutput volume. The other methods do nothing by default.
     virtual bool updateRate(double rate);
     virtual bool updatePitch(double pitch);
-    virtual bool updateVolume(int volume);
+    virtual bool updateVolume(double volume);
 
     // This method is called from the internal processor thread, and should block
     // until the given text has been processed or processing is interrupted.
