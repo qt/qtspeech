@@ -120,7 +120,7 @@ void MainWindow::engineSelected(int index)
         if (locale.name() == current.name())
             current = locale;
     }
-    setRate(ui.volume->value());
+    setRate(ui.rate->value());
     setPitch(ui.pitch->value());
     m_speech->setVolume(ui.volume->value());
     connect(ui.stopButton, &QPushButton::clicked, m_speech, &QTextToSpeech::stop);
