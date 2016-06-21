@@ -112,7 +112,7 @@ signals:
     void notSpeaking(int statusCode);
 
 private:
-    void run() Q_DECL_OVERRIDE;
+    void run() override;
     mutable QMutex m_lock;
     volatile bool m_stop;
     volatile bool m_idle;

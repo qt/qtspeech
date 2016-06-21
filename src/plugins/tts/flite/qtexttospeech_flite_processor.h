@@ -59,7 +59,7 @@ class QTextToSpeechProcessorFlite : public QTextToSpeechProcessor {
 public:
     static QSharedPointer<QTextToSpeechProcessorFlite> instance();
     ~QTextToSpeechProcessorFlite();
-    const QVector<VoiceInfo> &voices() const Q_DECL_OVERRIDE;
+    const QVector<VoiceInfo> &voices() const override;
 
 private:
     QTextToSpeechProcessorFlite();
@@ -67,7 +67,7 @@ private:
                             int last, cst_audio_streaming_info *asi);
     int fliteOutput(const cst_wave *w, int start, int size,
                     int last, cst_audio_streaming_info *asi);
-    int processText(const QString &text, int voiceId) Q_DECL_OVERRIDE;
+    int processText(const QString &text, int voiceId) override;
     void setRateForVoice(cst_voice *voice, float rate);
     void setPitchForVoice(cst_voice *voice, float pitch);
     bool init();
