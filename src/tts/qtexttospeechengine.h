@@ -50,7 +50,7 @@ class QTEXTTOSPEECH_EXPORT QTextToSpeechEngine : public QObject
     Q_OBJECT
 
 public:
-    explicit QTextToSpeechEngine(QObject *parent = Q_NULLPTR);
+    explicit QTextToSpeechEngine(QObject *parent = nullptr);
     ~QTextToSpeechEngine();
 
     virtual QVector<QLocale> availableLocales() const = 0;
