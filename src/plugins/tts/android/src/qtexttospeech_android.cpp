@@ -33,48 +33,16 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
+#include "qtexttospeech_android.h"
 
-#include "qtexttospeech_p.h"
 #include <jni.h>
-#include <QtCore/private/qjni_p.h>
 #include <QtCore/private/qjnihelpers_p.h>
 
 QT_BEGIN_NAMESPACE
 
 static jclass g_qtSpeechClass = 0;
-class QTextToSpeechPrivateAndroid : public QTextToSpeechPrivate
-{
-public:
-    QTextToSpeechPrivateAndroid(QTextToSpeech *speech);
-    ~QTextToSpeechPrivateAndroid();
 
-    QVector<QLocale> availableLocales() const Q_DECL_OVERRIDE;
-    QVector<QVoice> availableVoices() const Q_DECL_OVERRIDE;
-
-    void say(const QString &text) Q_DECL_OVERRIDE;
-    void stop() Q_DECL_OVERRIDE;
-    void pause() Q_DECL_OVERRIDE;
-    void resume() Q_DECL_OVERRIDE;
-
-    double rate() const Q_DECL_OVERRIDE;
-    void setRate(double rate) Q_DECL_OVERRIDE;
-    double pitch() const Q_DECL_OVERRIDE;
-    void setPitch(double pitch) Q_DECL_OVERRIDE;
-    int volume() const Q_DECL_OVERRIDE;
-    void setVolume(int volume) Q_DECL_OVERRIDE;
-    void setLocale(const QLocale &locale) Q_DECL_OVERRIDE;
-    QLocale locale() const Q_DECL_OVERRIDE;
-    void setVoice(const QVoice &voice) Q_DECL_OVERRIDE;
-    QVoice voice() const Q_DECL_OVERRIDE;
-    QTextToSpeech::State state() const Q_DECL_OVERRIDE;
-    void setState(QTextToSpeech::State state);
-
-private:
-    QString m_text;
-    QJNIObjectPrivate m_speech;
-};
-
-typedef QMap<jlong, QTextToSpeechPrivateAndroid *> TextToSpeechMap;
+typedef QMap<jlong, QTextToSpeechEngineAndroid *> TextToSpeechMap;
 Q_GLOBAL_STATIC(TextToSpeechMap, textToSpeechMap)
 
 static void notifyError(JNIEnv *env, jobject thiz, jlong id)
@@ -82,7 +50,7 @@ static void notifyError(JNIEnv *env, jobject thiz, jlong id)
     Q_UNUSED(env);
     Q_UNUSED(thiz);
 
-    QTextToSpeechPrivateAndroid *const tts = (*textToSpeechMap)[id];
+    QTextToSpeechEngineAndroid *const tts = (*textToSpeechMap)[id];
     if (!tts)
         return;
 
@@ -94,7 +62,7 @@ static void notifyReady(JNIEnv *env, jobject thiz, jlong id)
     Q_UNUSED(env);
     Q_UNUSED(thiz);
 
-    QTextToSpeechPrivateAndroid *const tts = (*textToSpeechMap)[id];
+    QTextToSpeechEngineAndroid *const tts = (*textToSpeechMap)[id];
     if (!tts || tts->state() == QTextToSpeech::Paused)
         return;
 
@@ -106,7 +74,7 @@ static void notifySpeaking(JNIEnv *env, jobject thiz, jlong id)
     Q_UNUSED(env);
     Q_UNUSED(thiz);
 
-    QTextToSpeechPrivateAndroid *const tts = (*textToSpeechMap)[id];
+    QTextToSpeechEngineAndroid *const tts = (*textToSpeechMap)[id];
     if (!tts)
         return;
 
@@ -147,9 +115,13 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
     return JNI_VERSION_1_4;
 }
 
-QTextToSpeechPrivateAndroid::QTextToSpeechPrivateAndroid(QTextToSpeech *speech)
-    : QTextToSpeechPrivate(speech)
+QTextToSpeechEngineAndroid::QTextToSpeechEngineAndroid(const QVariantMap &parameters, QObject *parent)
+    : QTextToSpeechEngine(parent)
+    , m_speech()
+    , m_state(QTextToSpeech::Ready)
+    , m_text()
 {
+    Q_UNUSED(parameters)
     Q_ASSERT(g_qtSpeechClass);
 
     const jlong id = reinterpret_cast<jlong>(this);
@@ -161,19 +133,13 @@ QTextToSpeechPrivateAndroid::QTextToSpeechPrivateAndroid(QTextToSpeech *speech)
     (*textToSpeechMap)[id] = this;
 }
 
-QTextToSpeechPrivateAndroid::~QTextToSpeechPrivateAndroid()
+QTextToSpeechEngineAndroid::~QTextToSpeechEngineAndroid()
 {
     textToSpeechMap->remove(reinterpret_cast<jlong>(this));
     m_speech.callMethod<void>("shutdown");
 }
 
-QTextToSpeech::QTextToSpeech(QObject *parent)
-    : QObject(*new QTextToSpeechPrivateAndroid(this), parent)
-{
-    qRegisterMetaType<QTextToSpeech::State>();
-}
-
-void QTextToSpeechPrivateAndroid::say(const QString &text)
+void QTextToSpeechEngineAndroid::say(const QString &text)
 {
     if (text.isEmpty())
         return;
@@ -188,21 +154,21 @@ void QTextToSpeechPrivateAndroid::say(const QString &text)
     m_speech.callMethod<void>("say", "(Ljava/lang/String;)V", jstr);
 }
 
-QTextToSpeech::State QTextToSpeechPrivateAndroid::state() const
+QTextToSpeech::State QTextToSpeechEngineAndroid::state() const
 {
     return m_state;
 }
 
-void QTextToSpeechPrivateAndroid::setState(QTextToSpeech::State state)
+void QTextToSpeechEngineAndroid::setState(QTextToSpeech::State state)
 {
     if (m_state == state)
         return;
 
     m_state = state;
-    emitStateChanged(m_state);
+    emit stateChanged(m_state);
 }
 
-void QTextToSpeechPrivateAndroid::stop()
+void QTextToSpeechEngineAndroid::stop()
 {
     if (m_state == QTextToSpeech::Ready)
         return;
@@ -210,7 +176,7 @@ void QTextToSpeechPrivateAndroid::stop()
     m_speech.callMethod<void>("stop", "()V");
 }
 
-void QTextToSpeechPrivateAndroid::pause()
+void QTextToSpeechEngineAndroid::pause()
 {
     if (m_state == QTextToSpeech::Paused)
         return;
@@ -219,7 +185,7 @@ void QTextToSpeechPrivateAndroid::pause()
     setState(QTextToSpeech::Paused);
 }
 
-void QTextToSpeechPrivateAndroid::resume()
+void QTextToSpeechEngineAndroid::resume()
 {
     if (m_state != QTextToSpeech::Paused)
         return;
@@ -227,69 +193,68 @@ void QTextToSpeechPrivateAndroid::resume()
     say(m_text);
 }
 
-double QTextToSpeechPrivateAndroid::pitch() const
+double QTextToSpeechEngineAndroid::pitch() const
 {
     jfloat pitch = m_speech.callMethod<jfloat>("pitch");
     return double(pitch - 1.0f);
 }
 
-void QTextToSpeechPrivateAndroid::setPitch(double pitch)
+bool QTextToSpeechEngineAndroid::setPitch(double pitch)
 {
     // 0 == SUCCESS and 1.0 == Android API's normal pitch.
-    if (m_speech.callMethod<int>("setPitch", "(F)I", pitch + 1.0) == 0)
-        emitPitchChanged(pitch);
+    return m_speech.callMethod<int>("setPitch", "(F)I", pitch + 1.0f) == 0;
 }
 
-double QTextToSpeechPrivateAndroid::rate() const
+double QTextToSpeechEngineAndroid::rate() const
 {
     jfloat rate = m_speech.callMethod<jfloat>("rate");
     return double(rate - 1.0f);
 }
 
-void QTextToSpeechPrivateAndroid::setRate(double rate)
+bool QTextToSpeechEngineAndroid::setRate(double rate)
 {
     // 0 == SUCCESS and 1.0 == Android API's normal rate.
-    if (m_speech.callMethod<int>("setRate", "(F)I", rate + 1.0f) == 0)
-        emitRateChanged(rate);
+    return (m_speech.callMethod<int>("setRate", "(F)I", rate + 1.0f) == 0);
 }
 
-int QTextToSpeechPrivateAndroid::volume() const
+double QTextToSpeechEngineAndroid::volume() const
 {
     jfloat volume = m_speech.callMethod<jfloat>("volume");
-    return int(volume * 100);
+    return volume;
 }
 
-void QTextToSpeechPrivateAndroid::setVolume(int volume)
+bool QTextToSpeechEngineAndroid::setVolume(double volume)
 {
     // 0 == SUCCESS
-    if (m_speech.callMethod<jint>("setVolume", "(F)I", float(volume) / 100) == 0)
-        emitVolumeChanged(volume);
+    return m_speech.callMethod<jint>("setVolume", "(F)I", float(volume)) == 0;
 }
 
-QVector<QLocale> QTextToSpeechPrivateAndroid::availableLocales() const
+QVector<QLocale> QTextToSpeechEngineAndroid::availableLocales() const
 {
     return QVector<QLocale>();
 }
 
-void QTextToSpeechPrivateAndroid::setLocale(const QLocale & /* locale */)
+bool QTextToSpeechEngineAndroid::setLocale(const QLocale & /* locale */)
 {
+    return false;
 }
 
-QLocale QTextToSpeechPrivateAndroid::locale() const
+QLocale QTextToSpeechEngineAndroid::locale() const
 {
     return QLocale();
 }
 
-QVector<QVoice> QTextToSpeechPrivateAndroid::availableVoices() const
+QVector<QVoice> QTextToSpeechEngineAndroid::availableVoices() const
 {
     return QVector<QVoice>();
 }
 
-void QTextToSpeechPrivateAndroid::setVoice(const QVoice & /* voice */)
+bool QTextToSpeechEngineAndroid::setVoice(const QVoice & /* voice */)
 {
+    return false;
 }
 
-QVoice QTextToSpeechPrivateAndroid::voice() const
+QVoice QTextToSpeechEngineAndroid::voice() const
 {
     return QVoice();
 }

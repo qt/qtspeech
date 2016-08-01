@@ -20,3 +20,10 @@ SOURCES = \
     qtexttospeechplugin.cpp \
     qtexttospeechengine.cpp \
     qvoice.cpp \
+
+ANDROID_BUNDLED_JAR_DEPENDENCIES = \
+    jar/QtTextToSpeech-bundled.jar
+ANDROID_JAR_DEPENDENCIES = \
+    jar/QtTextToSpeech.jar
+ANDROID_LIB_DEPENDENCIES = \
+    plugins/texttospeech/libqttexttospeech_android.so

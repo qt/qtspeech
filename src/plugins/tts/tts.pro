@@ -14,6 +14,8 @@ winrt: SUBDIRS += winrt
 
 osx: SUBDIRS += osx
 
+android: SUBDIRS += android
+
 config_flite | config_flite_alsa {
     SUBDIRS += flite
 }
