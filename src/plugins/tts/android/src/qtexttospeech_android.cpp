@@ -54,7 +54,7 @@ static void notifyError(JNIEnv *env, jobject thiz, jlong id)
     if (!tts)
         return;
 
-    tts->setState(QTextToSpeech::BackendError);
+    QMetaObject::invokeMethod(tts, "processNotifyError", Qt::AutoConnection);
 }
 
 static void notifyReady(JNIEnv *env, jobject thiz, jlong id)
@@ -63,10 +63,10 @@ static void notifyReady(JNIEnv *env, jobject thiz, jlong id)
     Q_UNUSED(thiz);
 
     QTextToSpeechEngineAndroid *const tts = (*textToSpeechMap)[id];
-    if (!tts || tts->state() == QTextToSpeech::Paused)
+    if (!tts)
         return;
 
-    tts->setState(QTextToSpeech::Ready);
+    QMetaObject::invokeMethod(tts, "processNotifyReady", Qt::AutoConnection);
 }
 
 static void notifySpeaking(JNIEnv *env, jobject thiz, jlong id)
@@ -78,7 +78,7 @@ static void notifySpeaking(JNIEnv *env, jobject thiz, jlong id)
     if (!tts)
         return;
 
-    tts->setState(QTextToSpeech::Speaking);
+    QMetaObject::invokeMethod(tts, "processNotifySpeaking", Qt::AutoConnection);
 }
 
 Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
@@ -166,6 +166,22 @@ void QTextToSpeechEngineAndroid::setState(QTextToSpeech::State state)
 
     m_state = state;
     emit stateChanged(m_state);
+}
+
+void QTextToSpeechEngineAndroid::processNotifyReady()
+{
+    if (m_state != QTextToSpeech::Paused)
+        setState(QTextToSpeech::Ready);
+}
+
+void QTextToSpeechEngineAndroid::processNotifyError()
+{
+    setState(QTextToSpeech::BackendError);
+}
+
+void QTextToSpeechEngineAndroid::processNotifySpeaking()
+{
+    setState(QTextToSpeech::Speaking);
 }
 
 void QTextToSpeechEngineAndroid::stop()

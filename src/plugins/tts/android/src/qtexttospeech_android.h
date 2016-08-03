@@ -74,13 +74,17 @@ public:
     bool setVoice(const QVoice &voice) override;
     QTextToSpeech::State state() const override;
 
-    void setState(QTextToSpeech::State state);
+public Q_SLOTS:
+    void processNotifyReady();
+    void processNotifyError();
+    void processNotifySpeaking();
 
 private:
+    void setState(QTextToSpeech::State state);
+
     QJNIObjectPrivate m_speech;
     QTextToSpeech::State m_state;
     QString m_text;
-
 };
 
 QT_END_NAMESPACE
