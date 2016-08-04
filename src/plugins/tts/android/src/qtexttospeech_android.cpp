@@ -174,6 +174,7 @@ void QTextToSpeechEngineAndroid::stop()
         return;
 
     m_speech.callMethod<void>("stop", "()V");
+    setState(QTextToSpeech::Ready);
 }
 
 void QTextToSpeechEngineAndroid::pause()
@@ -181,7 +182,7 @@ void QTextToSpeechEngineAndroid::pause()
     if (m_state == QTextToSpeech::Paused)
         return;
 
-    stop();
+    m_speech.callMethod<void>("stop", "()V");
     setState(QTextToSpeech::Paused);
 }
 
