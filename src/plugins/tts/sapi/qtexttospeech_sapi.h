@@ -88,7 +88,6 @@ private:
 
     QTextToSpeech::State m_state;
     QVector<QLocale> m_locales;
-//    QLocale m_currentLocale;
     QVoice m_currentVoice;
     // Voices mapped by their locale name.
     QMultiMap<QString, QVoice> m_voices;
