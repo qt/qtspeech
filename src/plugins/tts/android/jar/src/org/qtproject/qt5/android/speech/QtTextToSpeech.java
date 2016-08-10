@@ -95,14 +95,6 @@ public class QtTextToSpeech
         }
 
         @Override
-        public void onError(String utteranceId, int errorCode) {
-            Log.w("UtteranceProgressListener", "onError");
-            if (utteranceId.equals("UtteranceId")) {
-                notifyReady(mId);
-            }
-        }
-
-        @Override
         public void onStart(String utteranceId) {
             Log.w("UtteranceProgressListener", "onStart");
             if (utteranceId.equals("UtteranceId")) {
@@ -144,16 +136,11 @@ public class QtTextToSpeech
         Log.w("QtTextToSpeech", text);
 
         int result = -1;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Bundle params = new Bundle();
-            params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, mVolume);
-            result = mTts.speak(text, TextToSpeech.QUEUE_FLUSH, params, "UtteranceId");
-        } else {
-            HashMap<String, String> map = new HashMap<String, String>();
-            map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "UtteranceId");
-            map.put(TextToSpeech.Engine.KEY_PARAM_VOLUME, Float.toString(mVolume));
-            result = mTts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
-        }
+
+        HashMap<String, String> map = new HashMap<String, String>();
+        map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "UtteranceId");
+        map.put(TextToSpeech.Engine.KEY_PARAM_VOLUME, Float.toString(mVolume));
+        result = mTts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
 
         Log.w("QtTextToSpeech", "RESULT: " + Integer.toString(result));
     }
