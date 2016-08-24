@@ -83,6 +83,11 @@ static void notifySpeaking(JNIEnv *env, jobject thiz, jlong id)
 
 Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
 {
+    static bool initialized = false;
+    if (initialized)
+        return JNI_VERSION_1_6;
+    initialized = true;
+
     typedef union {
         JNIEnv *nativeEnvironment;
         void *venv;
@@ -91,7 +96,7 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
     UnionJNIEnvToVoid uenv;
     uenv.venv = NULL;
 
-    if (vm->GetEnv(&uenv.venv, JNI_VERSION_1_4) != JNI_OK)
+    if (vm->GetEnv(&uenv.venv, JNI_VERSION_1_6) != JNI_OK)
         return JNI_ERR;
 
     JNIEnv *jniEnv = uenv.nativeEnvironment;
@@ -112,7 +117,7 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
         }
     }
 
-    return JNI_VERSION_1_4;
+    return JNI_VERSION_1_6;
 }
 
 QTextToSpeechEngineAndroid::QTextToSpeechEngineAndroid(const QVariantMap &parameters, QObject *parent)
