@@ -133,7 +133,7 @@ QTextToSpeechEngineAndroid::QTextToSpeechEngineAndroid(const QVariantMap &parame
     m_speech = QJNIObjectPrivate::callStaticObjectMethod(g_qtSpeechClass,
                                                          "open",
                                                          "(Landroid/content/Context;J)Lorg/qtproject/qt5/android/speech/QtTextToSpeech;",
-                                                         QtAndroidPrivate::activity(),
+                                                         QtAndroidPrivate::context(),
                                                          id);
     (*textToSpeechMap)[id] = this;
 }
