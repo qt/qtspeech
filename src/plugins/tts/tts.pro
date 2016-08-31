@@ -13,6 +13,7 @@ windows:!winrt:!mingw: SUBDIRS += sapi
 winrt: SUBDIRS += winrt
 
 osx: SUBDIRS += osx
+ios: SUBDIRS += ios
 
 android: SUBDIRS += android
 
