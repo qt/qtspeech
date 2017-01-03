@@ -256,9 +256,25 @@ QVector<QLocale> QTextToSpeechEngineAndroid::availableLocales() const
     return QVector<QLocale>();
 }
 
-bool QTextToSpeechEngineAndroid::setLocale(const QLocale & /* locale */)
+bool QTextToSpeechEngineAndroid::setLocale(const QLocale &locale)
 {
-    return false;
+    QStringList parts = locale.name().split('_');
+
+    if (parts.length() != 2)
+        return false;
+
+    QString languageCode = parts.at(0);
+    QString countryCode = parts.at(1);
+
+    QJNIEnvironmentPrivate env;
+    jstring jLanguageCode = env->NewString(reinterpret_cast<const jchar*>(languageCode.constData()),
+                                  languageCode.length());
+    jstring jCountryCode = env->NewString(reinterpret_cast<const jchar*>(countryCode.constData()),
+                                  countryCode.length());
+
+    QJNIObjectPrivate jLocale("java/util/Locale", "(Ljava/lang/String;Ljava/lang/String;)V", jLanguageCode, jCountryCode);
+
+    return m_speech.callMethod<jboolean>("setLocale", "(Ljava/util/Locale;)Z", jLocale.object());
 }
 
 QLocale QTextToSpeechEngineAndroid::locale() const

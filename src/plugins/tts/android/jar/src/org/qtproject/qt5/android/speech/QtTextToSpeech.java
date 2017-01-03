@@ -49,6 +49,7 @@ import android.os.Bundle;
 import android.util.Log;
 import java.lang.Float;
 import java.util.HashMap;
+import java.util.Locale;
 
 public class QtTextToSpeech
 {
@@ -197,6 +198,12 @@ public class QtTextToSpeech
 
         mVolume = volume;
         return TextToSpeech.SUCCESS;
+    }
+
+    public boolean setLocale(Locale locale)
+    {
+        int result = mTts.setLanguage(locale);
+        return (result != TextToSpeech.LANG_NOT_SUPPORTED) && (result != TextToSpeech.LANG_MISSING_DATA);
     }
 
 }
