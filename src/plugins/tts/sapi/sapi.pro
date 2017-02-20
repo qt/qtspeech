@@ -14,6 +14,8 @@ load(qt_plugin)
 
 QT += core texttospeech
 
+mingw: LIBS += -luuid -lsapi -lole32
+
 HEADERS += \
     qtexttospeech_sapi.h \
     qtexttospeech_sapi_plugin.h \
