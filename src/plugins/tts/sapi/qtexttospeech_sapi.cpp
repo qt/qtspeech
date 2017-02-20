@@ -44,13 +44,15 @@
 QT_BEGIN_NAMESPACE
 
 QTextToSpeechEngineSapi::QTextToSpeechEngineSapi(const QVariantMap &, QObject *)
-    : m_pitch(0.0), m_pauseCount(0), m_state(QTextToSpeech::BackendError)
+    : m_state(QTextToSpeech::BackendError), m_voice(nullptr), m_pitch(0.0), m_pauseCount(0)
 {
     init();
 }
 
 QTextToSpeechEngineSapi::~QTextToSpeechEngineSapi()
 {
+    if (m_voice)
+        m_voice->Release();
 }
 
 void QTextToSpeechEngineSapi::init()
