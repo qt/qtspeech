@@ -34,69 +34,30 @@
 **
 ****************************************************************************/
 
-#ifndef QTEXTTOSPEECHENGINE_SAPI_H
-#define QTEXTTOSPEECHENGINE_SAPI_H
+#ifndef QTEXTTOSPEECHPLUGIN_IOS_H
+#define QTEXTTOSPEECHPLUGIN_IOS_H
 
-#include <QtCore/qt_windows.h>
-#include <sapi.h>
-
-#include <QtCore/qobject.h>
-#include <QtCore/qvector.h>
-#include <QtCore/qstring.h>
-#include <QtCore/qlocale.h>
+#include <QtCore/QObject>
+#include <QtCore/QLoggingCategory>
+#include <QtTextToSpeech/qtexttospeechplugin.h>
 #include <QtTextToSpeech/qtexttospeechengine.h>
-#include <QtTextToSpeech/qvoice.h>
 
 QT_BEGIN_NAMESPACE
 
-class QTextToSpeechEngineSapi : public QTextToSpeechEngine, public ISpNotifyCallback
+class QTextToSpeechPluginIos : public QObject, public QTextToSpeechPlugin
 {
     Q_OBJECT
+    Q_INTERFACES(QTextToSpeechPlugin)
+    Q_PLUGIN_METADATA(IID "org.qt-project.qt.speech.tts.plugin/5.0"
+                      FILE "ios_plugin.json")
 
 public:
-    QTextToSpeechEngineSapi(const QVariantMap &parameters, QObject *parent);
-    ~QTextToSpeechEngineSapi();
-
-    // Plug-in API:
-    QVector<QLocale> availableLocales() const override;
-    QVector<QVoice> availableVoices() const override;
-    void say(const QString &text) override;
-    void stop() override;
-    void pause() override;
-    void resume() override;
-    double rate() const override;
-    bool setRate(double rate) override;
-    double pitch() const override;
-    bool setPitch(double pitch) override;
-    QLocale locale() const override;
-    bool setLocale(const QLocale &locale) override;
-    double volume() const override;
-    bool setVolume(double volume) override;
-    QVoice voice() const override;
-    bool setVoice(const QVoice &voice) override;
-    QTextToSpeech::State state() const override;
-
-    HRESULT STDMETHODCALLTYPE NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/);
-private:
-
-    void init();
-    bool isSpeaking() const;
-    bool isPaused() const { return m_pauseCount; }
-    QMap<QString, QString> voiceAttributes(ISpObjectToken *speechToken) const;
-    QString voiceId(ISpObjectToken *speechToken) const;
-    QLocale lcidToLocale(const QString &lcid) const;
-    void updateVoices();
-
-    QTextToSpeech::State m_state;
-    QVector<QLocale> m_locales;
-    QVoice m_currentVoice;
-    // Voices mapped by their locale name.
-    QMultiMap<QString, QVoice> m_voices;
-
-    ISpVoice *m_voice;
-    double m_pitch;
-    int m_pauseCount;
+    QTextToSpeechEngine *createTextToSpeechEngine(
+                                const QVariantMap &parameters,
+                                QObject *parent,
+                                QString *errorString) const;
 };
+
 QT_END_NAMESPACE
 
 #endif

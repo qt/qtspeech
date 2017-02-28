@@ -7,12 +7,11 @@ unix {
     }
 }
 
-# mingw needs copies of the structures defined in sapi.h
-# until those are written, disable the sapi plugin for mingw
-windows:!winrt:!mingw: SUBDIRS += sapi
+windows:!winrt: SUBDIRS += sapi
 winrt: SUBDIRS += winrt
 
 osx: SUBDIRS += osx
+uikit: SUBDIRS += ios
 
 android: SUBDIRS += android
 

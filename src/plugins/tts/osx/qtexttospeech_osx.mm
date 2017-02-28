@@ -70,6 +70,8 @@ QTextToSpeechEngineOsx::QTextToSpeechEngineOsx(const QVariantMap &/*parameters*/
 
 QTextToSpeechEngineOsx::~QTextToSpeechEngineOsx()
 {
+    [speechSynthesizer setDelegate: nil];
+    [speechSynthesizer stopSpeaking];
     [speechSynthesizer release];
     [stateDelegate release];
 }

@@ -167,7 +167,7 @@ void QTextToSpeechPrivate::loadPluginMetadata(QHash<QString, QJsonObject> &list)
   It is possible to specify the language with \l setLocale().
   To select between the available voices use \l setVoice().
   The languages and voices depend on the available synthesizers on each platform.
-  On Linux by default speech-dispatcher is used.
+  On Linux, \c speech-dispatcher is used by default.
 */
 
 /*!
@@ -175,7 +175,7 @@ void QTextToSpeechPrivate::loadPluginMetadata(QHash<QString, QJsonObject> &list)
   \value Ready          The synthesizer is ready to start a new text. This is
                         also the state after a text was finished.
   \value Speaking       The current text is being spoken.
-  \value Paused         The sythetization was paused and can be resumed with \l resume().
+  \value Paused         The synthesis was paused and can be resumed with \l resume().
   \value BackendError   The backend was unable to synthesize the current string.
 */
 
@@ -193,7 +193,7 @@ void QTextToSpeechPrivate::loadPluginMetadata(QHash<QString, QJsonObject> &list)
 
     The default engine may be platform-specific.
 
-    If loading the plug-in fails, QTextToSpeech::state() will return
+    If the plugin fails to load, QTextToSpeech::state() returns
     QTextToSpeech::BackendError.
 
     \sa availableEngines()
@@ -214,7 +214,7 @@ QTextToSpeech::QTextToSpeech(QObject *parent)
   If \a engine is empty, the default engine plug-in is used. The default
   engine may be platform-specific.
 
-  If loading the plug-in fails, QTextToSpeech::state() will return QTextToSpeech::BackendError.
+  If the plugin fails to load, QTextToSpeech::state() returns QTextToSpeech::BackendError.
 
   \sa availableEngines()
 */
@@ -245,10 +245,10 @@ QTextToSpeech::State QTextToSpeech::state() const
 
 /*!
   Start synthesizing the \a text.
-  This function will start the asynchronous speaking of the text.
+  This function will start the asynchronous reading of the text.
   The current state is available using the \l state property. Once the
-  synthetization is done, a \l stateChanged() signal with the \l Ready state
-  will be emitted.
+  synthesis is done, a \l stateChanged() signal with the \l Ready state
+  is emitted.
 */
 void QTextToSpeech::say(const QString &text)
 {
@@ -258,7 +258,7 @@ void QTextToSpeech::say(const QString &text)
 }
 
 /*!
-  Stop the currently speaking text.
+  Stop the text that is being read.
 */
 void QTextToSpeech::stop()
 {
@@ -268,13 +268,20 @@ void QTextToSpeech::stop()
 }
 
 /*!
-  Pause the current speech.
-  \note this function depends on the platform and backend and may not work at all,
-  take several seconds until it takes effect or may pause instantly.
-  Some synthesizers will look for a break that they can later resume from, such as
-  a sentence end.
-  \note Due to Android platform limitations, pause() stops the current utterance,
-  while resume() starts the previously queued utterance from the beginning.
+  Pauses the current speech.
+
+  Note:
+  \list
+      \li This function depends on the platform and the backend. It may not
+      work at all, it may take several seconds before it takes effect,
+      or it may pause instantly.
+      Some synthesizers will look for a break that they can later resume
+      from, such as a sentence end.
+      \li Due to Android platform limitations, pause() stops what is presently
+      being said, while resume() starts the previously queued sentence from
+      the beginning.
+  \endlist
+
   \sa resume()
 */
 void QTextToSpeech::pause()
@@ -315,8 +322,8 @@ void QTextToSpeech::resume()
 
 /*!
  \property QTextToSpeech::pitch
- This property holds the voice pitch in the range -1.0 to 1.0.
- The default of 0.0 is normal speech pitch.
+ This property holds the voice pitch, ranging from -1.0 to 1.0.
+ The default of 0.0 is the normal speech pitch.
 */
 
 void QTextToSpeech::setPitch(double pitch)
@@ -336,7 +343,7 @@ double QTextToSpeech::pitch() const
 
 /*!
  \property QTextToSpeech::rate
- This property holds the current voice rate in the range -1.0 to 1.0.
+ This property holds the current voice rate, ranging from -1.0 to 1.0.
  The default value of 0.0 is normal speech flow.
 */
 void QTextToSpeech::setRate(double rate)
@@ -356,7 +363,7 @@ double QTextToSpeech::rate() const
 
 /*!
  \property QTextToSpeech::volume
- This property holds the current volume in the range 0.0 to 1.0.
+ This property holds the current volume, ranging from 0.0 to 1.0.
  The default value is the platform's default volume.
 */
 void QTextToSpeech::setVolume(double volume)
@@ -402,8 +409,9 @@ QLocale QTextToSpeech::locale() const
 }
 
 /*!
- Gets a vector of locales that are currently supported. Note on some platforms
- these can change when the backend changes synthesizers for example.
+ Gets a vector of locales that are currently supported.
+ \note On some platforms these can change, for example,
+       when the backend changes synthesizers.
 */
 QVector<QLocale> QTextToSpeech::availableLocales() const
 {
@@ -416,9 +424,8 @@ QVector<QLocale> QTextToSpeech::availableLocales() const
 /*!
  Sets the \a voice to use.
 
- \note On some platforms setting the voice changes other voice attributes
- such as locale, pitch, etc. in which case signals are emitted for these
- changes.
+ \note On some platforms, setting the voice changes other voice attributes
+ such as locale, pitch, and so on. These changes trigger the emission of signals.
 */
 void QTextToSpeech::setVoice(const QVoice &voice)
 {

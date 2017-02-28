@@ -43,14 +43,41 @@
 
 QT_BEGIN_NAMESPACE
 
+#ifndef SPERR_NO_MORE_ITEMS
+# define SPERR_NO_MORE_ITEMS MAKE_SAPI_ERROR(0x039)
+#endif
+
+#ifdef Q_CC_MINGW // from sphelper.h
+
+static const GUID CLSD_SpVoice = {0x96749377, 0x3391, 0x11d2,{0x9e, 0xe3, 0x0, 0xc0, 0x4f, 0x79, 0x73, 0x96}};
+
+static inline HRESULT SpGetTokenFromId(const WCHAR *pszTokenId, ISpObjectToken **cpToken, BOOL fCreateIfNotExist = FALSE)
+{
+    LPUNKNOWN pUnkOuter = nullptr;
+    HRESULT hr = ::CoCreateInstance(CLSID_SpObjectToken, pUnkOuter, CLSCTX_ALL,
+                                    __uuidof(ISpObjectToken), reinterpret_cast<void **>(cpToken));
+    if (SUCCEEDED(hr))
+        hr = (*cpToken)->SetId(NULL, pszTokenId, fCreateIfNotExist);
+    return hr;
+}
+
+static inline HRESULT SpCreateNewToken(const WCHAR *pszTokenId, ISpObjectToken **ppToken)
+{
+    // Forcefully create the token
+    return SpGetTokenFromId(pszTokenId, ppToken, TRUE);
+}
+#endif // Q_CC_MINGW
+
 QTextToSpeechEngineSapi::QTextToSpeechEngineSapi(const QVariantMap &, QObject *)
-    : m_pitch(0.0), m_pauseCount(0), m_state(QTextToSpeech::BackendError)
+    : m_state(QTextToSpeech::BackendError), m_voice(nullptr), m_pitch(0.0), m_pauseCount(0)
 {
     init();
 }
 
 QTextToSpeechEngineSapi::~QTextToSpeechEngineSapi()
 {
+    if (m_voice)
+        m_voice->Release();
 }
 
 void QTextToSpeechEngineSapi::init()
@@ -246,8 +273,8 @@ QLocale QTextToSpeechEngineSapi::lcidToLocale(const QString &lcid) const
 void QTextToSpeechEngineSapi::updateVoices()
 {
     HRESULT hr = S_OK;
-    CComPtr<ISpObjectToken> cpVoiceToken;
-    CComPtr<IEnumSpObjectTokens> cpEnum;
+    ISpObjectToken *cpVoiceToken = nullptr;
+    IEnumSpObjectTokens *cpEnum = nullptr;
     ULONG ulCount = 0;
 
     hr = SpEnumTokens(SPCAT_VOICES, NULL, NULL, &cpEnum);
@@ -257,7 +284,10 @@ void QTextToSpeechEngineSapi::updateVoices()
 
     // Loop through all voices
     while (SUCCEEDED(hr) && ulCount--) {
-        cpVoiceToken.Release();
+        if (cpVoiceToken) {
+            cpVoiceToken->Release();
+            cpVoiceToken = nullptr;
+        }
         hr = cpEnum->Next(1, &cpVoiceToken, NULL);
 
         // Get attributes of the voice
@@ -280,6 +310,9 @@ void QTextToSpeechEngineSapi::updateVoices()
         QVoice voice = createVoice(name, gender, age, vId);
         m_voices.insert(vLocale.name(), voice);
     }
+    if (cpVoiceToken)
+        cpVoiceToken->Release();
+    cpEnum->Release();
 }
 
 QVector<QLocale> QTextToSpeechEngineSapi::availableLocales() const
@@ -302,10 +335,11 @@ bool QTextToSpeechEngineSapi::setLocale(const QLocale &locale)
 QLocale QTextToSpeechEngineSapi::locale() const
 {
     // Get current voice id
-    CComPtr<ISpObjectToken> cpVoiceToken;
+    ISpObjectToken *cpVoiceToken = nullptr;
     m_voice->GetVoice(&cpVoiceToken);
     // read attributes
     QMap<QString, QString> vAttr = voiceAttributes(cpVoiceToken);
+    cpVoiceToken->Release();
     return lcidToLocale(vAttr["Language"]);
 }
 
@@ -324,10 +358,12 @@ bool QTextToSpeechEngineSapi::setVoice(const QVoice &voice)
 
     // create the voice token via the id
     HRESULT hr = S_OK;
-    CComPtr<ISpObjectToken> cpVoiceToken;
+    ISpObjectToken *cpVoiceToken = nullptr;
     hr = SpCreateNewToken(tokenId, &cpVoiceToken);
     if (FAILED(hr)) {
         qWarning() << "Creating the voice token from ID failed";
+        if (cpVoiceToken)
+            cpVoiceToken->Release();
         m_state = QTextToSpeech::BackendError;
         emit stateChanged(m_state);
         return false;
@@ -340,14 +376,16 @@ bool QTextToSpeechEngineSapi::setVoice(const QVoice &voice)
 
     delete[] tokenId;
     m_voice->SetVoice(cpVoiceToken);
+    cpVoiceToken->Release();
     return true;
 }
 
 QVoice QTextToSpeechEngineSapi::voice() const
 {
-    CComPtr<ISpObjectToken> cpVoiceToken;
+    ISpObjectToken *cpVoiceToken = nullptr;
     m_voice->GetVoice(&cpVoiceToken);
     QString vId = voiceId(cpVoiceToken);
+    cpVoiceToken->Release();
     foreach (const QVoice &voice, m_voices.values()) {
         if (voiceData(voice).toString() == vId) {
             return voice;

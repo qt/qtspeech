@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2016 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -34,30 +34,26 @@
 **
 ****************************************************************************/
 
-#ifndef QTEXTTOSPEECHENGINE_SAPI_H
-#define QTEXTTOSPEECHENGINE_SAPI_H
+#ifndef QTEXTTOSPEECHENGINE_IOS_H
+#define QTEXTTOSPEECHENGINE_IOS_H
 
-#include <QtCore/qt_windows.h>
-#include <sapi.h>
-
-#include <QtCore/qobject.h>
 #include <QtCore/qvector.h>
-#include <QtCore/qstring.h>
-#include <QtCore/qlocale.h>
 #include <QtTextToSpeech/qtexttospeechengine.h>
 #include <QtTextToSpeech/qvoice.h>
 
+Q_FORWARD_DECLARE_OBJC_CLASS(AVSpeechSynthesizer);
+Q_FORWARD_DECLARE_OBJC_CLASS(AVSpeechSynthesisVoice);
+
 QT_BEGIN_NAMESPACE
 
-class QTextToSpeechEngineSapi : public QTextToSpeechEngine, public ISpNotifyCallback
+class QTextToSpeechEngineIos : public QTextToSpeechEngine
 {
     Q_OBJECT
 
 public:
-    QTextToSpeechEngineSapi(const QVariantMap &parameters, QObject *parent);
-    ~QTextToSpeechEngineSapi();
+    QTextToSpeechEngineIos(const QVariantMap &parameters, QObject *parent);
+    ~QTextToSpeechEngineIos();
 
-    // Plug-in API:
     QVector<QLocale> availableLocales() const override;
     QVector<QVoice> availableVoices() const override;
     void say(const QString &text) override;
@@ -76,27 +72,22 @@ public:
     bool setVoice(const QVoice &voice) override;
     QTextToSpeech::State state() const override;
 
-    HRESULT STDMETHODCALLTYPE NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/);
+    void setState(QTextToSpeech::State state);
+
 private:
+    AVSpeechSynthesisVoice *fromQVoice(const QVoice &voice) const;
+    QVoice toQVoice(AVSpeechSynthesisVoice *avVoice) const;
 
-    void init();
-    bool isSpeaking() const;
-    bool isPaused() const { return m_pauseCount; }
-    QMap<QString, QString> voiceAttributes(ISpObjectToken *speechToken) const;
-    QString voiceId(ISpObjectToken *speechToken) const;
-    QLocale lcidToLocale(const QString &lcid) const;
-    void updateVoices();
-
+    AVSpeechSynthesizer *m_speechSynthesizer;
+    QLocale m_locale;
+    QVoice m_voice;
     QTextToSpeech::State m_state;
-    QVector<QLocale> m_locales;
-    QVoice m_currentVoice;
-    // Voices mapped by their locale name.
-    QMultiMap<QString, QVoice> m_voices;
 
-    ISpVoice *m_voice;
     double m_pitch;
-    int m_pauseCount;
+    double m_rate;
+    double m_volume;
 };
+
 QT_END_NAMESPACE
 
 #endif

@@ -72,9 +72,11 @@ QTextToSpeechEngineSpeechd::QTextToSpeechEngineSpeechd(const QVariantMap &, QObj
 
 QTextToSpeechEngineSpeechd::~QTextToSpeechEngineSpeechd()
 {
-    if ((m_state != QTextToSpeech::BackendError) && (m_state != QTextToSpeech::Ready) && speechDispatcher)
-        spd_cancel_all(speechDispatcher);
-    spd_close(speechDispatcher);
+    if (speechDispatcher) {
+        if ((m_state != QTextToSpeech::BackendError) && (m_state != QTextToSpeech::Ready))
+            spd_cancel_all(speechDispatcher);
+        spd_close(speechDispatcher);
+    }
     backends->removeAll(this);
 }
 

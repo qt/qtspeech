@@ -42,6 +42,13 @@
 
 QT_BEGIN_NAMESPACE
 
+/*!
+  \class QVoice
+  \brief The QVoice class allows to set and retrieve values of a particular voice
+  \inmodule QtSpeech
+*/
+
+
 QVoice::QVoice()
 {
     d = new QVoicePrivate();
@@ -84,16 +91,25 @@ bool QVoice::operator!=(const QVoice &other)
     return !operator==(other);
 }
 
+/*!
+   Assign a \a name to a voice
+*/
 void QVoice::setName(const QString &name)
 {
     d->name = name;
 }
 
+/*!
+   Assign a \a gender to a voice
+*/
 void QVoice::setGender(Gender gender)
 {
     d->gender = gender;
 }
 
+/*!
+   Set the \a age property
+*/
 void QVoice::setAge(Age age)
 {
     d->age = age;
@@ -104,16 +120,25 @@ void QVoice::setData(const QVariant &data)
     d->data = data;
 }
 
+/*!
+   Returns the \a name to a voice
+*/
 QString QVoice::name() const
 {
     return d->name;
 }
 
+/*!
+   Returns the age of a voice
+*/
 QVoice::Age QVoice::age() const
 {
     return d->age;
 }
 
+/*!
+   Returns the gender of a voice
+*/
 QVoice::Gender QVoice::gender() const
 {
     return d->gender;
@@ -124,6 +149,9 @@ QVariant QVoice::data() const
     return d->data;
 }
 
+/*!̈́
+   Returns the gender name of a voice
+*/
 QString QVoice::genderName(QVoice::Gender gender)
 {
     QString retval;
@@ -142,6 +170,9 @@ QString QVoice::genderName(QVoice::Gender gender)
     return retval;
 }
 
+/*!
+   Returns the age class of a voice
+*/
 QString QVoice::ageName(QVoice::Age age)
 {
     QString retval;
