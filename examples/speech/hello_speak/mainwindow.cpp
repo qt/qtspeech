@@ -101,7 +101,7 @@ void MainWindow::stateChanged(QTextToSpeech::State state)
 
     ui.pauseButton->setEnabled(state == QTextToSpeech::Speaking);
     ui.resumeButton->setEnabled(state == QTextToSpeech::Paused);
-    ui.stopButton->setEnabled(state == QTextToSpeech::Speaking || QTextToSpeech::Paused);
+    ui.stopButton->setEnabled(state == QTextToSpeech::Speaking || state == QTextToSpeech::Paused);
 }
 
 void MainWindow::engineSelected(int index)
