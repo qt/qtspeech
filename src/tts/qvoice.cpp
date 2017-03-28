@@ -150,7 +150,7 @@ QVariant QVoice::data() const
 }
 
 /*!̈́
-   Returns the gender name of a voice
+   Returns the \a gender name of a voice
 */
 QString QVoice::genderName(QVoice::Gender gender)
 {
@@ -171,7 +171,7 @@ QString QVoice::genderName(QVoice::Gender gender)
 }
 
 /*!
-   Returns the age class of a voice
+   Returns the \a age class of a voice
 */
 QString QVoice::ageName(QVoice::Age age)
 {
