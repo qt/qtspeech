@@ -121,7 +121,7 @@ void QVoice::setData(const QVariant &data)
 }
 
 /*!
-   Returns the \a name to a voice
+   Returns the name of a voice
 */
 QString QVoice::name() const
 {
