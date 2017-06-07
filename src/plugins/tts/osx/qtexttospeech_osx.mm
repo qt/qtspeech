@@ -71,7 +71,8 @@ QTextToSpeechEngineOsx::QTextToSpeechEngineOsx(const QVariantMap &/*parameters*/
 QTextToSpeechEngineOsx::~QTextToSpeechEngineOsx()
 {
     [speechSynthesizer setDelegate: nil];
-    [speechSynthesizer stopSpeaking];
+    if ([speechSynthesizer isSpeaking])
+        [speechSynthesizer stopSpeakingAtBoundary:NSSpeechImmediateBoundary];
     [speechSynthesizer release];
     [stateDelegate release];
 }
@@ -105,7 +106,7 @@ void QTextToSpeechEngineOsx::say(const QString &text)
         stop();
 
     if([speechSynthesizer isSpeaking]) {
-        [speechSynthesizer stopSpeaking];
+        [speechSynthesizer stopSpeakingAtBoundary:NSSpeechImmediateBoundary];
     }
 
     NSString *ntext = text.toNSString();
@@ -120,7 +121,7 @@ void QTextToSpeechEngineOsx::say(const QString &text)
 void QTextToSpeechEngineOsx::stop()
 {
     if([speechSynthesizer isSpeaking])
-        [speechSynthesizer stopSpeaking];
+        [speechSynthesizer stopSpeakingAtBoundary:NSSpeechImmediateBoundary];
 }
 
 void QTextToSpeechEngineOsx::pause()
