@@ -5,7 +5,7 @@ PLUGIN_CLASS_NAME = QTextToSpeechPluginIos
 load(qt_plugin)
 
 QT += core texttospeech
-LIBS += -framework AVFoundation
+LIBS += -framework Foundation -framework AVFoundation
 
 HEADERS += \
     qtexttospeech_ios_plugin.h \
