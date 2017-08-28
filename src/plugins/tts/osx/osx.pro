@@ -12,9 +12,6 @@ HEADERS += \
     qtexttospeech_osx_plugin.h \
     qtexttospeech_osx.h \
 
-OBJECTIVE_HEADERS += \
-    qtexttospeech_osx.h \
-
 SOURCES += \
     qtexttospeech_osx_plugin.cpp \
 
