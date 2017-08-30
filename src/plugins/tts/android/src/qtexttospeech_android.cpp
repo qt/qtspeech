@@ -123,7 +123,7 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
 QTextToSpeechEngineAndroid::QTextToSpeechEngineAndroid(const QVariantMap &parameters, QObject *parent)
     : QTextToSpeechEngine(parent)
     , m_speech()
-    , m_state(QTextToSpeech::Ready)
+    , m_state(QTextToSpeech::BackendError)
     , m_text()
 {
     Q_UNUSED(parameters)
