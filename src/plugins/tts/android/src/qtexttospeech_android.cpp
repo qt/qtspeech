@@ -153,10 +153,7 @@ void QTextToSpeechEngineAndroid::say(const QString &text)
         stop();
 
     m_text = text;
-    QJNIEnvironmentPrivate env;
-    jstring jstr = env->NewString(reinterpret_cast<const jchar*>(text.constData()),
-                                  text.length());
-    m_speech.callMethod<void>("say", "(Ljava/lang/String;)V", jstr);
+    m_speech.callMethod<void>("say", "(Ljava/lang/String;)V", QJNIObjectPrivate::fromString(m_text).object());
 }
 
 QTextToSpeech::State QTextToSpeechEngineAndroid::state() const
@@ -266,13 +263,9 @@ bool QTextToSpeechEngineAndroid::setLocale(const QLocale &locale)
     QString languageCode = parts.at(0);
     QString countryCode = parts.at(1);
 
-    QJNIEnvironmentPrivate env;
-    jstring jLanguageCode = env->NewString(reinterpret_cast<const jchar*>(languageCode.constData()),
-                                  languageCode.length());
-    jstring jCountryCode = env->NewString(reinterpret_cast<const jchar*>(countryCode.constData()),
-                                  countryCode.length());
-
-    QJNIObjectPrivate jLocale("java/util/Locale", "(Ljava/lang/String;Ljava/lang/String;)V", jLanguageCode, jCountryCode);
+    QJNIObjectPrivate jLocale("java/util/Locale", "(Ljava/lang/String;Ljava/lang/String;)V",
+                              QJNIObjectPrivate::fromString(languageCode).object(),
+                              QJNIObjectPrivate::fromString(countryCode).object());
 
     return m_speech.callMethod<jboolean>("setLocale", "(Ljava/util/Locale;)Z", jLocale.object());
 }
