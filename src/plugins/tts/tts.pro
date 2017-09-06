@@ -2,7 +2,7 @@ TEMPLATE = subdirs
 
 unix {
     CONFIG += link_pkgconfig
-    packagesExist(speech-dispatcher) {
+    config_speechd | packagesExist(speech-dispatcher) {
         SUBDIRS += speechdispatcher
     }
 }

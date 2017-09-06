@@ -38,7 +38,7 @@
 #include "qtexttospeech_speechd.h"
 
 #include <qdebug.h>
-#include <speech-dispatcher/libspeechd.h>
+#include <libspeechd.h>
 
 #if LIBSPEECHD_MAJOR_VERSION > 0 || LIBSPEECHD_MINOR_VERSION >= 9
   #define HAVE_SPD_090

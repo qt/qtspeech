@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2017 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -34,63 +34,12 @@
 **
 ****************************************************************************/
 
-#ifndef QTEXTTOSPEECHENGINE_SPEECHD_H
-#define QTEXTTOSPEECHENGINE_SPEECHD_H
-
-#include "qtexttospeechengine.h"
-#include "qvoice.h"
-
-#include <QtCore/qobject.h>
-#include <QtCore/qvector.h>
-#include <QtCore/qstring.h>
-#include <QtCore/qlocale.h>
 #include <libspeechd.h>
 
-QT_BEGIN_NAMESPACE
-
-class QTextToSpeechEngineSpeechd : public QTextToSpeechEngine
+int main()
 {
-    Q_OBJECT
-
-public:
-    QTextToSpeechEngineSpeechd(const QVariantMap &parameters, QObject *parent);
-    ~QTextToSpeechEngineSpeechd();
-
-    // Plug-in API:
-    QVector<QLocale> availableLocales() const override;
-    QVector<QVoice> availableVoices() const override;
-    void say(const QString &text) override;
-    void stop() override;
-    void pause() override;
-    void resume() override;
-    double rate() const override;
-    bool setRate(double rate) override;
-    double pitch() const override;
-    bool setPitch(double pitch) override;
-    QLocale locale() const override;
-    bool setLocale(const QLocale &locale) override;
-    double volume() const override;
-    bool setVolume(double volume) override;
-    QVoice voice() const override;
-    bool setVoice(const QVoice &voice) override;
-    QTextToSpeech::State state() const override;
-
-    void spdStateChanged(SPDNotificationType state);
-
-private:
-
-    QLocale localeForVoice(SPDVoice *voice) const;
-    bool connectToSpeechDispatcher();
-    void updateVoices();
-
-    QTextToSpeech::State m_state;
-    SPDConnection *speechDispatcher;
-    QLocale m_currentLocale;
-    QVector<QLocale> m_locales;
-    QVoice m_currentVoice;
-    // Voices mapped by their locale name.
-    QMultiMap<QString, QVoice> m_voices;
-};
-QT_END_NAMESPACE
-
-#endif
+    SPDConnection *speechDispatcher = spd_open("QtConfigTest", "main", 0, SPD_MODE_THREADED);
+    if (speechDispatcher)
+        spd_close(speechDispatcher);
+    return 0;
+}

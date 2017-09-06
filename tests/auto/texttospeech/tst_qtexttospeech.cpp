@@ -40,7 +40,7 @@
 #include <QSignalSpy>
 
 #if defined(HAVE_SPEECHD)
-    #include <speech-dispatcher/libspeechd.h>
+    #include <libspeechd.h>
     #if LIBSPEECHD_MAJOR_VERSION == 0 && LIBSPEECHD_MINOR_VERSION < 9
         #define HAVE_SPEECHD_BEFORE_090
     #endif
