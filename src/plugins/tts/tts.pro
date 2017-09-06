@@ -18,7 +18,3 @@ android: SUBDIRS += android
 config_flite | config_flite_alsa {
     SUBDIRS += flite
 }
-
-config_vocalizer: exists(vocalizer) {
-    SUBDIRS += vocalizer
-}
