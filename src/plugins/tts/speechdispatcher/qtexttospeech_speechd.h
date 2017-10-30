@@ -44,7 +44,7 @@
 #include <QtCore/qvector.h>
 #include <QtCore/qstring.h>
 #include <QtCore/qlocale.h>
-#include <speech-dispatcher/libspeechd.h>
+#include <libspeechd.h>
 
 QT_BEGIN_NAMESPACE
 

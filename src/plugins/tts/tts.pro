@@ -2,7 +2,7 @@ TEMPLATE = subdirs
 
 unix {
     CONFIG += link_pkgconfig
-    packagesExist(speech-dispatcher) {
+    config_speechd | packagesExist(speech-dispatcher) {
         SUBDIRS += speechdispatcher
     }
 }
@@ -17,8 +17,4 @@ android: SUBDIRS += android
 
 config_flite | config_flite_alsa {
     SUBDIRS += flite
-}
-
-config_vocalizer: exists(vocalizer) {
-    SUBDIRS += vocalizer
 }
