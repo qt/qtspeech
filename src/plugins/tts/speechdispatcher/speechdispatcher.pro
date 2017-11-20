@@ -7,7 +7,8 @@ load(qt_plugin)
 QT += core texttospeech
 
 CONFIG += link_pkgconfig
-PKGCONFIG = speech-dispatcher
+packagesExist(speech-dispatcher): PKGCONFIG = speech-dispatcher
+config_speechd: LIBS += -lspeechd
 
 HEADERS += \
     qtexttospeech_speechd.h \

@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 The Qt Company Ltd.
+** Copyright (C) 2017 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -34,15 +34,12 @@
 **
 ****************************************************************************/
 
-#include <ve_ttsapi.h>
-#include <string.h>
+#include <libspeechd.h>
 
 int main()
 {
-    VE_HSPEECH vocalizerClass;
-    VE_INSTALL vocalizerInstall;
-    memset(&vocalizerInstall, 0, sizeof(VE_INSTALL));
-    ve_ttsInitialize(&vocalizerInstall, &vocalizerClass);
-    ve_ttsUnInitialize(vocalizerClass);
+    SPDConnection *speechDispatcher = spd_open("QtConfigTest", "main", 0, SPD_MODE_THREADED);
+    if (speechDispatcher)
+        spd_close(speechDispatcher);
     return 0;
 }
