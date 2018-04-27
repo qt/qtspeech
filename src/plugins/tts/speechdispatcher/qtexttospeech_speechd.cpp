@@ -118,11 +118,10 @@ bool QTextToSpeechEngineSpeechd::connectToSpeechDispatcher()
         m_currentLocale = QLocale::system();
         updateVoices();
         return true;
-    } else {
-        qWarning() << "Connection to speech-dispatcher failed";
-        m_state = QTextToSpeech::BackendError;
-        return false;
     }
+
+    qWarning() << "Connection to speech-dispatcher failed";
+    m_state = QTextToSpeech::BackendError;
     return false;
 }
 
@@ -212,9 +211,7 @@ bool QTextToSpeechEngineSpeechd::setRate(double rate)
         return false;
 
     int result = spd_set_voice_rate(speechDispatcher, static_cast<int>(rate * 100));
-    if (result == 0)
-        return true;
-    return false;
+    return result == 0;
 }
 
 double QTextToSpeechEngineSpeechd::rate() const
@@ -236,9 +233,7 @@ bool QTextToSpeechEngineSpeechd::setVolume(double volume)
 
     // convert from 0.0..1.0 to -100..100
     int result = spd_set_volume(speechDispatcher, (volume - 0.5) * 200);
-    if (result == 0)
-        return true;
-    return false;
+    return result == 0;
 }
 
 double QTextToSpeechEngineSpeechd::volume() const
