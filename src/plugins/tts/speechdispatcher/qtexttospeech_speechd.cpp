@@ -64,7 +64,7 @@ QLocale QTextToSpeechEngineSpeechd::localeForVoice(SPDVoice *voice) const
 }
 
 QTextToSpeechEngineSpeechd::QTextToSpeechEngineSpeechd(const QVariantMap &, QObject *)
-    : speechDispatcher(0)
+    : speechDispatcher(nullptr)
 {
     backends->append(this);
     connectToSpeechDispatcher();
@@ -85,7 +85,7 @@ bool QTextToSpeechEngineSpeechd::connectToSpeechDispatcher()
     if (speechDispatcher)
         return true;
 
-    speechDispatcher = spd_open("QTextToSpeech", "main", 0, SPD_MODE_THREADED);
+    speechDispatcher = spd_open("QTextToSpeech", "main", nullptr, SPD_MODE_THREADED);
     if (speechDispatcher) {
         speechDispatcher->callback_begin = speech_finished_callback;
         spd_set_notification_on(speechDispatcher, SPD_BEGIN);
@@ -317,12 +317,12 @@ void QTextToSpeechEngineSpeechd::updateVoices()
 #endif
     QVoice originalVoice;
     char **module = modules;
-    while (module != NULL && module[0] != NULL) {
+    while (module != nullptr && module[0] != nullptr) {
         spd_set_output_module(speechDispatcher, module[0]);
 
         SPDVoice **voices = spd_list_synthesis_voices(speechDispatcher);
         int i = 0;
-        while (voices != NULL && voices[i] != NULL) {
+        while (voices != nullptr && voices[i] != nullptr) {
             QLocale locale = localeForVoice(voices[i]);
             if (!m_locales.contains(locale))
                 m_locales.append(locale);
