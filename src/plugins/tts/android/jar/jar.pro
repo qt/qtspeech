@@ -2,6 +2,7 @@ TARGET = QtTextToSpeech
 
 load(qt_build_paths)
 CONFIG += java
+API_VERSION = android-21
 
 DESTDIR = $$MODULE_BASE_OUTDIR/jar
 
