@@ -46,7 +46,7 @@ QTextToSpeechProcessor::QTextToSpeechProcessor():
     m_paused(false),
     m_rate(0),
     m_pitch(0),
-    m_volume(100),
+    m_volume(1.0),
     m_audio(0),
     m_audioBuffer(0)
 {

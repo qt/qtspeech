@@ -119,7 +119,7 @@ private:
     volatile bool m_paused;
     double m_rate;
     double m_pitch;
-    int m_volume;
+    double m_volume;
     QSemaphore m_speakSem;
     QString m_nextText;
     int m_nextVoice;
