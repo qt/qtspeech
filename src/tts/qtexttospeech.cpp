@@ -158,7 +158,7 @@ void QTextToSpeechPrivate::loadPluginMetadata(QHash<QString, QJsonObject> &list)
 
 /*!
   \class QTextToSpeech
-  \brief The QTextToSpeech class provides a convenient access to text-to-speech engines
+  \brief The QTextToSpeech class provides a convenient access to text-to-speech engines.
   \inmodule QtSpeech
 
   Use \l say() to start synthesizing text.
