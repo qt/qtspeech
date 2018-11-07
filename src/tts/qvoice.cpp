@@ -98,7 +98,7 @@ void QVoice::operator=(const QVoice &other)
 }
 
 /*!
-    Compares the \l name, \l gender, and \l age of this voice with \l other.
+    Compares the \l name, \l gender, and \l age of this voice with \a other.
     Returns \c true if all of them match.
 */
 bool QVoice::operator==(const QVoice &other)
@@ -112,7 +112,7 @@ bool QVoice::operator==(const QVoice &other)
 }
 
 /*!
-    Compares the \l name, \l gender, and \l age of this voice with \l other.
+    Compares the \l name, \l gender, and \l age of this voice with \a other.
     Returns \c true if they are not identical.
 */
 bool QVoice::operator!=(const QVoice &other)
