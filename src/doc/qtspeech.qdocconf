@@ -14,9 +14,7 @@ exampledirs += \
 
 moduleheader = QtSpeechDoc
 
-includepaths = -I . \
-               -I $QT_INSTALL_HEADERS \
-               -I $QT_INSTALL_HEADERS/QtCore
+includepaths = -I .
 
 examplesinstallpath = speech
 
