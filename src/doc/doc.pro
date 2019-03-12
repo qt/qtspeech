@@ -1,7 +1,7 @@
 TEMPLATE = aux
 
 CONFIG += force_qt
-QT += core-private
+QT = core-private
 
 QMAKE_DOCS = $$PWD/qtspeech.qdocconf
 
