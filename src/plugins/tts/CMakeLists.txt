@@ -1,0 +1,27 @@
+# Generated from tts.pro.
+
+if(QT_FEATURE_speechd AND UNIX)
+    add_subdirectory(speechdispatcher)
+endif()
+if(WIN32 AND NOT WINRT)
+    add_subdirectory(sapi)
+endif()
+if(WINRT)
+    add_subdirectory(winrt)
+endif()
+if(APPLE_OSX)
+    # begin special case
+    if(TARGET Qt::Gui)
+        add_subdirectory(osx)
+    endif()
+    # end special case
+endif()
+if(APPLE_UIKIT)
+    add_subdirectory(ios)
+endif()
+if(ANDROID)
+    add_subdirectory(android)
+endif()
+if(QT_FEATURE_flite AND TARGET Qt::Multimedia)
+    add_subdirectory(flite)
+endif()
