@@ -1,0 +1,20 @@
+# Generated from texttospeech.pro.
+
+#####################################################################
+## tst_qtexttospeech Test:
+#####################################################################
+
+add_qt_test(tst_qtexttospeech
+    SOURCES
+        tst_qtexttospeech.cpp
+    PUBLIC_LIBRARIES
+        Qt::TextToSpeechPrivate
+)
+
+## Scopes:
+#####################################################################
+
+extend_target(tst_qtexttospeech CONDITION QT_FEATURE_speechd
+    PUBLIC_LIBRARIES
+        SpeechDispatcher::SpeechDispatcher
+)
