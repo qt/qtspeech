@@ -54,7 +54,6 @@ class QTextToSpeechPrivate;
 class Q_TEXTTOSPEECH_EXPORT QTextToSpeech : public QObject
 {
     Q_OBJECT
-    Q_ENUMS(QTextToSpeech::State)
     Q_PROPERTY(State state READ state NOTIFY stateChanged)
     Q_PROPERTY(double volume READ volume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(double rate READ rate WRITE setRate NOTIFY rateChanged)
@@ -69,6 +68,7 @@ public:
         Paused,
         BackendError
     };
+    Q_ENUM(State)
 
     explicit QTextToSpeech(QObject *parent = nullptr);
     explicit QTextToSpeech(const QString &engine, QObject *parent = nullptr);
@@ -112,10 +112,6 @@ private:
     Q_DISABLE_COPY(QTextToSpeech)
 };
 
-Q_DECLARE_TYPEINFO(QTextToSpeech::State, Q_PRIMITIVE_TYPE);
-
 QT_END_NAMESPACE
-
-Q_DECLARE_METATYPE(QTextToSpeech::State)
 
 #endif
