@@ -260,7 +260,7 @@ bool QTextToSpeechEngineSpeechd::setLocale(const QLocale &locale)
         QVoice previousVoice = m_currentVoice;
         m_currentLocale = locale;
 
-        QVector<QVoice> voices = availableVoices();
+        QList<QVoice> voices = availableVoices();
         if (voices.size() > 0 && setVoice(voices.at(0)))
             return true;
 
@@ -350,14 +350,14 @@ void QTextToSpeechEngineSpeechd::updateVoices()
 #endif
 }
 
-QVector<QLocale> QTextToSpeechEngineSpeechd::availableLocales() const
+QList<QLocale> QTextToSpeechEngineSpeechd::availableLocales() const
 {
     return m_locales;
 }
 
-QVector<QVoice> QTextToSpeechEngineSpeechd::availableVoices() const
+QList<QVoice> QTextToSpeechEngineSpeechd::availableVoices() const
 {
-    return m_voices.values(m_currentLocale.name()).toVector();
+    return m_voices.values(m_currentLocale.name());
 }
 
 // We have no way of knowing our own client_id since speech-dispatcher seems to be incomplete

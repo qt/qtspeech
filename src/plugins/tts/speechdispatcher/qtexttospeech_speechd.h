@@ -40,10 +40,10 @@
 #include "qtexttospeechengine.h"
 #include "qvoice.h"
 
-#include <QtCore/qobject.h>
-#include <QtCore/qvector.h>
-#include <QtCore/qstring.h>
+#include <QtCore/qlist.h>
 #include <QtCore/qlocale.h>
+#include <QtCore/qobject.h>
+#include <QtCore/qstring.h>
 #include <libspeechd.h>
 
 QT_BEGIN_NAMESPACE
@@ -57,8 +57,8 @@ public:
     ~QTextToSpeechEngineSpeechd();
 
     // Plug-in API:
-    QVector<QLocale> availableLocales() const override;
-    QVector<QVoice> availableVoices() const override;
+    QList<QLocale> availableLocales() const override;
+    QList<QVoice> availableVoices() const override;
     void say(const QString &text) override;
     void stop() override;
     void pause() override;
@@ -86,7 +86,7 @@ private:
     QTextToSpeech::State m_state;
     SPDConnection *speechDispatcher;
     QLocale m_currentLocale;
-    QVector<QLocale> m_locales;
+    QList<QLocale> m_locales;
     QVoice m_currentVoice;
     // Voices mapped by their locale name.
     QMultiMap<QString, QVoice> m_voices;

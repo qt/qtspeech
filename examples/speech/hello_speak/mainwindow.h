@@ -83,7 +83,7 @@ public slots:
 private:
     Ui::MainWindow ui;
     QTextToSpeech *m_speech;
-    QVector<QVoice> m_voices;
+    QList<QVoice> m_voices;
 };
 
 #endif

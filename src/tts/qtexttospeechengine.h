@@ -53,8 +53,8 @@ public:
     explicit QTextToSpeechEngine(QObject *parent = nullptr);
     ~QTextToSpeechEngine();
 
-    virtual QVector<QLocale> availableLocales() const = 0;
-    virtual QVector<QVoice> availableVoices() const = 0;
+    virtual QList<QLocale> availableLocales() const = 0;
+    virtual QList<QVoice> availableVoices() const = 0;
 
     virtual void say(const QString &text) = 0;
     virtual void stop() = 0;

@@ -88,7 +88,7 @@ QTextToSpeechProcessorFlite::~QTextToSpeechProcessorFlite()
     }
 }
 
-const QVector<QTextToSpeechProcessor::VoiceInfo> &QTextToSpeechProcessorFlite::voices() const
+const QList<QTextToSpeechProcessor::VoiceInfo> &QTextToSpeechProcessorFlite::voices() const
 {
     return m_voices;
 }

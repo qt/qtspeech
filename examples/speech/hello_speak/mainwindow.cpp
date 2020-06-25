@@ -126,7 +126,7 @@ void MainWindow::engineSelected(int index)
     disconnect(ui.language, &QComboBox::currentIndexChanged, this, &MainWindow::languageSelected);
     ui.language->clear();
     // Populate the languages combobox before connecting its signal.
-    const QVector<QLocale> locales = m_speech->availableLocales();
+    const QList<QLocale> locales = m_speech->availableLocales();
     QLocale current = m_speech->locale();
     for (const QLocale &locale : locales) {
         QString name(QString("%1 (%2)")

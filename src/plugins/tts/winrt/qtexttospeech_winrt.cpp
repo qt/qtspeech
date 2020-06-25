@@ -77,9 +77,9 @@ public:
     QTimer timer;
     ComPtr<IXamlReaderStatics> xamlReader;
     ComPtr<ISpeechSynthesizer> synth;
-    QVector<QLocale> locales;
-    QVector<QVoice> voices;
-    QVector<ComPtr<IVoiceInformation>> infos;
+    QList<QLocale> locales;
+    QList<QVoice> voices;
+    QList<ComPtr<IVoiceInformation>> infos;
     EventRegistrationToken tok;
 
     ComPtr<IMediaElement> media;
@@ -106,13 +106,13 @@ QTextToSpeechEngineWinRT::~QTextToSpeechEngineWinRT()
 {
 }
 
-QVector<QLocale> QTextToSpeechEngineWinRT::availableLocales() const
+QList<QLocale> QTextToSpeechEngineWinRT::availableLocales() const
 {
     Q_D(const QTextToSpeechEngineWinRT);
     return d->locales;
 }
 
-QVector<QVoice> QTextToSpeechEngineWinRT::availableVoices() const
+QList<QVoice> QTextToSpeechEngineWinRT::availableVoices() const
 {
     Q_D(const QTextToSpeechEngineWinRT);
     return d->voices;

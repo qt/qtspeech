@@ -78,7 +78,7 @@ public:
     double rate() const;
     double pitch() const;
     double volume() const;
-    virtual const QVector<VoiceInfo> &voices() const = 0;
+    virtual const QList<VoiceInfo> &voices() const = 0;
 
 protected:
     // These are re-implemented QThread methods.

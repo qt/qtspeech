@@ -300,24 +300,6 @@ void QTextToSpeech::resume()
         d->m_engine->resume();
 }
 
-//QVector<QString> QTextToSpeech::availableVoiceTypes() const
-//{
-//    Q_D(const QTextToSpeech);
-//    return d->availableVoiceTypes();
-//}
-
-//void QTextToSpeech::setVoiceType(const QString& type)
-//{
-//    Q_D(QTextToSpeech);
-//    d->setVoiceType(type);
-//}
-//QString QTextToSpeech::currentVoiceType() const
-//{
-//    Q_D(const QTextToSpeech);
-//    return d->currentVoiceType();
-//}
-
-
 /*!
  \property QTextToSpeech::pitch
  This property holds the voice pitch, ranging from -1.0 to 1.0.
@@ -409,16 +391,16 @@ QLocale QTextToSpeech::locale() const
 }
 
 /*!
- Gets a vector of locales that are currently supported.
+ Gets a list of locales that are currently supported.
  \note On some platforms these can change, for example,
        when the backend changes synthesizers.
 */
-QVector<QLocale> QTextToSpeech::availableLocales() const
+QList<QLocale> QTextToSpeech::availableLocales() const
 {
     Q_D(const QTextToSpeech);
     if (d->m_engine)
         return d->m_engine->availableLocales();
-    return QVector<QLocale>();
+    return QList<QLocale>();
 }
 
 /*!
@@ -447,15 +429,15 @@ QVoice QTextToSpeech::voice() const
 }
 
 /*!
- Gets a vector of voices available for the current locale.
+ Gets a list of voices available for the current locale.
  \note if no locale has been set, the system locale is used.
 */
-QVector<QVoice> QTextToSpeech::availableVoices() const
+QList<QVoice> QTextToSpeech::availableVoices() const
 {
     Q_D(const QTextToSpeech);
     if (d->m_engine)
         return d->m_engine->availableVoices();
-    return QVector<QVoice>();
+    return QList<QVoice>();
 }
 
 QT_END_NAMESPACE

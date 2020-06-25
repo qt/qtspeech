@@ -42,10 +42,10 @@
 #include "qtexttospeechengine.h"
 #include "qvoice.h"
 
-#include <QtCore/QString>
-#include <QtCore/QVector>
-#include <QtCore/QSharedPointer>
+#include <QtCore/QList>
 #include <QtCore/QMutex>
+#include <QtCore/QSharedPointer>
+#include <QtCore/QString>
 
 #include <flite/flite.h>
 
@@ -59,7 +59,7 @@ class QTextToSpeechProcessorFlite : public QTextToSpeechProcessor {
 public:
     static QSharedPointer<QTextToSpeechProcessorFlite> instance();
     ~QTextToSpeechProcessorFlite() override;
-    const QVector<VoiceInfo> &voices() const override;
+    const QList<VoiceInfo> &voices() const override;
 
 private:
     QTextToSpeechProcessorFlite();
@@ -85,8 +85,8 @@ private:
     static QWeakPointer<QTextToSpeechProcessorFlite> m_instance;
     static QMutex m_instanceLock;
     bool m_initialized;
-    QVector<VoiceInfo> m_voices;
-    QVector<FliteVoice> m_fliteVoices;
+    QList<VoiceInfo> m_voices;
+    QList<FliteVoice> m_fliteVoices;
     int m_currentVoice;
 };
 

@@ -37,10 +37,10 @@
 #ifndef QTEXTTOSPEECHENGINE_OSX_H
 #define QTEXTTOSPEECHENGINE_OSX_H
 
-#include <QtCore/qobject.h>
-#include <QtCore/qvector.h>
-#include <QtCore/qstring.h>
+#include <QtCore/qlist.h>
 #include <QtCore/qlocale.h>
+#include <QtCore/qobject.h>
+#include <QtCore/qstring.h>
 #include <QtTextToSpeech/qtexttospeechengine.h>
 #include <QtTextToSpeech/qvoice.h>
 
@@ -59,8 +59,8 @@ public:
     ~QTextToSpeechEngineOsx();
 
     // Plug-in API:
-    QVector<QLocale> availableLocales() const override;
-    QVector<QVoice> availableVoices() const override;
+    QList<QLocale> availableLocales() const override;
+    QList<QVoice> availableVoices() const override;
     void say(const QString &text) override;
     void stop() override;
     void pause() override;
@@ -90,7 +90,7 @@ private:
     QVoice voiceForNSVoice(NSString *voiceString) const;
     NSSpeechSynthesizer *speechSynthesizer;
     QT_MANGLE_NAMESPACE(StateDelegate) *stateDelegate;
-    QVector<QLocale> m_locales;
+    QList<QLocale> m_locales;
     QMultiMap<QString, QVoice> m_voices;
 };
 

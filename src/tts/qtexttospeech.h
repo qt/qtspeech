@@ -74,11 +74,11 @@ public:
     explicit QTextToSpeech(const QString &engine, QObject *parent = nullptr);
     State state() const;
 
-    QVector<QLocale> availableLocales() const;
+    QList<QLocale> availableLocales() const;
     QLocale locale() const;
 
     QVoice voice() const;
-    QVector<QVoice> availableVoices() const;
+    QList<QVoice> availableVoices() const;
 
     double rate() const;
     double pitch() const;

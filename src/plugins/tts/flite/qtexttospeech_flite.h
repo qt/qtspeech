@@ -42,8 +42,8 @@
 #include "qvoice.h"
 
 #include <QtCore/QString>
+#include <QtCore/QList>
 #include <QtCore/QLocale>
-#include <QtCore/QVector>
 #include <QtCore/QSharedPointer>
 
 #include <flite/flite.h>
@@ -59,8 +59,8 @@ public:
     ~QTextToSpeechEngineFlite() override;
 
     // Plug-in API:
-    QVector<QLocale> availableLocales() const override;
-    QVector<QVoice> availableVoices() const override;
+    QList<QLocale> availableLocales() const override;
+    QList<QVoice> availableVoices() const override;
     void say(const QString &text) override;
     void stop() override;
     void pause() override;
@@ -87,7 +87,7 @@ private:
     QTextToSpeech::State m_state;
     QSharedPointer<QTextToSpeechProcessorFlite> m_processor;
     QLocale m_currentLocale;
-    QVector<QLocale> m_locales;
+    QList<QLocale> m_locales;
     QVoice m_currentVoice;
     // Voices mapped by their locale name.
     QMultiMap<QString, QVoice> m_voices;

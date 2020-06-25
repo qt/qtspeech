@@ -315,7 +315,7 @@ void QTextToSpeechEngineSapi::updateVoices()
     cpEnum->Release();
 }
 
-QVector<QLocale> QTextToSpeechEngineSapi::availableLocales() const
+QList<QLocale> QTextToSpeechEngineSapi::availableLocales() const
 {
     return m_locales;
 }
@@ -343,9 +343,9 @@ QLocale QTextToSpeechEngineSapi::locale() const
     return lcidToLocale(vAttr["Language"]);
 }
 
-QVector<QVoice> QTextToSpeechEngineSapi::availableVoices() const
+QList<QVoice> QTextToSpeechEngineSapi::availableVoices() const
 {
-    return m_voices.values(locale().name()).toVector();
+    return m_voices.values(locale().name());
 }
 
 bool QTextToSpeechEngineSapi::setVoice(const QVoice &voice)

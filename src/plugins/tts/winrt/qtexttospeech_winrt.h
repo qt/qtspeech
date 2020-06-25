@@ -40,11 +40,11 @@
 #include <QtTextToSpeech/qtexttospeechengine.h>
 #include <QtTextToSpeech/qvoice.h>
 
-#include <QtCore/QObject>
-#include <QtCore/QVector>
-#include <QtCore/QString>
+#include <QtCore/QList>
 #include <QtCore/QLocale>
+#include <QtCore/QObject>
 #include <QtCore/QScopedPointer>
+#include <QtCore/QString>
 #include <QtCore/qt_windows.h>
 #include <wrl.h>
 
@@ -70,8 +70,8 @@ public:
     QTextToSpeechEngineWinRT(const QVariantMap &parameters, QObject *parent);
     ~QTextToSpeechEngineWinRT();
 
-    QVector<QLocale> availableLocales() const override;
-    QVector<QVoice> availableVoices() const override;
+    QList<QLocale> availableLocales() const override;
+    QList<QVoice> availableVoices() const override;
     void say(const QString &text) override;
     void stop() override;
     void pause() override;

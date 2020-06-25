@@ -37,7 +37,7 @@
 #ifndef QTEXTTOSPEECHENGINE_IOS_H
 #define QTEXTTOSPEECHENGINE_IOS_H
 
-#include <QtCore/qvector.h>
+#include <QtCore/qlist.h>
 #include <QtTextToSpeech/qtexttospeechengine.h>
 #include <QtTextToSpeech/qvoice.h>
 
@@ -54,8 +54,8 @@ public:
     QTextToSpeechEngineIos(const QVariantMap &parameters, QObject *parent);
     ~QTextToSpeechEngineIos();
 
-    QVector<QLocale> availableLocales() const override;
-    QVector<QVoice> availableVoices() const override;
+    QList<QLocale> availableLocales() const override;
+    QList<QVoice> availableVoices() const override;
     void say(const QString &text) override;
     void stop() override;
     void pause() override;

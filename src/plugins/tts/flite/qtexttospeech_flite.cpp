@@ -51,14 +51,14 @@ QTextToSpeechEngineFlite::~QTextToSpeechEngineFlite()
 {
 }
 
-QVector<QLocale> QTextToSpeechEngineFlite::availableLocales() const
+QList<QLocale> QTextToSpeechEngineFlite::availableLocales() const
 {
     return m_locales;
 }
 
-QVector<QVoice> QTextToSpeechEngineFlite::availableVoices() const
+QList<QVoice> QTextToSpeechEngineFlite::availableVoices() const
 {
-    return m_voices.values(m_currentLocale.name()).toVector();
+    return m_voices.values(m_currentLocale.name());
 }
 
 void QTextToSpeechEngineFlite::say(const QString &text)
@@ -172,7 +172,7 @@ QTextToSpeech::State QTextToSpeechEngineFlite::state() const
 bool QTextToSpeechEngineFlite::init(QString *errorString)
 {
     int i = 0;
-    const QVector<QTextToSpeechProcessor::VoiceInfo> &voices = m_processor->voices();
+    const QList<QTextToSpeechProcessor::VoiceInfo> &voices = m_processor->voices();
     for (const QTextToSpeechProcessor::VoiceInfo &voiceInfo : voices) {
         QString name = voiceInfo.name;
         QLocale locale(voiceInfo.locale);

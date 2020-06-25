@@ -41,9 +41,9 @@
 #include "qvoice.h"
 
 #include <QtCore/private/qjni_p.h>
-#include <QtCore/QString>
+#include <QtCore/QList>
 #include <QtCore/QLocale>
-#include <QtCore/QVector>
+#include <QtCore/QString>
 
 QT_BEGIN_NAMESPACE
 
@@ -56,8 +56,8 @@ public:
     virtual ~QTextToSpeechEngineAndroid();
 
     // Plug-in API:
-    QVector<QLocale> availableLocales() const override;
-    QVector<QVoice> availableVoices() const override;
+    QList<QLocale> availableLocales() const override;
+    QList<QVoice> availableVoices() const override;
     void say(const QString &text) override;
     void stop() override;
     void pause() override;

@@ -50,12 +50,12 @@ QT_BEGIN_NAMESPACE
   its pure virtual methods.
 */
 
-/*! \fn QVector<QLocale> QTextToSpeechEngine::availableLocales() const
+/*! \fn QList<QLocale> QTextToSpeechEngine::availableLocales() const
 
   Implementation of \l QTextToSpeech::availableLocales().
 */
 
-/*! \fn QVector<QVoice> QTextToSpeechEngine::availableVoices() const
+/*! \fn QList<QVoice> QTextToSpeechEngine::availableVoices() const
 
   Implementation of \l QTextToSpeech::availableVoices().
 */

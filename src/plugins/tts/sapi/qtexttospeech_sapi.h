@@ -40,10 +40,10 @@
 #include <QtCore/qt_windows.h>
 #include <sapi.h>
 
-#include <QtCore/qobject.h>
-#include <QtCore/qvector.h>
-#include <QtCore/qstring.h>
+#include <QtCore/qlist.h>
 #include <QtCore/qlocale.h>
+#include <QtCore/qobject.h>
+#include <QtCore/qstring.h>
 #include <QtTextToSpeech/qtexttospeechengine.h>
 #include <QtTextToSpeech/qvoice.h>
 
@@ -58,8 +58,8 @@ public:
     ~QTextToSpeechEngineSapi();
 
     // Plug-in API:
-    QVector<QLocale> availableLocales() const override;
-    QVector<QVoice> availableVoices() const override;
+    QList<QLocale> availableLocales() const override;
+    QList<QVoice> availableVoices() const override;
     void say(const QString &text) override;
     void stop() override;
     void pause() override;
@@ -88,7 +88,7 @@ private:
     void updateVoices();
 
     QTextToSpeech::State m_state;
-    QVector<QLocale> m_locales;
+    QList<QLocale> m_locales;
     QVoice m_currentVoice;
     // Voices mapped by their locale name.
     QMultiMap<QString, QVoice> m_voices;

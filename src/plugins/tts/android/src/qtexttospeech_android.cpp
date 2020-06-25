@@ -248,11 +248,11 @@ bool QTextToSpeechEngineAndroid::setVolume(double volume)
     return m_speech.callMethod<jint>("setVolume", "(F)I", float(volume)) == 0;
 }
 
-QVector<QLocale> QTextToSpeechEngineAndroid::availableLocales() const
+QList<QLocale> QTextToSpeechEngineAndroid::availableLocales() const
 {
     auto locales = m_speech.callObjectMethod("getAvailableLocales", "()Ljava/util/List;");
     int count = locales.callMethod<jint>("size");
-    QVector<QLocale> result;
+    QList<QLocale> result;
     result.reserve(count);
     for (int i = 0; i < count; ++i) {
         auto locale = locales.callObjectMethod("get", "(I)Ljava/lang/Object;", i);
@@ -303,11 +303,11 @@ QVoice QTextToSpeechEngineAndroid::javaVoiceObjectToQVoice(QJNIObjectPrivate &ob
     return createVoice(voiceName, gender, QVoice::Other, voiceName);
 }
 
-QVector<QVoice> QTextToSpeechEngineAndroid::availableVoices() const
+QList<QVoice> QTextToSpeechEngineAndroid::availableVoices() const
 {
     auto voices = m_speech.callObjectMethod("getAvailableVoices", "()Ljava/util/List;");
     int count = voices.callMethod<jint>("size");
-    QVector<QVoice> result;
+    QList<QVoice> result;
     result.reserve(count);
     for (int i = 0; i < count; ++i) {
         auto voice = voices.callObjectMethod("get", "(I)Ljava/lang/Object;", i);
