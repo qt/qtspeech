@@ -126,7 +126,7 @@ QTextToSpeechEngineAndroid::QTextToSpeechEngineAndroid(const QVariantMap &parame
     , m_state(QTextToSpeech::BackendError)
     , m_text()
 {
-    Q_UNUSED(parameters)
+    Q_UNUSED(parameters);
     Q_ASSERT(g_qtSpeechClass);
 
     const jlong id = reinterpret_cast<jlong>(this);

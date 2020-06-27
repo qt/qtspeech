@@ -39,6 +39,6 @@
 
 QTextToSpeechEngine *QTextToSpeechPluginIos::createTextToSpeechEngine(const QVariantMap &parameters, QObject *parent, QString *errorString) const
 {
-    Q_UNUSED(errorString)
+    Q_UNUSED(errorString);
     return new QTextToSpeechEngineIos(parameters, parent);
 }

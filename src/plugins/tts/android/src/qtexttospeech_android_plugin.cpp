@@ -44,7 +44,7 @@ Q_LOGGING_CATEGORY(lcSpeechTtsAndroid, "qt.speech.tts.android")
 QTextToSpeechEngine *QTextToSpeechPluginAndroid::createTextToSpeechEngine(
         const QVariantMap &parameters, QObject *parent, QString *errorString) const
 {
-    Q_UNUSED(errorString)
+    Q_UNUSED(errorString);
     QTextToSpeechEngineAndroid *android = new QTextToSpeechEngineAndroid(parameters, parent);
     if (android) {
         return android;

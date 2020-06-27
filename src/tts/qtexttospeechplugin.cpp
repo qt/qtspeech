@@ -65,9 +65,9 @@ QTextToSpeechEngine *QTextToSpeechPlugin::createTextToSpeechEngine(
         QObject *parent,
         QString *errorString) const
 {
-    Q_UNUSED(parameters)
-    Q_UNUSED(parent)
-    Q_UNUSED(errorString)
+    Q_UNUSED(parameters);
+    Q_UNUSED(parent);
+    Q_UNUSED(errorString);
 
     return 0;
 }
