@@ -174,6 +174,11 @@ public class QtTextToSpeech
         return success;
     }
 
+    public float rate()
+    {
+        return mRate;
+    }
+
     public int setRate(float rate)
     {
         if (Float.compare(rate, mRate) == 0)
