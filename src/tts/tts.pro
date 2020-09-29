@@ -22,6 +22,6 @@ SOURCES = \
     qvoice.cpp \
 
 ANDROID_BUNDLED_JAR_DEPENDENCIES = \
-    jar/QtTextToSpeech.jar
+    jar/Qt$${QT_MAJOR_VERSION}AndroidTextToSpeech.jar
 ANDROID_LIB_DEPENDENCIES = \
     plugins/texttospeech/libplugins_texttospeech_qttexttospeech_android.so

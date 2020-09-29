@@ -100,7 +100,7 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
         return JNI_ERR;
 
     JNIEnv *jniEnv = uenv.nativeEnvironment;
-    jclass clazz = jniEnv->FindClass("org/qtproject/qt5/android/speech/QtTextToSpeech");
+    jclass clazz = jniEnv->FindClass("org/qtproject/qt/android/speech/QtTextToSpeech");
 
     static const JNINativeMethod methods[] = {
         {"notifyError", "(J)V", reinterpret_cast<void *>(notifyError)},
@@ -132,7 +132,7 @@ QTextToSpeechEngineAndroid::QTextToSpeechEngineAndroid(const QVariantMap &parame
     const jlong id = reinterpret_cast<jlong>(this);
     m_speech = QJNIObjectPrivate::callStaticObjectMethod(g_qtSpeechClass,
                                                          "open",
-                                                         "(Landroid/content/Context;J)Lorg/qtproject/qt5/android/speech/QtTextToSpeech;",
+                                                         "(Landroid/content/Context;J)Lorg/qtproject/qt/android/speech/QtTextToSpeech;",
                                                          QtAndroidPrivate::context(),
                                                          id);
     (*textToSpeechMap)[id] = this;

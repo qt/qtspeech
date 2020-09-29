@@ -34,7 +34,7 @@
 **
 ****************************************************************************/
 
-package org.qtproject.qt5.android.speech;
+package org.qtproject.qt.android.speech;
 
 import android.content.ContentResolver;
 import android.content.Context;

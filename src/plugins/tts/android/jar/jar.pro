@@ -1,4 +1,4 @@
-TARGET = QtTextToSpeech
+TARGET = Qt$${QT_MAJOR_VERSION}AndroidTextToSpeech
 
 load(qt_build_paths)
 CONFIG += java
@@ -6,7 +6,7 @@ API_VERSION = android-21
 
 DESTDIR = $$MODULE_BASE_OUTDIR/jar
 
-PATHPREFIX = $$PWD/src/org/qtproject/qt5/android/speech
+PATHPREFIX = $$PWD/src/org/qtproject/qt/android/speech
 
 JAVACLASSPATH += $$PWD/src
 JAVASOURCES += $$PATHPREFIX/QtTextToSpeech.java
