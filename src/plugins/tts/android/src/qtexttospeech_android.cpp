@@ -292,11 +292,13 @@ QList<QLocale> QTextToSpeechEngineAndroid::availableLocales() const
     result.reserve(count);
     for (int i = 0; i < count; ++i) {
         auto locale = locales.callMethod<jobject>("get", i);
-        auto localeLanguage = locale.callMethod<jstring>("getLanguage").toString();
-        auto localeCountry = locale.callMethod<jstring>("getCountry").toString();
-        if (!localeCountry.isEmpty())
-            localeLanguage += QString("_%1").arg(localeCountry).toUpper();
-        result << QLocale(localeLanguage);
+        if (locale.isValid()) {
+            auto localeLanguage = locale.callMethod<jstring>("getLanguage").toString();
+            auto localeCountry = locale.callMethod<jstring>("getCountry").toString();
+            if (!localeCountry.isEmpty())
+                localeLanguage += QString("_%1").arg(localeCountry).toUpper();
+            result << QLocale(localeLanguage);
+        }
     }
     return result;
 }

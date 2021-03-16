@@ -228,6 +228,8 @@ public class QtTextToSpeech
     {
         //Log.d(TAG, "getLocale: " + mLocale);
         final Locale language = mTts.getLanguage();
+        if (language == null)
+            return null;
         String languageCode = language.getLanguage();
         String countryCode = language.getCountry();
 
