@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2021 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -40,10 +40,10 @@
 #include "qtexttospeechengine.h"
 #include "qvoice.h"
 
-#include <QtCore/private/qjni_p.h>
 #include <QtCore/QList>
 #include <QtCore/QLocale>
 #include <QtCore/QString>
+#include <QtCore/qjniobject.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -81,9 +81,9 @@ public Q_SLOTS:
 
 private:
     void setState(QTextToSpeech::State state);
-    QVoice javaVoiceObjectToQVoice(QJNIObjectPrivate &obj) const;
+    QVoice javaVoiceObjectToQVoice(QJniObject &obj) const;
 
-    QJNIObjectPrivate m_speech;
+    QJniObject m_speech;
     QTextToSpeech::State m_state;
     QString m_text;
 };

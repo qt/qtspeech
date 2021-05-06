@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2021 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -35,8 +35,7 @@
 ****************************************************************************/
 #include "qtexttospeech_android.h"
 
-#include <jni.h>
-#include <QtCore/private/qjnihelpers_p.h>
+#include <QtCore/qcoreapplication.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -130,11 +129,10 @@ QTextToSpeechEngineAndroid::QTextToSpeechEngineAndroid(const QVariantMap &parame
     Q_ASSERT(g_qtSpeechClass);
 
     const jlong id = reinterpret_cast<jlong>(this);
-    m_speech = QJNIObjectPrivate::callStaticObjectMethod(g_qtSpeechClass,
-                                                         "open",
-                                                         "(Landroid/content/Context;J)Lorg/qtproject/qt/android/speech/QtTextToSpeech;",
-                                                         QtAndroidPrivate::context(),
-                                                         id);
+    m_speech = QJniObject::callStaticObjectMethod(
+                    g_qtSpeechClass, "open",
+                    "(Landroid/content/Context;J)Lorg/qtproject/qt/android/speech/QtTextToSpeech;",
+                    QNativeInterface::QAndroidApplication::context(), id);
     (*textToSpeechMap)[id] = this;
 }
 
@@ -153,7 +151,7 @@ void QTextToSpeechEngineAndroid::say(const QString &text)
         stop();
 
     m_text = text;
-    m_speech.callMethod<void>("say", "(Ljava/lang/String;)V", QJNIObjectPrivate::fromString(m_text).object());
+    m_speech.callMethod<void>("say", "(Ljava/lang/String;)V", QJniObject::fromString(m_text).object());
 }
 
 QTextToSpeech::State QTextToSpeechEngineAndroid::state() const
@@ -275,9 +273,9 @@ bool QTextToSpeechEngineAndroid::setLocale(const QLocale &locale)
     QString languageCode = parts.at(0);
     QString countryCode = parts.at(1);
 
-    QJNIObjectPrivate jLocale("java/util/Locale", "(Ljava/lang/String;Ljava/lang/String;)V",
-                              QJNIObjectPrivate::fromString(languageCode).object(),
-                              QJNIObjectPrivate::fromString(countryCode).object());
+    QJniObject jLocale("java/util/Locale", "(Ljava/lang/String;Ljava/lang/String;)V",
+                              QJniObject::fromString(languageCode).object(),
+                              QJniObject::fromString(countryCode).object());
 
     return m_speech.callMethod<jboolean>("setLocale", "(Ljava/util/Locale;)Z", jLocale.object());
 }
@@ -295,7 +293,7 @@ QLocale QTextToSpeechEngineAndroid::locale() const
     return QLocale();
 }
 
-QVoice QTextToSpeechEngineAndroid::javaVoiceObjectToQVoice(QJNIObjectPrivate &obj) const
+QVoice QTextToSpeechEngineAndroid::javaVoiceObjectToQVoice(QJniObject &obj) const
 {
     auto voiceName = obj.callObjectMethod<jstring>("getName").toString();
     QVoice::Gender gender;
@@ -325,7 +323,7 @@ QList<QVoice> QTextToSpeechEngineAndroid::availableVoices() const
 bool QTextToSpeechEngineAndroid::setVoice(const QVoice &voice)
 {
     return m_speech.callMethod<jboolean>("setVoice", "(Ljava/lang/String;)Z",
-                                         QJNIObjectPrivate::fromString(voiceData(voice).toString()).object());
+                                         QJniObject::fromString(voiceData(voice).toString()).object());
 }
 
 QVoice QTextToSpeechEngineAndroid::voice() const
