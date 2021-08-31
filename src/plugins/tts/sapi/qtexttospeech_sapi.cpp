@@ -37,6 +37,9 @@
 #include "qtexttospeech_sapi.h"
 
 #include <windows.h>
+#ifdef Q_CC_MSVC
+#pragma warning(disable : 4996)
+#endif
 #include <sapi.h>
 #include <sphelper.h>
 #include <qdebug.h>
