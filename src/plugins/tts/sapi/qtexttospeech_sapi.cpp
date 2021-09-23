@@ -339,7 +339,11 @@ QLocale QTextToSpeechEngineSapi::locale() const
 {
     // Get current voice id
     ISpObjectToken *cpVoiceToken = nullptr;
-    m_voice->GetVoice(&cpVoiceToken);
+    HRESULT hr = m_voice->GetVoice(&cpVoiceToken);
+    if (FAILED(hr)) {
+        qWarning() << "ISpObjectToken::GetVoice failed";
+        return QLocale();
+    }
     // read attributes
     QMap<QString, QString> vAttr = voiceAttributes(cpVoiceToken);
     cpVoiceToken->Release();
@@ -386,7 +390,11 @@ bool QTextToSpeechEngineSapi::setVoice(const QVoice &voice)
 QVoice QTextToSpeechEngineSapi::voice() const
 {
     ISpObjectToken *cpVoiceToken = nullptr;
-    m_voice->GetVoice(&cpVoiceToken);
+    HRESULT hr = m_voice->GetVoice(&cpVoiceToken);
+    if (FAILED(hr)) {
+        qWarning() << "ISpObjectToken::GetVoice failed";
+        return QVoice();
+    }
     QString vId = voiceId(cpVoiceToken);
     cpVoiceToken->Release();
     for (const QVoice &voice : m_voices) {
