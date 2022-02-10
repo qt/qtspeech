@@ -53,6 +53,7 @@
 #include <qtexttospeech.h>
 #include <qtexttospeechplugin.h>
 #include <QMutex>
+#include <QCborMap>
 #include <QtCore/qhash.h>
 #include <QtCore/private/qobject_p.h>
 
@@ -64,17 +65,17 @@ class QTextToSpeechPrivate : public QObjectPrivate
 public:
     QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine);
     ~QTextToSpeechPrivate();
-    static QMultiHash<QString, QJsonObject> plugins(bool reload = false);
+    static QMultiHash<QString, QCborMap> plugins(bool reload = false);
 
     QTextToSpeechEngine *m_engine;
 private:
     bool loadMeta();
     void loadPlugin();
-    static void loadPluginMetadata(QMultiHash<QString, QJsonObject> &list);
+    static void loadPluginMetadata(QMultiHash<QString, QCborMap> &list);
     QTextToSpeech *m_speech;
     QString m_providerName;
     QTextToSpeechPlugin *m_plugin;
-    QJsonObject m_metaData;
+    QCborMap m_metaData;
     static QMutex m_mutex;
 };
 

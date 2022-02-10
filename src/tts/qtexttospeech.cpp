@@ -90,48 +90,43 @@ QTextToSpeechPrivate::~QTextToSpeechPrivate()
 
 bool QTextToSpeechPrivate::loadMeta()
 {
-    m_plugin = 0;
-    m_metaData = QJsonObject();
-    m_metaData.insert(QLatin1String("index"), -1);
+    m_plugin = nullptr;
+    m_metaData = QCborMap();
 
-    QList<QJsonObject> candidates = QTextToSpeechPrivate::plugins().values(m_providerName);
+    QList<QCborMap> candidates = QTextToSpeechPrivate::plugins().values(m_providerName);
 
     int versionFound = -1;
-    int idx = -1;
 
     // figure out which version of the plugin we want
     for (int i = 0; i < candidates.size(); ++i) {
-        QJsonObject meta = candidates[i];
-        if (meta.contains(QLatin1String("Version"))
-                && meta.value(QLatin1String("Version")).isDouble()) {
-            int ver = int(meta.value(QLatin1String("Version")).toDouble());
-            if (ver > versionFound) {
-                versionFound = ver;
-                idx = i;
-            }
+        QCborMap meta = candidates[i];
+        if (int ver = meta.value(QLatin1String("Version")).toInteger(); ver > versionFound) {
+            versionFound = ver;
+            m_metaData = std::move(meta);
         }
     }
 
-    if (idx != -1) {
-        m_metaData = candidates[idx];
-        return true;
+    if (m_metaData.isEmpty()) {
+        m_metaData.insert(QLatin1String("index"), -1); // not found
+        return false;
     }
-    return false;
+
+    return true;
 }
 
 void QTextToSpeechPrivate::loadPlugin()
 {
-    if (int(m_metaData.value(QLatin1String("index")).toDouble()) < 0) {
-        m_plugin = 0;
+    int idx = m_metaData.value(QLatin1String("index")).toInteger();
+    if (idx < 0) {
+        m_plugin = nullptr;
         return;
     }
-    int idx = int(m_metaData.value(QLatin1String("index")).toDouble());
     m_plugin = qobject_cast<QTextToSpeechPlugin *>(loader()->instance(idx));
 }
 
-QMultiHash<QString, QJsonObject> QTextToSpeechPrivate::plugins(bool reload)
+QMultiHash<QString, QCborMap> QTextToSpeechPrivate::plugins(bool reload)
 {
-    static QMultiHash<QString, QJsonObject> plugins;
+    static QMultiHash<QString, QCborMap> plugins;
     static bool alreadyDiscovered = false;
     QMutexLocker lock(&m_mutex);
 
@@ -145,12 +140,12 @@ QMultiHash<QString, QJsonObject> QTextToSpeechPrivate::plugins(bool reload)
     return plugins;
 }
 
-void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QJsonObject> &list)
+void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &list)
 {
     QFactoryLoader *l = loader();
-    QList<QJsonObject> meta = l->metaData();
+    QList<QPluginParsedMetaData> meta = l->metaData();
     for (int i = 0; i < meta.size(); ++i) {
-        QJsonObject obj = meta.at(i).value(QLatin1String("MetaData")).toObject();
+        QCborMap obj = meta.at(i).value(QtPluginMetaDataKeys::MetaData).toMap();
         obj.insert(QLatin1String("index"), i);
         list.insert(obj.value(QLatin1String("Provider")).toString(), obj);
     }
