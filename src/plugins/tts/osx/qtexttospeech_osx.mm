@@ -189,7 +189,7 @@ bool QTextToSpeechEngineOsx::setVolume(double volume)
 QLocale localeForVoice(NSString *voice)
 {
     NSDictionary *attrs = [NSSpeechSynthesizer attributesForVoice:voice];
-    return QString::fromNSString(attrs[NSVoiceLocaleIdentifier]);
+    return QLocale(QString::fromNSString(attrs[NSVoiceLocaleIdentifier]));
 }
 
 QVoice QTextToSpeechEngineOsx::voiceForNSVoice(NSString *voiceString) const
