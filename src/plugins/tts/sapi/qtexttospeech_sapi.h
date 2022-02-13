@@ -37,6 +37,7 @@
 #ifndef QTEXTTOSPEECHENGINE_SAPI_H
 #define QTEXTTOSPEECHENGINE_SAPI_H
 
+#include <windows.h>
 #include <QtCore/qt_windows.h>
 #include <sapi.h>
 
