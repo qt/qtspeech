@@ -10,7 +10,7 @@ qt_internal_add_plugin(QTextToSpeechEngineAndroid
     SOURCES
         qtexttospeech_android.cpp qtexttospeech_android.h
         qtexttospeech_android_plugin.cpp qtexttospeech_android_plugin.h
-    PUBLIC_LIBRARIES
+    LIBRARIES
         Qt::Core
         Qt::CorePrivate
         Qt::TextToSpeech

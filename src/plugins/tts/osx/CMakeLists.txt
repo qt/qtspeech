@@ -10,7 +10,7 @@ qt_internal_add_plugin(QTextToSpeechPluginOsx
     SOURCES
         qtexttospeech_osx.h qtexttospeech_osx.mm
         qtexttospeech_osx_plugin.cpp qtexttospeech_osx_plugin.h
-    PUBLIC_LIBRARIES
+    LIBRARIES
         ${FWCocoa}
         Qt::Core
         Qt::Gui

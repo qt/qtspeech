@@ -14,7 +14,6 @@ qt_internal_add_plugin(QTextToSpeechEngineFlite
         qtexttospeech_flite_processor.cpp qtexttospeech_flite_processor.h
     LIBRARIES
         Flite::Flite
-    PUBLIC_LIBRARIES
         Qt::Core
         Qt::Multimedia
         Qt::TextToSpeech

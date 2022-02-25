@@ -10,7 +10,7 @@ qt_internal_add_plugin(QTextToSpeechPluginSapi
     SOURCES
         qtexttospeech_sapi.cpp qtexttospeech_sapi.h
         qtexttospeech_sapi_plugin.cpp qtexttospeech_sapi_plugin.h
-    PUBLIC_LIBRARIES
+    LIBRARIES
         Qt::Core
         Qt::Gui
         Qt::TextToSpeech
@@ -33,7 +33,7 @@ qt_internal_extend_target(QTextToSpeechPluginSapi CONDITION MSVC
 )
 
 qt_internal_extend_target(QTextToSpeechPluginSapi CONDITION MINGW
-    PUBLIC_LIBRARIES
+    LIBRARIES
         ole32
         sapi
         uuid

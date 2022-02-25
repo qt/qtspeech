@@ -10,7 +10,7 @@ qt_internal_add_plugin(QTextToSpeechPluginWinRT
     SOURCES
         qtexttospeech_winrt.cpp qtexttospeech_winrt.h
         qtexttospeech_winrt_plugin.cpp qtexttospeech_winrt_plugin.h
-    PUBLIC_LIBRARIES
+    LIBRARIES
         Qt::Core
         Qt::CorePrivate
         Qt::Gui

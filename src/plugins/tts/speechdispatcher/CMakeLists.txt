@@ -10,7 +10,7 @@ qt_internal_add_plugin(QTextToSpeechPluginSpeechd
     SOURCES
         qtexttospeech_speechd.cpp qtexttospeech_speechd.h
         qtexttospeech_speechd_plugin.cpp qtexttospeech_speechd_plugin.h
-    PUBLIC_LIBRARIES
+    LIBRARIES
         Qt::Core
         Qt::TextToSpeech
 )

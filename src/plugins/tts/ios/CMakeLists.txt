@@ -10,7 +10,7 @@ qt_internal_add_plugin(QTextToSpeechPluginIos
     SOURCES
         qtexttospeech_ios.h qtexttospeech_ios.mm
         qtexttospeech_ios_plugin.cpp qtexttospeech_ios_plugin.h
-    PUBLIC_LIBRARIES
+    LIBRARIES
         ${FWAVFoundation}
         ${FWFoundation}
         Qt::Core
