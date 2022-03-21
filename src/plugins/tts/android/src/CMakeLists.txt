@@ -1,9 +1,3 @@
-# Generated from src.pro.
-
-#####################################################################
-## QTextToSpeechEngineAndroid Plugin:
-#####################################################################
-
 qt_internal_add_plugin(QTextToSpeechEngineAndroid
     OUTPUT_NAME qttexttospeech_android
     PLUGIN_TYPE texttospeech
@@ -15,6 +9,3 @@ qt_internal_add_plugin(QTextToSpeechEngineAndroid
         Qt::CorePrivate
         Qt::TextToSpeech
 )
-
-#### Keys ignored in scope 1:.:.:src.pro:<TRUE>:
-# OTHER_FILES = "android_plugin.json"

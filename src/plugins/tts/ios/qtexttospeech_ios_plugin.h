@@ -44,7 +44,7 @@
 
 QT_BEGIN_NAMESPACE
 
-class QTextToSpeechPluginIos : public QObject, public QTextToSpeechPlugin
+class QTextToSpeechIosPlugin : public QObject, public QTextToSpeechPlugin
 {
     Q_OBJECT
     Q_INTERFACES(QTextToSpeechPlugin)

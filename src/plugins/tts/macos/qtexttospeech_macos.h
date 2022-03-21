@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -34,8 +34,8 @@
 **
 ****************************************************************************/
 
-#ifndef QTEXTTOSPEECHENGINE_OSX_H
-#define QTEXTTOSPEECHENGINE_OSX_H
+#ifndef QTEXTTOSPEECHENGINE_MACOS_H
+#define QTEXTTOSPEECHENGINE_MACOS_H
 
 #include <QtCore/qlist.h>
 #include <QtCore/qlocale.h>
@@ -50,13 +50,13 @@ Q_FORWARD_DECLARE_OBJC_CLASS(NSString);
 
 QT_BEGIN_NAMESPACE
 
-class QTextToSpeechEngineOsx : public QTextToSpeechEngine
+class QTextToSpeechEngineMacOS : public QTextToSpeechEngine
 {
     Q_OBJECT
 
 public:
-    QTextToSpeechEngineOsx(const QVariantMap &parameters, QObject *parent);
-    ~QTextToSpeechEngineOsx();
+    QTextToSpeechEngineMacOS(const QVariantMap &parameters, QObject *parent);
+    ~QTextToSpeechEngineMacOS();
 
     // Plug-in API:
     QList<QLocale> availableLocales() const override;

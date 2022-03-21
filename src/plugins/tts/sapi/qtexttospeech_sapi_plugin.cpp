@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -37,7 +37,7 @@
 #include "qtexttospeech_sapi_plugin.h"
 #include "qtexttospeech_sapi.h"
 
-QTextToSpeechEngine *QTextToSpeechPluginSapi::createTextToSpeechEngine(const QVariantMap &parameters, QObject *parent, QString *errorString) const
+QTextToSpeechEngine *QTextToSpeechSapiPlugin::createTextToSpeechEngine(const QVariantMap &parameters, QObject *parent, QString *errorString) const
 {
     Q_UNUSED(errorString);
     return new QTextToSpeechEngineSapi(parameters, parent);

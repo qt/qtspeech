@@ -1,5 +1,3 @@
-# Generated from jar.pro.
-
 qt_get_android_sdk_jar_for_api("android-21" android_sdk)
 
 set(java_sources
@@ -16,4 +14,3 @@ install_jar(QtAndroidTextToSpeech
     DESTINATION jar
     COMPONENT Devel
 )
-

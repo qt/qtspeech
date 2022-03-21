@@ -1,10 +1,4 @@
-# Generated from ios.pro.
-
-#####################################################################
-## QTextToSpeechPluginIos Plugin:
-#####################################################################
-
-qt_internal_add_plugin(QTextToSpeechPluginIos
+qt_internal_add_plugin(QTextToSpeechIosPlugin
     OUTPUT_NAME qtexttospeech_speechios
     PLUGIN_TYPE texttospeech
     SOURCES
@@ -17,6 +11,3 @@ qt_internal_add_plugin(QTextToSpeechPluginIos
         Qt::Gui
         Qt::TextToSpeech
 )
-
-#### Keys ignored in scope 1:.:.:ios.pro:<TRUE>:
-# OTHER_FILES = "ios_plugin.json"

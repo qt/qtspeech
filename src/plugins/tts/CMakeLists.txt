@@ -1,5 +1,3 @@
-# Generated from tts.pro.
-
 if(QT_FEATURE_speechd AND UNIX)
     add_subdirectory(speechdispatcher)
 endif()
@@ -10,7 +8,7 @@ if(WINRT)
     add_subdirectory(winrt)
 endif()
 if(MACOS AND TARGET Qt::Gui)
-    add_subdirectory(osx)
+    add_subdirectory(macos)
 endif()
 if(UIKIT)
     add_subdirectory(ios)

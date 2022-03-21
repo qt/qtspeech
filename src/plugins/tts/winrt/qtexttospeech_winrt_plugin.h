@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -44,7 +44,7 @@
 
 QT_BEGIN_NAMESPACE
 
-class QTextToSpeechPluginWinRT : public QObject, public QTextToSpeechPlugin
+class QTextToSpeechWinRTPlugin : public QObject, public QTextToSpeechPlugin
 {
     Q_OBJECT
     Q_INTERFACES(QTextToSpeechPlugin)

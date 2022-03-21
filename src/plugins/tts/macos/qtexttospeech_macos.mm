@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -35,7 +35,7 @@
 ****************************************************************************/
 
 #include <Cocoa/Cocoa.h>
-#include "qtexttospeech_osx.h"
+#include "qtexttospeech_macos.h"
 #include <qdebug.h>
 
 @interface QT_MANGLE_NAMESPACE(StateDelegate) : NSObject <NSSpeechSynthesizerDelegate>
@@ -43,10 +43,10 @@
 
 @implementation QT_MANGLE_NAMESPACE(StateDelegate)
 {
-    QT_PREPEND_NAMESPACE(QTextToSpeechEngineOsx) *speechPrivate;
+    QT_PREPEND_NAMESPACE(QTextToSpeechEngineMacOS) *speechPrivate;
 }
 
-- (instancetype)initWithSpeechPrivate:(QTextToSpeechEngineOsx *) priv
+- (instancetype)initWithSpeechPrivate:(QTextToSpeechEngineMacOS *) priv
 {
     if ((self = [self init])) {
         speechPrivate = priv;
@@ -61,7 +61,7 @@
 
 QT_BEGIN_NAMESPACE
 
-QTextToSpeechEngineOsx::QTextToSpeechEngineOsx(const QVariantMap &/*parameters*/, QObject *parent)
+QTextToSpeechEngineMacOS::QTextToSpeechEngineMacOS(const QVariantMap &/*parameters*/, QObject *parent)
     : QTextToSpeechEngine(parent), m_state(QTextToSpeech::Ready)
 {
     stateDelegate = [[QT_MANGLE_NAMESPACE(StateDelegate) alloc] initWithSpeechPrivate:this];
@@ -71,7 +71,7 @@ QTextToSpeechEngineOsx::QTextToSpeechEngineOsx(const QVariantMap &/*parameters*/
     updateVoices();
 }
 
-QTextToSpeechEngineOsx::~QTextToSpeechEngineOsx()
+QTextToSpeechEngineMacOS::~QTextToSpeechEngineMacOS()
 {
     [speechSynthesizer setDelegate: nil];
     if ([speechSynthesizer isSpeaking])
@@ -81,17 +81,17 @@ QTextToSpeechEngineOsx::~QTextToSpeechEngineOsx()
 }
 
 
-QTextToSpeech::State QTextToSpeechEngineOsx::state() const
+QTextToSpeech::State QTextToSpeechEngineMacOS::state() const
 {
     return m_state;
 }
 
-bool QTextToSpeechEngineOsx::isSpeaking() const
+bool QTextToSpeechEngineMacOS::isSpeaking() const
 {
     return [speechSynthesizer isSpeaking];
 }
 
-void QTextToSpeechEngineOsx::speechStopped(bool success)
+void QTextToSpeechEngineMacOS::speechStopped(bool success)
 {
     Q_UNUSED(success);
     if (m_state != QTextToSpeech::Ready) {
@@ -100,7 +100,7 @@ void QTextToSpeechEngineOsx::speechStopped(bool success)
     }
 }
 
-void QTextToSpeechEngineOsx::say(const QString &text)
+void QTextToSpeechEngineMacOS::say(const QString &text)
 {
     if (text.isEmpty())
         return;
@@ -121,13 +121,13 @@ void QTextToSpeechEngineOsx::say(const QString &text)
     }
 }
 
-void QTextToSpeechEngineOsx::stop()
+void QTextToSpeechEngineMacOS::stop()
 {
     if([speechSynthesizer isSpeaking])
         [speechSynthesizer stopSpeakingAtBoundary:NSSpeechImmediateBoundary];
 }
 
-void QTextToSpeechEngineOsx::pause()
+void QTextToSpeechEngineMacOS::pause()
 {
     if ([speechSynthesizer isSpeaking]) {
         [speechSynthesizer pauseSpeakingAtBoundary: NSSpeechWordBoundary];
@@ -136,24 +136,24 @@ void QTextToSpeechEngineOsx::pause()
     }
 }
 
-bool QTextToSpeechEngineOsx::isPaused() const
+bool QTextToSpeechEngineMacOS::isPaused() const
 {
     return m_state == QTextToSpeech::Paused;
 }
 
-void QTextToSpeechEngineOsx::resume()
+void QTextToSpeechEngineMacOS::resume()
 {
     m_state = QTextToSpeech::Speaking;
     emit stateChanged(m_state);
     [speechSynthesizer continueSpeaking];
 }
 
-double QTextToSpeechEngineOsx::rate() const
+double QTextToSpeechEngineMacOS::rate() const
 {
     return ([speechSynthesizer rate] - 200) / 200.0;
 }
 
-bool QTextToSpeechEngineOsx::setPitch(double pitch)
+bool QTextToSpeechEngineMacOS::setPitch(double pitch)
 {
     // 30 to 65
     double p = 30.0 + ((pitch + 1.0) / 2.0) * 35.0;
@@ -161,18 +161,18 @@ bool QTextToSpeechEngineOsx::setPitch(double pitch)
     return true;
 }
 
-double QTextToSpeechEngineOsx::pitch() const
+double QTextToSpeechEngineMacOS::pitch() const
 {
     double pitch = [[speechSynthesizer objectForProperty:NSSpeechPitchBaseProperty error:nil] floatValue];
     return (pitch - 30.0) / 35.0 * 2.0 - 1.0;
 }
 
-double QTextToSpeechEngineOsx::volume() const
+double QTextToSpeechEngineMacOS::volume() const
 {
     return [speechSynthesizer volume];
 }
 
-bool QTextToSpeechEngineOsx::setRate(double rate)
+bool QTextToSpeechEngineMacOS::setRate(double rate)
 {
     // NSSpeechSynthesizer supports words per minute,
     // human speech is 180 to 220 - use 0 to 400 as range here
@@ -180,7 +180,7 @@ bool QTextToSpeechEngineOsx::setRate(double rate)
     return true;
 }
 
-bool QTextToSpeechEngineOsx::setVolume(double volume)
+bool QTextToSpeechEngineMacOS::setVolume(double volume)
 {
     [speechSynthesizer setVolume: volume];
     return true;
@@ -192,7 +192,7 @@ QLocale localeForVoice(NSString *voice)
     return QLocale(QString::fromNSString(attrs[NSVoiceLocaleIdentifier]));
 }
 
-QVoice QTextToSpeechEngineOsx::voiceForNSVoice(NSString *voiceString) const
+QVoice QTextToSpeechEngineMacOS::voiceForNSVoice(NSString *voiceString) const
 {
     NSDictionary *attrs = [NSSpeechSynthesizer attributesForVoice:voiceString];
     QString voiceName = QString::fromNSString(attrs[NSVoiceName]);
@@ -213,12 +213,12 @@ QVoice QTextToSpeechEngineOsx::voiceForNSVoice(NSString *voiceString) const
     return voice;
 }
 
-QVector<QLocale> QTextToSpeechEngineOsx::availableLocales() const
+QVector<QLocale> QTextToSpeechEngineMacOS::availableLocales() const
 {
     return m_locales;
 }
 
-bool QTextToSpeechEngineOsx::setLocale(const QLocale &locale)
+bool QTextToSpeechEngineMacOS::setLocale(const QLocale &locale)
 {
     NSArray *voices = [NSSpeechSynthesizer availableVoices];
     NSString *voice = [NSSpeechSynthesizer defaultVoice];
@@ -238,13 +238,13 @@ bool QTextToSpeechEngineOsx::setLocale(const QLocale &locale)
     return false;
 }
 
-QLocale QTextToSpeechEngineOsx::locale() const
+QLocale QTextToSpeechEngineMacOS::locale() const
 {
     NSString *voice = [speechSynthesizer voice];
     return localeForVoice(voice);
 }
 
-void QTextToSpeechEngineOsx::updateVoices()
+void QTextToSpeechEngineMacOS::updateVoices()
 {
     NSArray *voices = [NSSpeechSynthesizer availableVoices];
     for (NSString *voice in voices) {
@@ -256,19 +256,19 @@ void QTextToSpeechEngineOsx::updateVoices()
     }
 }
 
-QVector<QVoice> QTextToSpeechEngineOsx::availableVoices() const
+QVector<QVoice> QTextToSpeechEngineMacOS::availableVoices() const
 {
     return m_voices.values(locale().name()).toVector();
 }
 
-bool QTextToSpeechEngineOsx::setVoice(const QVoice &voice)
+bool QTextToSpeechEngineMacOS::setVoice(const QVoice &voice)
 {
     NSString *identifier = voiceData(voice).toString().toNSString();
     [speechSynthesizer setVoice:identifier];
     return true;
 }
 
-QVoice QTextToSpeechEngineOsx::voice() const
+QVoice QTextToSpeechEngineMacOS::voice() const
 {
     NSString *voice = [speechSynthesizer voice];
     return voiceForNSVoice(voice);

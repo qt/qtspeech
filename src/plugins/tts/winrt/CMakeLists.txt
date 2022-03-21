@@ -4,7 +4,7 @@
 ## QTextToSpeechPluginWinRT Plugin:
 #####################################################################
 
-qt_internal_add_plugin(QTextToSpeechPluginWinRT
+qt_internal_add_plugin(QTextToSpeechWinRTPlugin
     OUTPUT_NAME qtexttospeech_winrt
     PLUGIN_TYPE texttospeech
     SOURCES

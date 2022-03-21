@@ -37,7 +37,7 @@
 #include "qtexttospeech_ios_plugin.h"
 #include "qtexttospeech_ios.h"
 
-QTextToSpeechEngine *QTextToSpeechPluginIos::createTextToSpeechEngine(const QVariantMap &parameters, QObject *parent, QString *errorString) const
+QTextToSpeechEngine *QTextToSpeechIosPlugin::createTextToSpeechEngine(const QVariantMap &parameters, QObject *parent, QString *errorString) const
 {
     Q_UNUSED(errorString);
     return new QTextToSpeechEngineIos(parameters, parent);

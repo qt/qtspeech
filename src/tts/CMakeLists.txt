@@ -1,9 +1,3 @@
-# Generated from tts.pro.
-
-#####################################################################
-## TextToSpeech Module:
-#####################################################################
-
 qt_internal_add_module(TextToSpeech
     PLUGIN_TYPES texttospeech
     SOURCES
@@ -30,6 +24,3 @@ if(ANDROID)
         plugins/texttospeech/libplugins_texttospeech_qttexttospeech_android.so
     )
 endif()
-
-#### Keys ignored in scope 1:.:.:tts.pro:<TRUE>:
-# MODULE = "texttospeech"

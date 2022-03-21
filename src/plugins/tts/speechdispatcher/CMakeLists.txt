@@ -1,10 +1,4 @@
-# Generated from speechdispatcher.pro.
-
-#####################################################################
-## QTextToSpeechPluginSpeechd Plugin:
-#####################################################################
-
-qt_internal_add_plugin(QTextToSpeechPluginSpeechd
+qt_internal_add_plugin(QTextToSpeechSpeechdPlugin
     OUTPUT_NAME qtexttospeech_speechd
     PLUGIN_TYPE texttospeech
     SOURCES
@@ -15,14 +9,7 @@ qt_internal_add_plugin(QTextToSpeechPluginSpeechd
         Qt::TextToSpeech
 )
 
-#### Keys ignored in scope 1:.:.:speechdispatcher.pro:<TRUE>:
-# OTHER_FILES = "speechd_plugin.json"
-# QT_FOR_CONFIG = "texttospeech-private"
-
-## Scopes:
-#####################################################################
-
-qt_internal_extend_target(QTextToSpeechPluginSpeechd CONDITION QT_FEATURE_speechd
+qt_internal_extend_target(QTextToSpeechSpeechdPlugin CONDITION QT_FEATURE_speechd
     LIBRARIES
         SpeechDispatcher::SpeechDispatcher
 )
