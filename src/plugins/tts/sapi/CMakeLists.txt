@@ -6,7 +6,6 @@ qt_internal_add_plugin(QTextToSpeechSapiPlugin
         qtexttospeech_sapi_plugin.cpp qtexttospeech_sapi_plugin.h
     LIBRARIES
         Qt::Core
-        Qt::Gui
         Qt::TextToSpeech
 )
 

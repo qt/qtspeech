@@ -13,7 +13,6 @@ qt_internal_add_plugin(QTextToSpeechWinRTPlugin
     LIBRARIES
         Qt::Core
         Qt::CorePrivate
-        Qt::Gui
         Qt::TextToSpeech
 )
 
