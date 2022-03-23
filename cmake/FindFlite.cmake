@@ -5,16 +5,16 @@ if(TARGET Flite::Flite)
     return()
 endif()
 
-find_path(FLITE_INCLUDE_DIR
+find_path(Flite_INCLUDE_DIR
     NAMES
         flite/flite.h
 )
-find_library(FLITE_LIBRARY
+find_library(Flite_LIBRARY
     NAMES
         flite
 )
 
-if(NOT FLITE_INCLUDE_DIR OR NOT FLITE_LIBRARY)
+if(NOT Flite_INCLUDE_DIR OR NOT Flite_LIBRARY)
     set(Flite_FOUND 0)
     return()
 endif()
@@ -28,8 +28,8 @@ find_package(ALSA QUIET)
 
 cmake_push_check_state(RESET)
 
-set(CMAKE_REQUIRED_INCLUDES "${FLITE_INCLUDE_DIR}")
-set(CMAKE_REQUIRED_LIBRARIES "${FLITE_LIBRARY}")
+set(CMAKE_REQUIRED_INCLUDES "${Flite_INCLUDE_DIR}")
+set(CMAKE_REQUIRED_LIBRARIES "${Flite_LIBRARY}")
 
 if(ALSA_FOUND)
 list(APPEND CMAKE_REQUIRED_LIBRARIES "${ALSA_LIBRARIES}")
@@ -61,25 +61,25 @@ int main()
 cmake_pop_check_state()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(FLITE
+find_package_handle_standard_args(Flite
     FOUND_VAR
-        FLITE_FOUND
+        Flite_FOUND
     REQUIRED_VARS
-        FLITE_LIBRARY
-        FLITE_INCLUDE_DIR
+        Flite_LIBRARY
+        Flite_INCLUDE_DIR
         HAVE_FLITE
 )
 
-if(FLITE_FOUND)
+if(Flite_FOUND)
     add_library(Flite::Flite UNKNOWN IMPORTED)
     set_target_properties(Flite::Flite PROPERTIES
-        IMPORTED_LOCATION "${FLITE_LIBRARY}"
-        INTERFACE_INCLUDE_DIRECTORIES "${FLITE_INCLUDE_DIR}"
+        IMPORTED_LOCATION "${Flite_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Flite_INCLUDE_DIR}"
         INTERFACE_LINK_LIBRARIES "${ALSA_LIBRARIES}"
     )
 endif()
 
-mark_as_advanced(FLITE_LIBRARY FLITE_INCLUDE_DIR HAVE_FLITE)
+mark_as_advanced(Flite_LIBRARY Flite_INCLUDE_DIR HAVE_FLITE)
 
 
 if(HAVE_FLITE)
