@@ -1,7 +1,7 @@
 find_package(Qt6 ${PROJECT_VERSION} CONFIG REQUIRED COMPONENTS Multimedia)
 
 qt_internal_add_plugin(QTextToSpeechFlitePlugin
-    OUTPUT_NAME qttexttospeech_flite
+    OUTPUT_NAME qtexttospeech_flite
     PLUGIN_TYPE texttospeech
     SOURCES
         qtexttospeechprocessor.cpp qtexttospeechprocessor_p.h
