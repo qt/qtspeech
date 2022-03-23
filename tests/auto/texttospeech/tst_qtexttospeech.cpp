@@ -64,6 +64,8 @@ private slots:
 
 void tst_QTextToSpeech::initTestCase()
 {
+    qInfo("Available text-to-speech engines: %s",
+          qPrintable(QTextToSpeech::availableEngines().join(", ")));
 #if QT_CONFIG(speechd) && defined(LIBSPEECHD_MAJOR_VERSION) && defined(LIBSPEECHD_MINOR_VERSION)
     qInfo("Using libspeechd v%d.%d", LIBSPEECHD_MAJOR_VERSION, LIBSPEECHD_MINOR_VERSION);
 #endif
