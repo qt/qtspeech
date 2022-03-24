@@ -17,13 +17,19 @@ qt_find_package(SpeechDispatcher PROVIDED_TARGETS SpeechDispatcher::SpeechDispat
 
 #### Features
 
+if (Flite_FOUND AND NOT TARGET Qt::Multimedia)
+    message(WARNING
+            "FLite was found, but Qt::Multimedia is not configured.\n"
+            "The Flite engine will be disabled.")
+endif()
+
 qt_feature("flite" PRIVATE
     LABEL "Flite"
-    CONDITION Flite_FOUND
+    CONDITION Flite_FOUND AND TARGET Qt::Multimedia
 )
 qt_feature("flite_alsa" PRIVATE
     LABEL "Flite with ALSA"
-    CONDITION Flite_FOUND AND ALSA_FOUND
+    CONDITION Flite_FOUND AND ALSA_FOUND AND TARGET Qt::Multimedia
 )
 qt_feature("speechd" PUBLIC
     LABEL "Speech Dispatcher"

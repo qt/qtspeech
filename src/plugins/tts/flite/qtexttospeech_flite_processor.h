@@ -37,7 +37,7 @@
 #ifndef QTEXTTOSPEECHPROCESSOR_FLITE_H
 #define QTEXTTOSPEECHPROCESSOR_FLITE_H
 
-#include "../common/qtexttospeechprocessor_p.h"
+#include "qtexttospeechprocessor_p.h"
 
 #include "qtexttospeechengine.h"
 #include "qvoice.h"

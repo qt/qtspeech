@@ -37,6 +37,7 @@
 #include "qtexttospeechprocessor_p.h"
 
 #include <QtCore/QDateTime>
+#include <QtMultimedia/QAudioFormat>
 
 QT_BEGIN_NAMESPACE
 
@@ -207,6 +208,10 @@ void QTextToSpeechProcessor::run()
 
 bool QTextToSpeechProcessor::audioStart(int sampleRate, int channelCount, QString *errorString)
 {
+    Q_UNUSED(sampleRate)
+    Q_UNUSED(channelCount)
+    Q_UNUSED(errorString)
+#if 0
     QMutexLocker lock(&m_lock);
     QAudioFormat format;
     format.setSampleRate(sampleRate);
@@ -229,12 +234,17 @@ bool QTextToSpeechProcessor::audioStart(int sampleRate, int channelCount, QStrin
     delete m_audio;
     m_audio = nullptr;
     m_audioBuffer = nullptr;
+#endif
     return false;
 }
 
 bool QTextToSpeechProcessor::audioOutput(const char *data, qint64 dataSize, QString *errorString)
 {
     bool ret = true;
+    Q_UNUSED(data)
+    Q_UNUSED(dataSize)
+    Q_UNUSED(errorString)
+#if 0
     int bytesWritten = 0;
     QString error;
     forever {
@@ -266,12 +276,15 @@ bool QTextToSpeechProcessor::audioOutput(const char *data, qint64 dataSize, QStr
     }
     if (errorString)
         *errorString = error;
+#endif
     return ret;
 }
 
 void QTextToSpeechProcessor::audioStop(bool abort)
 {
+    Q_UNUSED(abort)
     QMutexLocker lock(&m_lock);
+#if 0
     if (m_audio) {
         if (abort) {
             m_audio->reset(); // Discard buffered audio
@@ -285,6 +298,7 @@ void QTextToSpeechProcessor::audioStop(bool abort)
         m_audio = nullptr;
         m_audioBuffer = nullptr;
     }
+#endif
 }
 
 bool QTextToSpeechProcessor::updateRate(double rate)

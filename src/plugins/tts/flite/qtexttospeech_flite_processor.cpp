@@ -44,8 +44,8 @@
 #include <flite/flite.h>
 
 // en_US voice:
-extern "C" cst_voice *register_cmu_us_kal16();
-extern "C" void unregister_cmu_us_kal16(cst_voice *vox);
+extern "C" cst_voice *register_cmu_us_kal();
+extern "C" void unregister_cmu_us_kal(cst_voice *vox);
 
 QT_BEGIN_NAMESPACE
 
@@ -169,8 +169,8 @@ bool QTextToSpeechProcessorFlite::init()
 {
     flite_init();
     FliteVoice voice_enus = {
-        register_cmu_us_kal16(),
-        unregister_cmu_us_kal16,
+        register_cmu_us_kal(),
+        unregister_cmu_us_kal,
         "kal16",
         QLocale(QLocale::English, QLocale::UnitedStates).name(),
         QVoice::Male,
