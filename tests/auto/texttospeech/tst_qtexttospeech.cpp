@@ -54,7 +54,8 @@ class tst_QTextToSpeech : public QObject
     Q_OBJECT
 
 private slots:
-    void initTestCase();
+    void initTestCase_data();
+    void init();
     void say_hello();
     void speech_rate();
     void pitch();
@@ -62,19 +63,44 @@ private slots:
     void volume();
 };
 
-void tst_QTextToSpeech::initTestCase()
+void tst_QTextToSpeech::initTestCase_data()
 {
-    qInfo("Available text-to-speech engines: %s",
-          qPrintable(QTextToSpeech::availableEngines().join(", ")));
+    qInfo("Available text-to-speech engines:");
+    QTest::addColumn<QString>("engine");
+    const auto engines = QTextToSpeech::availableEngines();
+    if (!engines.count())
+        QSKIP("No speech engines available, skipping test case");
+    for (const auto &engine : engines) {
+        QTest::addRow("%s", engine.toUtf8().constData()) << engine;
+
+        QString engineName = engine;
 #if QT_CONFIG(speechd) && defined(LIBSPEECHD_MAJOR_VERSION) && defined(LIBSPEECHD_MINOR_VERSION)
-    qInfo("Using libspeechd v%d.%d", LIBSPEECHD_MAJOR_VERSION, LIBSPEECHD_MINOR_VERSION);
+        if (engineName == "speechd") {
+            engineName += QString(" (using libspeechd %1.%2)").arg(LIBSPEECHD_MAJOR_VERSION)
+                                                              .arg(LIBSPEECHD_MINOR_VERSION);
+        }
 #endif
+        qInfo().noquote() << "- " << engineName;
+    }
+}
+
+void tst_QTextToSpeech::init()
+{
+    QFETCH_GLOBAL(QString, engine);
+    if (engine == "speechd") {
+        QTextToSpeech tts(engine);
+        if (tts.state() == QTextToSpeech::BackendError) {
+            QSKIP("speechd engine reported a backend error, "
+                  "make sure the speech-dispatcher service is running!");
+        }
+    }
 }
 
 void tst_QTextToSpeech::say_hello()
 {
+    QFETCH_GLOBAL(QString, engine);
     QString text = QStringLiteral("this is an example text");
-    QTextToSpeech tts;
+    QTextToSpeech tts(engine);
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
 
     QElapsedTimer timer;
@@ -89,8 +115,9 @@ void tst_QTextToSpeech::say_hello()
 
 void tst_QTextToSpeech::speech_rate()
 {
+    QFETCH_GLOBAL(QString, engine);
     QString text = QStringLiteral("this is an example text");
-    QTextToSpeech tts;
+    QTextToSpeech tts(engine);
     tts.setRate(0.5);
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
 #ifndef HAVE_SPEECHD_BEFORE_090
@@ -116,7 +143,8 @@ void tst_QTextToSpeech::speech_rate()
 
 void tst_QTextToSpeech::pitch()
 {
-    QTextToSpeech tts;
+    QFETCH_GLOBAL(QString, engine);
+    QTextToSpeech tts(engine);
     for (int i = -10; i <= 10; ++i) {
         tts.setPitch(i / 10.0);
 #ifndef HAVE_SPEECHD_BEFORE_090
@@ -127,8 +155,9 @@ void tst_QTextToSpeech::pitch()
 
 void tst_QTextToSpeech::set_voice()
 {
+    QFETCH_GLOBAL(QString, engine);
     QString text = QStringLiteral("this is an example text");
-    QTextToSpeech tts;
+    QTextToSpeech tts(engine);
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
 
     // Choose a voice
@@ -153,7 +182,8 @@ void tst_QTextToSpeech::set_voice()
 
 void tst_QTextToSpeech::volume()
 {
-    QTextToSpeech tts;
+    QFETCH_GLOBAL(QString, engine);
+    QTextToSpeech tts(engine);
     double volumeSignalEmitted = -99.0;
     connect(&tts, static_cast<void (QTextToSpeech::*)(double)>(&QTextToSpeech::volumeChanged),
             [&volumeSignalEmitted](double volume){ volumeSignalEmitted = volume; } );
