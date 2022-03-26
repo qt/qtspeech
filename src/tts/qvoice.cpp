@@ -42,9 +42,11 @@
 
 QT_BEGIN_NAMESPACE
 
+QT_DEFINE_QESDP_SPECIALIZATION_DTOR(QVoicePrivate)
+
 /*!
   \class QVoice
-  \brief The QVoice class allows to set and retrieve values of a particular voice.
+  \brief The QVoice class represents a particular voice.
   \inmodule QtSpeech
 */
 
@@ -70,99 +72,92 @@ QT_BEGIN_NAMESPACE
     \value Unknown Voice of unknown gender
 */
 
+/*!
+    Constructs an empty QVoice.
+*/
 QVoice::QVoice()
-{
-    d = new QVoicePrivate();
-}
-
-QVoice::QVoice(const QVoice &other)
-    :d(other.d)
+    : d(nullptr)
 {
 }
 
+/*!
+    Copy-constructs a QVoice from \a other.
+*/
+QVoice::QVoice(const QVoice &other) noexcept
+    : d(other.d)
+{}
+
+/*!
+    Destroys the QVoice instance.
+*/
+QVoice::~QVoice()
+{}
+
+/*!
+    \fn QVoice::QVoice(QVoice &&other)
+
+    Constructs a QVoice object by moving from \a other.
+*/
+
+/*!
+    \fn QVoice &QVoice::operator=(QVoice &&other)
+    Moves \a other into this QVoice object.
+*/
+
+/*!
+    Assigns \a other to this QVoice object.
+*/
+QVoice &QVoice::operator=(const QVoice &other) noexcept
+{
+    d = other.d;
+    return *this;
+}
+
+/*!
+    \internal
+*/
 QVoice::QVoice(const QString &name, Gender gender, Age age, const QVariant &data)
     :d(new QVoicePrivate(name, gender, age, data))
 {
 }
 
-QVoice::~QVoice()
-{
-}
-
-void QVoice::operator=(const QVoice &other)
-{
-    d->name = other.d->name;
-    d->gender = other.d->gender;
-    d->age = other.d->age;
-    d->data = other.d->data;
-}
 
 /*!
+    \internal
     Compares the \l name, \l gender, and \l age of this voice with \a other.
     Returns \c true if all of them match.
 */
-bool QVoice::operator==(const QVoice &other)
+bool QVoice::isEqual(const QVoice &other) const noexcept
 {
-    if (d->name != other.d->name ||
-        d->gender != other.d->gender ||
-        d->age != other.d->age ||
-        d->data != other.d->data)
+    if (d == other.d)
+        return true;
+    if (!d || !other.d)
         return false;
-    return true;
+
+    return d->name == other.d->name
+        && d->gender == other.d->gender
+        && d->age == other.d->age
+        && d->data == other.d->data;
 }
 
 /*!
-    Compares the \l name, \l gender, and \l age of this voice with \a other.
-    Returns \c true if they are not identical.
+    \fn bool QVoice::operator==(const QVoice &lhs, const QVoice &rhs)
+    \returns whether the \a lhs voice and the \a rhs voice are identical.
+
+    Two voices are identical if \l name, \l gender, and \l age are identical.
 */
-bool QVoice::operator!=(const QVoice &other)
-{
-    return !operator==(other);
-}
 
 /*!
-   Assign a \a name to a voice.
+    \fn bool QVoice::operator!=(const QVoice &lhs, const QVoice &rhs)
+    \returns whether the \a lhs voice and the \a rhs voice are different.
 */
-void QVoice::setName(const QString &name)
-{
-    d->name = name;
-}
-
-/*!
-   Assign a \a gender to a voice.
-*/
-void QVoice::setGender(Gender gender)
-{
-    d->gender = gender;
-}
-
-/*!
-   Set the \a age property.
-*/
-void QVoice::setAge(Age age)
-{
-    d->age = age;
-}
-
-void QVoice::setData(const QVariant &data)
-{
-    d->data = data;
-}
 
 /*!
    Returns the name of a voice.
 */
 QString QVoice::name() const
 {
-    return d->name;
-}
-
-/*!
-   Returns the age of a voice.
-*/
-QVoice::Age QVoice::age() const
-{
-    return d->age;
+    return d ? d->name : QString();
 }
 
 /*!
@@ -170,12 +165,23 @@ QVoice::Age QVoice::age() const
 */
 QVoice::Gender QVoice::gender() const
 {
-    return d->gender;
+    return d ? d->gender : QVoice::Unknown;
 }
 
+/*!
+   Returns the age of a voice.
+*/
+QVoice::Age QVoice::age() const
+{
+    return d ? d->age : QVoice::Other;
+}
+
+/*!
+    \internal
+*/
 QVariant QVoice::data() const
 {
-    return d->data;
+    return d ? d->data : QVariant();
 }
 
 /*!̈́
@@ -185,16 +191,15 @@ QString QVoice::genderName(QVoice::Gender gender)
 {
     QString retval;
     switch (gender) {
-        case QVoice::Male:
-            retval = QTextToSpeech::tr("Male", "Gender of a voice");
-            break;
-        case QVoice::Female:
-            retval = QTextToSpeech::tr("Female", "Gender of a voice");
-            break;
-        case QVoice::Unknown:
-        default:
-            retval = QTextToSpeech::tr("Unknown Gender", "Voice gender is unknown");
-            break;
+    case QVoice::Male:
+        retval = QTextToSpeech::tr("Male", "Gender of a voice");
+        break;
+    case QVoice::Female:
+        retval = QTextToSpeech::tr("Female", "Gender of a voice");
+        break;
+    case QVoice::Unknown:
+        retval = QTextToSpeech::tr("Unknown Gender", "Voice gender is unknown");
+        break;
     }
     return retval;
 }
@@ -206,24 +211,35 @@ QString QVoice::ageName(QVoice::Age age)
 {
     QString retval;
     switch (age) {
-        case QVoice::Child:
-            retval = QTextToSpeech::tr("Child", "Age of a voice");
-            break;
-        case QVoice::Teenager:
-            retval = QTextToSpeech::tr("Teenager", "Age of a voice");
-            break;
-        case QVoice::Adult:
-            retval = QTextToSpeech::tr("Adult", "Age of a voice");
-            break;
-        case QVoice::Senior:
-            retval = QTextToSpeech::tr("Senior", "Age of a voice");
-            break;
-        case QVoice::Other:
-        default:
-            retval = QTextToSpeech::tr("Other Age", "Unknown age of a voice");
-            break;
+    case QVoice::Child:
+        retval = QTextToSpeech::tr("Child", "Age of a voice");
+        break;
+    case QVoice::Teenager:
+        retval = QTextToSpeech::tr("Teenager", "Age of a voice");
+        break;
+    case QVoice::Adult:
+        retval = QTextToSpeech::tr("Adult", "Age of a voice");
+        break;
+    case QVoice::Senior:
+        retval = QTextToSpeech::tr("Senior", "Age of a voice");
+        break;
+    case QVoice::Other:
+        retval = QTextToSpeech::tr("Other Age", "Unknown age of a voice");
+        break;
     }
     return retval;
 }
+
+#ifndef QT_NO_DEBUG_STREAM
+QDebug operator<<(QDebug dbg, const QVoice &voice)
+{
+    QDebugStateSaver state(dbg);
+    dbg.noquote().nospace();
+    dbg << voice.name() << ", " << QVoice::genderName(voice.gender())
+                        << ", " << QVoice::ageName(voice.age())
+                        << "; engine data: " << voice.data();
+    return dbg;
+}
+#endif
 
 QT_END_NAMESPACE

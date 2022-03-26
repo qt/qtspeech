@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -34,19 +34,19 @@
 **
 ****************************************************************************/
 
-
-
-
 #ifndef QVOICE_H
 #define QVOICE_H
 
 #include <QtTextToSpeech/qtexttospeech_global.h>
 #include <QtCore/qshareddata.h>
+#include <QtCore/qmetatype.h>
 
 QT_BEGIN_NAMESPACE
 
 class QVoicePrivate;
 class QVariant;
+
+QT_DECLARE_QESDP_SPECIALIZATION_DTOR_WITH_EXPORT(QVoicePrivate, Q_TEXTTOSPEECH_EXPORT)
 
 class Q_TEXTTOSPEECH_EXPORT QVoice
 {
@@ -66,13 +66,19 @@ public:
     };
 
     QVoice();
-    QVoice(const QVoice &other);
     ~QVoice();
+    QVoice(const QVoice &other) noexcept;
+    QVoice &operator=(const QVoice &other) noexcept;
+    QVoice(QVoice &&other) noexcept = default;
+    QT_MOVE_ASSIGNMENT_OPERATOR_IMPL_VIA_PURE_SWAP(QVoice)
 
-    void operator=(const QVoice &other);
+    void swap(QVoice &other) noexcept
+    { d.swap(other.d); }
 
-    bool operator==(const QVoice &other);
-    bool operator!=(const QVoice &other);
+    friend inline bool operator==(const QVoice &lhs, const QVoice &rhs) noexcept
+    { return lhs.isEqual(rhs); }
+    friend inline bool operator!=(const QVoice &lhs, const QVoice &rhs) noexcept
+    { return !lhs.isEqual(rhs); }
 
     QString name() const;
     Gender gender() const;
@@ -80,20 +86,28 @@ public:
 
     static QString genderName(QVoice::Gender gender);
     static QString ageName(QVoice::Age age);
+
 private:
     QVoice(const QString &name, Gender gender, Age age, const QVariant &data);
+    bool isEqual(const QVoice &other) const noexcept;
 
-    void setName(const QString &name);
-    void setGender(Gender gender);
-    void setAge(Age age);
-    void setData(const QVariant &data);
     QVariant data() const;
 
-    QSharedDataPointer<QVoicePrivate> d;
+    QExplicitlySharedDataPointer<QVoicePrivate> d;
     friend class QTextToSpeechEngine;
+    friend Q_TEXTTOSPEECH_EXPORT QDebug operator<<(QDebug, const QVoice &);
 };
+
+#ifndef QT_NO_DEBUG_STREAM
+Q_TEXTTOSPEECH_EXPORT QDebug operator<<(QDebug, const QVoice &);
+#endif
+
+Q_DECLARE_SHARED(QVoice)
 
 QT_END_NAMESPACE
 
-#endif
+Q_DECLARE_METATYPE(QVoice)
+Q_DECLARE_METATYPE(QVoice::Age)
+Q_DECLARE_METATYPE(QVoice::Gender)
 
+#endif
