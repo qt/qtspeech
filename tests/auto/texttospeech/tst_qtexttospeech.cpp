@@ -56,6 +56,9 @@ class tst_QTextToSpeech : public QObject
 private slots:
     void initTestCase_data();
     void init();
+
+    void availableVoices();
+    void availableLocales();
     void say_hello();
     void speech_rate();
     void pitch();
@@ -94,6 +97,28 @@ void tst_QTextToSpeech::init()
                   "make sure the speech-dispatcher service is running!");
         }
     }
+}
+
+void tst_QTextToSpeech::availableVoices()
+{
+    QFETCH_GLOBAL(QString, engine);
+    QTextToSpeech tts(engine);
+    qInfo("Available voices:");
+    const auto availableVoices = tts.availableVoices();
+    QVERIFY(availableVoices.count() > 0);
+    for (const auto &voice : availableVoices)
+        qInfo().noquote() << "-" << voice;
+}
+
+void tst_QTextToSpeech::availableLocales()
+{
+    QFETCH_GLOBAL(QString, engine);
+    QTextToSpeech tts(engine);
+    const auto availableLocales = tts.availableLocales();
+    QVERIFY(availableLocales.count() > 0);
+    qInfo("Available locales:");
+    for (const auto &locale : availableLocales)
+        qInfo().noquote() << "-" << locale;
 }
 
 void tst_QTextToSpeech::say_hello()
