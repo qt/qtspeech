@@ -344,11 +344,9 @@ double QTextToSpeech::rate() const
 void QTextToSpeech::setVolume(double volume)
 {
     Q_D(QTextToSpeech);
-    volume = qMin(qMax(volume, 0.0), 1.0);
-    if (d->m_engine && d->m_engine->setVolume(volume)) {
+    volume = qBound(0.0, volume, 1.0);
+    if (d->m_engine && d->m_engine->setVolume(volume))
         emit volumeChanged(volume);
-        emit volumeChanged(static_cast<int>(volume));
-    }
 }
 
 double QTextToSpeech::volume() const

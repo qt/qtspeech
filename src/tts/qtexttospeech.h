@@ -104,7 +104,6 @@ Q_SIGNALS:
     void localeChanged(const QLocale &locale);
     void rateChanged(double rate);
     void pitchChanged(double pitch);
-    void volumeChanged(int volume);  // ### Qt 6: remove this bad overload
     void volumeChanged(double volume);
     void voiceChanged(const QVoice &voice);
 
