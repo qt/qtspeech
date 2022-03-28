@@ -1,3 +1,4 @@
+add_subdirectory(mock)
 if(QT_FEATURE_speechd AND UNIX)
     add_subdirectory(speechdispatcher)
 endif()
