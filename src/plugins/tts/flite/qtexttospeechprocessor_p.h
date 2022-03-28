@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -43,10 +43,11 @@
 #include <QtCore/QThread>
 #include <QtCore/QMutex>
 #include <QtCore/QSemaphore>
-#include <QtCore/QIODevice>
-#include <QtMultimedia/QAudioOutput>
 
 QT_BEGIN_NAMESPACE
+
+class QAudioOutput;
+class QIODevice;
 
 // A common base class for text-to-speech engine integrations
 // that require audio output implementation and thread handling.
@@ -104,7 +105,7 @@ protected:
     // until the given text has been processed or processing is interrupted.
     virtual int processText(const QString &text, int voiceId) = 0;
 
-signals:
+Q_SIGNALS:
     // This signal is emitted when the processor goes to idle state, i.e. when no
     // new text is set to be spoken. The parameter is the latest return value of
     // processText(). As the signal is emitted from the internal thread, the recipient
