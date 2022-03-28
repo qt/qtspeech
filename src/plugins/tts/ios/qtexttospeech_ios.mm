@@ -48,9 +48,8 @@
 
 - (instancetype)initWithQIOSTextToSpeechEngineIos:(QTextToSpeechEngineIos *)engine
 {
-    if ((self = [self init])) {
+    if ((self = [self init]))
         _engine = engine;
-    }
     return self;
 }
 
@@ -187,9 +186,9 @@ double QTextToSpeechEngineIos::volume() const
     return m_volume;
 }
 
-QVector<QLocale> QTextToSpeechEngineIos::availableLocales() const
+QList<QLocale> QTextToSpeechEngineIos::availableLocales() const
 {
-    QVector<QLocale> localeVector;
+    QList<QLocale> locales;
     QString prevVoiceLanguage;
     for (AVSpeechSynthesisVoice *voice in [AVSpeechSynthesisVoice speechVoices]) {
         QString language = QString::fromNSString(voice.language);
@@ -197,11 +196,11 @@ QVector<QLocale> QTextToSpeechEngineIos::availableLocales() const
         // in sequence if more than one voice name exists for them.
         if (language == prevVoiceLanguage)
             continue;
-        localeVector << QLocale(language);
+        locales << QLocale(language);
         prevVoiceLanguage = language;
     }
 
-    return localeVector;
+    return locales;
 }
 
 bool QTextToSpeechEngineIos::setLocale(const QLocale &locale)
@@ -221,17 +220,17 @@ QLocale QTextToSpeechEngineIos::locale() const
     return m_locale;
 }
 
-QVector<QVoice> QTextToSpeechEngineIos::availableVoices() const
+QList<QVoice> QTextToSpeechEngineIos::availableVoices() const
 {
-    QVector<QVoice> voiceVector;
-    QString countryCode = m_locale.name().mid(3);
+    QList<QVoice> voices;
+    const QString countryCode = m_locale.name().mid(3);
 
     for (AVSpeechSynthesisVoice *avVoice in [AVSpeechSynthesisVoice speechVoices]) {
         if (QString::fromNSString(avVoice.language).endsWith(countryCode))
-            voiceVector << toQVoice(avVoice);
+            voices << toQVoice(avVoice);
     }
 
-    return voiceVector;
+    return voices;
 }
 
 bool QTextToSpeechEngineIos::setVoice(const QVoice &voice)
@@ -256,7 +255,7 @@ AVSpeechSynthesisVoice *QTextToSpeechEngineIos::fromQVoice(const QVoice &voice) 
             return avVoice;
     }
 
-    return Q_NULLPTR;
+    return nullptr;
 }
 
 QVoice QTextToSpeechEngineIos::toQVoice(AVSpeechSynthesisVoice *avVoice) const
