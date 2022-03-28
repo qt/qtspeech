@@ -46,8 +46,6 @@
 
 QT_BEGIN_NAMESPACE
 
-QString dummyModule = QStringLiteral("dummy");
-
 typedef QList<QTextToSpeechEngineSpeechd*> QTextToSpeechSpeechDispatcherBackendList;
 Q_GLOBAL_STATIC(QTextToSpeechSpeechDispatcherBackendList, backends)
 
@@ -68,6 +66,10 @@ QTextToSpeechEngineSpeechd::QTextToSpeechEngineSpeechd(const QVariantMap &, QObj
 {
     backends->append(this);
     connectToSpeechDispatcher();
+
+    const auto voices = availableVoices();
+    if (voices.count())
+        setVoice(voices.first());
 }
 
 QTextToSpeechEngineSpeechd::~QTextToSpeechEngineSpeechd()
@@ -108,14 +110,13 @@ bool QTextToSpeechEngineSpeechd::connectToSpeechDispatcher()
 
         if (availableModules.length() == 0) {
             qWarning() << "Found no modules in speech-dispatcher. No text to speech possible.";
-        } else if (availableModules.length() == 1 && availableModules.at(0) == dummyModule) {
-            qWarning() << "Found only the dummy module in speech-dispatcher. No text to speech possible. Install a tts module (e.g. espeak).";
         } else {
             m_state = QTextToSpeech::Ready;
         }
 
         // Default to system locale, since there's no api to get this from spd yet.
         m_currentLocale = QLocale::system();
+        setLocale(m_currentLocale);
         updateVoices();
         return true;
     }
