@@ -124,7 +124,7 @@ void tst_QTextToSpeech::availableLocales()
 void tst_QTextToSpeech::say_hello()
 {
     QFETCH_GLOBAL(QString, engine);
-    QString text = QStringLiteral("this is an example text");
+    QString text = QStringLiteral("saying hello as a test");
     QTextToSpeech tts(engine);
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
 
@@ -134,14 +134,14 @@ void tst_QTextToSpeech::say_hello()
     QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
     QSignalSpy spy(&tts, &QTextToSpeech::stateChanged);
     QVERIFY(spy.wait(SpeechDuration));
-    QCOMPARE(int(tts.state()), int(QTextToSpeech::Ready));
+    QCOMPARE(tts.state(), QTextToSpeech::Ready);
     QVERIFY(timer.elapsed() > 100);
 }
 
 void tst_QTextToSpeech::speech_rate()
 {
     QFETCH_GLOBAL(QString, engine);
-    QString text = QStringLiteral("this is an example text");
+    QString text = QStringLiteral("example text at different rates");
     QTextToSpeech tts(engine);
     tts.setRate(0.5);
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
@@ -159,7 +159,7 @@ void tst_QTextToSpeech::speech_rate()
         QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
         QSignalSpy spy(&tts, &QTextToSpeech::stateChanged);
         QVERIFY(spy.wait(SpeechDuration));
-        QCOMPARE(int(tts.state()), int(QTextToSpeech::Ready));
+        QCOMPARE(tts.state(), QTextToSpeech::Ready);
         qint64 time = timer.elapsed();
         QVERIFY(time > lastTime);
         lastTime = time;
@@ -181,28 +181,24 @@ void tst_QTextToSpeech::pitch()
 void tst_QTextToSpeech::set_voice()
 {
     QFETCH_GLOBAL(QString, engine);
-    QString text = QStringLiteral("this is an example text");
+    QString text = QStringLiteral("example text with voices");
     QTextToSpeech tts(engine);
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
 
-    // Choose a voice
-    QList<QVoice> voices = tts.availableVoices();
-    int vId = 0;
-    QVERIFY(voices.length()); // have at least one voice
-    if (voices.length() > 1) {
-        vId = 1;
-    }
-    tts.setVoice(voices[vId]);
-    QCOMPARE(tts.state(), QTextToSpeech::Ready);
+    const QList<QVoice> voices = tts.availableVoices();
+    for (const auto &voice : voices) {
+        tts.setVoice(voice);
+        QCOMPARE(tts.state(), QTextToSpeech::Ready);
 
-    QElapsedTimer timer;
-    timer.start();
-    tts.say(text);
-    QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
-    QSignalSpy spy(&tts, &QTextToSpeech::stateChanged);
-    QVERIFY(spy.wait(SpeechDuration));
-    QCOMPARE(int(tts.state()), int(QTextToSpeech::Ready));
-    QVERIFY(timer.elapsed() > 100);
+        QElapsedTimer timer;
+        timer.start();
+        tts.say(text);
+        QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
+        QSignalSpy spy(&tts, &QTextToSpeech::stateChanged);
+        QVERIFY(spy.wait(SpeechDuration));
+        QCOMPARE(tts.state(), QTextToSpeech::Ready);
+        QVERIFY(timer.elapsed() > 100);
+    }
 }
 
 void tst_QTextToSpeech::volume()
