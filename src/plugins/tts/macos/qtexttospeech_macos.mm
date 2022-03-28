@@ -48,12 +48,14 @@
 
 - (instancetype)initWithSpeechPrivate:(QTextToSpeechEngineMacOS *) priv
 {
-    if ((self = [self init])) {
+    if ((self = [super init]))
         speechPrivate = priv;
-    }
+
     return self;
 }
-- (void)speechSynthesizer:(NSSpeechSynthesizer *)sender didFinishSpeaking:(BOOL)success {
+
+- (void)speechSynthesizer:(NSSpeechSynthesizer *)sender didFinishSpeaking:(BOOL)success
+{
     Q_UNUSED(sender);
     speechPrivate->speechStopped(success);
 }
@@ -65,9 +67,8 @@ QTextToSpeechEngineMacOS::QTextToSpeechEngineMacOS(const QVariantMap &/*paramete
     : QTextToSpeechEngine(parent), m_state(QTextToSpeech::Ready)
 {
     stateDelegate = [[QT_MANGLE_NAMESPACE(StateDelegate) alloc] initWithSpeechPrivate:this];
-
     speechSynthesizer = [[NSSpeechSynthesizer alloc] init];
-    [speechSynthesizer setDelegate: stateDelegate];
+    speechSynthesizer.delegate = stateDelegate;
     updateVoices();
 }
 
@@ -88,7 +89,7 @@ QTextToSpeech::State QTextToSpeechEngineMacOS::state() const
 
 bool QTextToSpeechEngineMacOS::isSpeaking() const
 {
-    return [speechSynthesizer isSpeaking];
+    return speechSynthesizer.isSpeaking;
 }
 
 void QTextToSpeechEngineMacOS::speechStopped(bool success)
@@ -108,9 +109,8 @@ void QTextToSpeechEngineMacOS::say(const QString &text)
     if (m_state != QTextToSpeech::Ready)
         stop();
 
-    if([speechSynthesizer isSpeaking]) {
+    if (speechSynthesizer.isSpeaking)
         [speechSynthesizer stopSpeakingAtBoundary:NSSpeechImmediateBoundary];
-    }
 
     NSString *ntext = text.toNSString();
     [speechSynthesizer startSpeakingString:ntext];
@@ -123,13 +123,13 @@ void QTextToSpeechEngineMacOS::say(const QString &text)
 
 void QTextToSpeechEngineMacOS::stop()
 {
-    if([speechSynthesizer isSpeaking])
+    if (speechSynthesizer.isSpeaking)
         [speechSynthesizer stopSpeakingAtBoundary:NSSpeechImmediateBoundary];
 }
 
 void QTextToSpeechEngineMacOS::pause()
 {
-    if ([speechSynthesizer isSpeaking]) {
+    if (speechSynthesizer.isSpeaking) {
         [speechSynthesizer pauseSpeakingAtBoundary: NSSpeechWordBoundary];
         m_state = QTextToSpeech::Paused;
         emit stateChanged(m_state);
@@ -150,7 +150,7 @@ void QTextToSpeechEngineMacOS::resume()
 
 double QTextToSpeechEngineMacOS::rate() const
 {
-    return ([speechSynthesizer rate] - 200) / 200.0;
+    return (speechSynthesizer.rate - 200) / 200.0;
 }
 
 bool QTextToSpeechEngineMacOS::setPitch(double pitch)
@@ -169,20 +169,20 @@ double QTextToSpeechEngineMacOS::pitch() const
 
 double QTextToSpeechEngineMacOS::volume() const
 {
-    return [speechSynthesizer volume];
+    return speechSynthesizer.volume;
 }
 
 bool QTextToSpeechEngineMacOS::setRate(double rate)
 {
     // NSSpeechSynthesizer supports words per minute,
     // human speech is 180 to 220 - use 0 to 400 as range here
-    [speechSynthesizer setRate: 200 + (rate * 200)];
+    speechSynthesizer.rate = 200 + (rate * 200);
     return true;
 }
 
 bool QTextToSpeechEngineMacOS::setVolume(double volume)
 {
-    [speechSynthesizer setVolume: volume];
+    speechSynthesizer.volume = volume;
     return true;
 }
 
@@ -198,9 +198,9 @@ QVoice QTextToSpeechEngineMacOS::voiceForNSVoice(NSString *voiceString) const
     QString voiceName = QString::fromNSString(attrs[NSVoiceName]);
 
     NSString *genderString = attrs[NSVoiceGender];
-    QVoice::Gender gender = [genderString isEqualToString:NSVoiceGenderMale] ? QVoice::Male :
-                            [genderString isEqualToString:NSVoiceGenderFemale] ? QVoice::Female :
-                            QVoice::Unknown;
+    QVoice::Gender gender = [genderString isEqualToString:NSVoiceGenderMale] ? QVoice::Male
+                          : [genderString isEqualToString:NSVoiceGenderFemale] ? QVoice::Female
+                          : QVoice::Unknown;
 
     NSNumber *ageNSNumber = attrs[NSVoiceAge];
     int ageInt = ageNSNumber.intValue;
@@ -213,25 +213,24 @@ QVoice QTextToSpeechEngineMacOS::voiceForNSVoice(NSString *voiceString) const
     return voice;
 }
 
-QVector<QLocale> QTextToSpeechEngineMacOS::availableLocales() const
+QList<QLocale> QTextToSpeechEngineMacOS::availableLocales() const
 {
     return m_locales;
 }
 
 bool QTextToSpeechEngineMacOS::setLocale(const QLocale &locale)
 {
-    NSArray *voices = [NSSpeechSynthesizer availableVoices];
-    NSString *voice = [NSSpeechSynthesizer defaultVoice];
+    NSArray *voices = NSSpeechSynthesizer.availableVoices;
+    NSString *voice = NSSpeechSynthesizer.defaultVoice;
     // always prefer default
     if (locale == localeForVoice(voice)) {
-        [speechSynthesizer setVoice:voice];
+        speechSynthesizer.voice = voice;
         return true;
     }
 
     for (voice in voices) {
-        QLocale voiceLocale = localeForVoice(voice);
-        if (locale == voiceLocale) {
-            [speechSynthesizer setVoice:voice];
+        if (locale == localeForVoice(voice)) {
+            speechSynthesizer.voice = voice;
             return true;
         }
     }
@@ -240,13 +239,13 @@ bool QTextToSpeechEngineMacOS::setLocale(const QLocale &locale)
 
 QLocale QTextToSpeechEngineMacOS::locale() const
 {
-    NSString *voice = [speechSynthesizer voice];
+    NSString *voice = speechSynthesizer.voice;
     return localeForVoice(voice);
 }
 
 void QTextToSpeechEngineMacOS::updateVoices()
 {
-    NSArray *voices = [NSSpeechSynthesizer availableVoices];
+    NSArray *voices = NSSpeechSynthesizer.availableVoices;
     for (NSString *voice in voices) {
         QLocale locale = localeForVoice(voice);
         QVoice data = voiceForNSVoice(voice);
@@ -256,22 +255,21 @@ void QTextToSpeechEngineMacOS::updateVoices()
     }
 }
 
-QVector<QVoice> QTextToSpeechEngineMacOS::availableVoices() const
+QList<QVoice> QTextToSpeechEngineMacOS::availableVoices() const
 {
-    return m_voices.values(locale().name()).toVector();
+    return m_voices.values(locale().name()).toList();
 }
 
 bool QTextToSpeechEngineMacOS::setVoice(const QVoice &voice)
 {
     NSString *identifier = voiceData(voice).toString().toNSString();
-    [speechSynthesizer setVoice:identifier];
+    speechSynthesizer.voice = identifier;
     return true;
 }
 
 QVoice QTextToSpeechEngineMacOS::voice() const
 {
-    NSString *voice = [speechSynthesizer voice];
-    return voiceForNSVoice(voice);
+    return voiceForNSVoice(speechSynthesizer.voice);
 }
 
 QT_END_NAMESPACE
