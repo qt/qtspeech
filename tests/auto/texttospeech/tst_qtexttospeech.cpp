@@ -188,6 +188,9 @@ void tst_QTextToSpeech::set_voice()
     const QList<QVoice> voices = tts.availableVoices();
     for (const auto &voice : voices) {
         tts.setVoice(voice);
+        auto logger = qScopeGuard([&voice]{
+            qWarning() << "Failure with voice" << voice;
+        });
         QCOMPARE(tts.state(), QTextToSpeech::Ready);
 
         QElapsedTimer timer;
@@ -198,6 +201,7 @@ void tst_QTextToSpeech::set_voice()
         QVERIFY(spy.wait(SpeechDuration));
         QCOMPARE(tts.state(), QTextToSpeech::Ready);
         QVERIFY(timer.elapsed() > 100);
+        logger.dismiss();
     }
 }
 
