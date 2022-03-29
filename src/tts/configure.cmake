@@ -19,7 +19,7 @@ qt_find_package(SpeechDispatcher PROVIDED_TARGETS SpeechDispatcher::SpeechDispat
 
 if (Flite_FOUND AND NOT TARGET Qt::Multimedia)
     message(WARNING
-            "FLite was found, but Qt::Multimedia is not configured.\n"
+            "Flite was found, but Qt::Multimedia is not configured.\n"
             "The Flite engine will be disabled.")
 endif()
 
