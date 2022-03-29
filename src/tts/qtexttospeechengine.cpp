@@ -171,9 +171,10 @@ QTextToSpeechEngine::~QTextToSpeechEngine()
 
   Parameters \a name, \a gender, \a age and \a data are directly stored in the QVoice instance.
 */
-QVoice QTextToSpeechEngine::createVoice(const QString &name, QVoice::Gender gender, QVoice::Age age, const QVariant &data)
+QVoice QTextToSpeechEngine::createVoice(const QString &name, QVoice::Gender gender, QVoice::Age age, const QVariant &data) const
 {
-    return QVoice(name, gender, age, data);
+    QVoice::EngineData engineData{ property("providerName").toString(), data };
+    return QVoice(name, gender, age, engineData);
 }
 
 /*!

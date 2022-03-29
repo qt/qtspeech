@@ -40,11 +40,11 @@
 #include <QtTextToSpeech/qtexttospeech_global.h>
 #include <QtCore/qshareddata.h>
 #include <QtCore/qmetatype.h>
+#include <QtCore/qvariant.h>
 
 QT_BEGIN_NAMESPACE
 
 class QVoicePrivate;
-class QVariant;
 
 QT_DECLARE_QESDP_SPECIALIZATION_DTOR_WITH_EXPORT(QVoicePrivate, Q_TEXTTOSPEECH_EXPORT)
 
@@ -88,15 +88,30 @@ public:
     static QString ageName(QVoice::Age age);
 
 private:
-    QVoice(const QString &name, Gender gender, Age age, const QVariant &data);
+    struct EngineData
+    {
+        QString engineName;
+        QVariant data;
+    };
+
+    QVoice(const QString &name, Gender gender, Age age, const EngineData &data);
     bool isEqual(const QVoice &other) const noexcept;
 
-    QVariant data() const;
+    QVariant data() const { return engineData().data; }
+    EngineData engineData() const;
 
     QExplicitlySharedDataPointer<QVoicePrivate> d;
+    friend class QVoicePrivate;
     friend class QTextToSpeechEngine;
     friend Q_TEXTTOSPEECH_EXPORT QDebug operator<<(QDebug, const QVoice &);
+    friend Q_TEXTTOSPEECH_EXPORT QDataStream &operator<<(QDataStream &, const QVoice &);
+    friend Q_TEXTTOSPEECH_EXPORT QDataStream &operator>>(QDataStream &, QVoice &);
 };
+
+#ifndef QT_NO_DATASTREAM
+Q_TEXTTOSPEECH_EXPORT QDataStream &operator<<(QDataStream &, const QVoice &);
+Q_TEXTTOSPEECH_EXPORT QDataStream &operator>>(QDataStream &, QVoice &);
+#endif
 
 #ifndef QT_NO_DEBUG_STREAM
 Q_TEXTTOSPEECH_EXPORT QDebug operator<<(QDebug, const QVoice &);

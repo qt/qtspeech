@@ -159,7 +159,7 @@ QVoice QTextToSpeechEngineWinRTPrivate::createVoiceForInformation(const ComPtr<I
     HString voiceId;
     hr = info->get_Id(voiceId.GetAddressOf());
 
-    return QTextToSpeechEngine::createVoice(QString::fromWCharArray(nativeName.GetRawBuffer(0)),
+    return q->createVoice(QString::fromWCharArray(nativeName.GetRawBuffer(0)),
                           gender == VoiceGender_Male ? QVoice::Male : QVoice::Female,
                           QVoice::Other,
                           QString::fromWCharArray(voiceId.GetRawBuffer(0)));

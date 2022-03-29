@@ -85,6 +85,7 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech, const QString 
             qCritical() << "Error creating text-to-speech engine" << m_providerName
                         << (errorString.isEmpty() ? QStringLiteral("") : (QStringLiteral(": ") + errorString));
         }
+        m_engine->setProperty("providerName", m_providerName);
     } else {
         qCritical() << "Error loading text-to-speech plug-in" << m_providerName;
     }
