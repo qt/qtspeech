@@ -38,14 +38,11 @@
 #include "qtexttospeech_flite_plugin.h"
 
 #include <QtCore/QString>
+#include <QtCore/QLibrary>
 #include <QtCore/QLocale>
 #include <QtCore/QMap>
 
 #include <flite/flite.h>
-
-// en_US voice:
-extern "C" cst_voice *register_cmu_us_kal();
-extern "C" void unregister_cmu_us_kal(cst_voice *vox);
 
 QT_BEGIN_NAMESPACE
 
@@ -165,18 +162,40 @@ void QTextToSpeechProcessorFlite::setPitchForVoice(cst_voice *voice, float pitch
     feat_set_float(voice->features, "int_f0_target_mean", f0);
 }
 
+typedef cst_voice*(*registerFnType)();
+typedef void(*unregisterFnType)(cst_voice *);
+
 bool QTextToSpeechProcessorFlite::init()
 {
     flite_init();
-    FliteVoice voice_enus = {
-        register_cmu_us_kal(),
-        unregister_cmu_us_kal,
-        "kal16",
-        QLocale(QLocale::English, QLocale::UnitedStates).name(),
-        QVoice::Male,
-        QVoice::Adult
-    };
-    m_fliteVoices.append(voice_enus);
+    const QLocale locale(QLocale::English, QLocale::UnitedStates);
+    // ### FIXME: hardcode for now, the only voice files we know about are for en_US
+    // We could source the language and perhaps the list of voices we want to load
+    // (hardcoded below) from an environment variable.
+    const QLatin1String langCode("us");
+    const QLatin1String libPrefix("flite_cmu_%1_%2");
+    const QLatin1String registerPrefix("register_cmu_%1_%2");
+    const QLatin1String unregisterPrefix("unregister_cmu_%1_%2");
+    // ### FIXME: these are the voice libraries installed when building flite from source.
+    for (const auto &voice : { "kal", "kal16", "rms", "slt", "awb" }) {
+        QLibrary library(libPrefix.arg(langCode, voice));
+        auto registerFn = reinterpret_cast<registerFnType>(library.resolve(
+            registerPrefix.arg(langCode, voice).toLatin1().constData()));
+        auto unregisterFn = reinterpret_cast<unregisterFnType>(library.resolve(
+            unregisterPrefix.arg(langCode, voice).toLatin1().constData()));
+        if (registerFn && unregisterFn) {
+            m_fliteVoices.append(FliteVoice{
+                registerFn(),
+                unregisterFn,
+                voice,
+                locale.name(),
+                QVoice::Male,
+                QVoice::Adult
+            });
+        } else {
+            library.unload();
+        }
+    }
 
     int totalVoiceCount = 0;
     for (const FliteVoice &voice : qAsConst(m_fliteVoices)) {

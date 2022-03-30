@@ -13,23 +13,6 @@ find_library(Flite_LIBRARY
     NAMES
         flite
 )
-find_library(Flite_cmu_LIBRARY
-    NAMES
-        flite_cmu_us_kal
-)
-find_library(Flite_cmulex_LIBRARY
-    NAMES
-        flite_cmulex
-)
-find_library(Flite_usenglish_LIBRARY
-    NAMES
-        flite_usenglish
-)
-set(Flite_LIBRARIES
-    "${Flite_cmu_LIBRARY}"
-    "${Flite_cmulex_LIBRARY}"
-    "${Flite_usenglish_LIBRARY}"
-)
 
 if(NOT Flite_INCLUDE_DIR OR NOT Flite_LIBRARY)
     set(Flite_FOUND 0)
@@ -49,8 +32,7 @@ set(CMAKE_REQUIRED_INCLUDES "${Flite_INCLUDE_DIR}")
 set(CMAKE_REQUIRED_LIBRARIES "${Flite_LIBRARY}")
 
 if(ALSA_FOUND)
-list(APPEND CMAKE_REQUIRED_LIBRARIES "${ALSA_LIBRARIES}")
-list(APPEND Flite_LIBRARIES "${ALSA_LIBRARIES}")
+    list(APPEND CMAKE_REQUIRED_LIBRARIES "${ALSA_LIBRARIES}")
 endif()
 
 check_cxx_source_compiles("
@@ -91,10 +73,14 @@ find_package_handle_standard_args(Flite
 if(Flite_FOUND)
     add_library(Flite::Flite UNKNOWN IMPORTED)
     set_target_properties(Flite::Flite PROPERTIES
-    IMPORTED_LOCATION "${Flite_LIBRARY}"
-    INTERFACE_INCLUDE_DIRECTORIES "${Flite_INCLUDE_DIR}"
-    INTERFACE_LINK_LIBRARIES "${Flite_LIBRARIES}"
+        IMPORTED_LOCATION "${Flite_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Flite_INCLUDE_DIR}"
     )
+    if(ALSA_FOUND)
+    set_target_properties(Flite::Flite PROPERTIES
+        INTERFACE_LINK_LIBRARIES "${ALSA_LIBRARIES}"
+    )
+    endif()
 endif()
 
 mark_as_advanced(Flite_LIBRARY Flite_INCLUDE_DIR HAVE_FLITE)
