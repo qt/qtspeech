@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -35,258 +35,216 @@
 ****************************************************************************/
 
 #include "qtexttospeech_winrt.h"
+#include "qtexttospeech_winrt_audiosource.h"
 
-#include <QtCore/QCoreApplication>
-#include <QtCore/qfunctions_winrt.h>
-#include <QtCore/QMap>
-#include <QtCore/QTimer>
-#include <private/qeventdispatcher_winrt_p.h>
+#include <QtMultimedia/QAudioSink>
 
+#include <QtCore/private/qfunctions_winrt_p.h>
+
+#include <winrt/base.h>
 #include <windows.foundation.h>
 #include <windows.foundation.collections.h>
 #include <windows.media.speechsynthesis.h>
 #include <windows.storage.streams.h>
-#include <windows.ui.xaml.h>
-#include <windows.ui.xaml.controls.h>
-#include <windows.ui.xaml.markup.h>
 
-#include <functional>
 #include <wrl.h>
+
 
 using namespace ABI::Windows::Foundation;
 using namespace ABI::Windows::Foundation::Collections;
 using namespace ABI::Windows::Media::SpeechSynthesis;
 using namespace ABI::Windows::Storage::Streams;
-using namespace ABI::Windows::UI::Xaml;
-using namespace ABI::Windows::UI::Xaml::Controls;
-using namespace ABI::Windows::UI::Xaml::Markup;
-using namespace ABI::Windows::UI::Xaml::Media;
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Wrappers;
 
 QT_BEGIN_NAMESPACE
 
-#define LSTRING(str) L#str
-static const wchar_t webviewXaml[] = LSTRING(
-<MediaElement xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" />
-);
-
 class QTextToSpeechEngineWinRTPrivate
 {
+    Q_DECLARE_PUBLIC(QTextToSpeechEngineWinRT);
 public:
-    QTimer timer;
-    ComPtr<IXamlReaderStatics> xamlReader;
+    QTextToSpeechEngineWinRTPrivate(QTextToSpeechEngineWinRT *q);
+    ~QTextToSpeechEngineWinRTPrivate();
+
+    QTextToSpeech::State state = QTextToSpeech::BackendError;
+
+    // interfaces used to access the speech synthesizer
     ComPtr<ISpeechSynthesizer> synth;
-    QList<QLocale> locales;
-    QList<QVoice> voices;
-    QList<ComPtr<IVoiceInformation>> infos;
-    EventRegistrationToken tok;
+    ComPtr<ISpeechSynthesizerOptions2> options;
 
-    ComPtr<IMediaElement> media;
+    // data streaming - AudioSource implements COM interfaces as well as
+    // QIODevice, so we store it in a ComPtr instead of a std::unique_ptr
+    ComPtr<AudioSource> audioSource;
+    // the sink is connected to the source
+    std::unique_ptr<QAudioSink> audioSink;
 
-    double rate;
-    double volume;
+    template <typename Fn> void forEachVoice(Fn &&lambda) const;
+    void updateVoices();
+    QVoice createVoiceForInformation(const ComPtr<IVoiceInformation> &info) const;
+    void initializeAudioSink(const QAudioFormat &format);
+    void sinkStateChanged(QAudio::State sinkState);
 
-    QTextToSpeech::State state;
+private:
+    QTextToSpeechEngineWinRT *q_ptr;
 };
+
+
+QTextToSpeechEngineWinRTPrivate::QTextToSpeechEngineWinRTPrivate(QTextToSpeechEngineWinRT *q)
+    : q_ptr(q)
+{}
+
+QTextToSpeechEngineWinRTPrivate::~QTextToSpeechEngineWinRTPrivate()
+{
+    // Close and free the source explicitly and in the right order so that the buffer's
+    // aboutToClose signal gets emitted before this private object is destroyed.
+    if (audioSource) {
+        audioSource->close();
+        audioSource.Reset();
+    }
+}
 
 QTextToSpeechEngineWinRT::QTextToSpeechEngineWinRT(const QVariantMap &, QObject *parent)
     : QTextToSpeechEngine(parent)
-    , d_ptr(new QTextToSpeechEngineWinRTPrivate)
+    , d_ptr(new QTextToSpeechEngineWinRTPrivate(this))
 {
-    d_ptr->rate = 0;
-    d_ptr->volume = 1.0;
-    d_ptr->timer.setInterval(100);
-    connect(&d_ptr->timer, &QTimer::timeout, this, &QTextToSpeechEngineWinRT::checkElementState);
+    Q_D(QTextToSpeechEngineWinRT);
+    HRESULT hr = CoInitialize(nullptr);
+    Q_ASSERT_SUCCEEDED(hr);
 
-    init();
+    hr = RoActivateInstance(HString::MakeReference(RuntimeClass_Windows_Media_SpeechSynthesis_SpeechSynthesizer).Get(),
+                            &d->synth);
+    RETURN_VOID_IF_FAILED("Could not instantiate SpeechSynthesizer.");
+
+    d->state = QTextToSpeech::Ready;
+
+    // the rest is optional, we might not support these features
+
+    ComPtr<ISpeechSynthesizer2> synth2;
+    hr = d->synth->QueryInterface(__uuidof(ISpeechSynthesizer2), &synth2);
+    RETURN_VOID_IF_FAILED("ISpeechSynthesizer2 not implemented.");
+
+    ComPtr<ISpeechSynthesizerOptions> options1;
+    hr = synth2->get_Options(&options1);
+    Q_ASSERT_SUCCEEDED(hr);
+
+    hr = options1->QueryInterface(__uuidof(ISpeechSynthesizerOptions2), &d->options);
+    RETURN_VOID_IF_FAILED("ISpeechSynthesizerOptions2 not implemented.");
+
+    d->options->put_AudioPitch(1.0);
+    d->options->put_AudioVolume(1.0);
+    d->options->put_SpeakingRate(1.0);
 }
 
 QTextToSpeechEngineWinRT::~QTextToSpeechEngineWinRT()
 {
+    d_ptr.reset();
+    CoUninitialize();
+}
+
+/* Voice and language/locale management */
+
+QVoice QTextToSpeechEngineWinRTPrivate::createVoiceForInformation(const ComPtr<IVoiceInformation> &info) const
+{
+    Q_Q(const QTextToSpeechEngineWinRT);
+    HRESULT hr;
+
+    HString nativeName;
+    hr = info->get_DisplayName(nativeName.GetAddressOf());
+    Q_ASSERT_SUCCEEDED(hr);
+
+    VoiceGender gender;
+    hr = info->get_Gender(&gender);
+    Q_ASSERT_SUCCEEDED(hr);
+
+    HString voiceId;
+    hr = info->get_Id(voiceId.GetAddressOf());
+
+    return QTextToSpeechEngine::createVoice(QString::fromWCharArray(nativeName.GetRawBuffer(0)),
+                          gender == VoiceGender_Male ? QVoice::Male : QVoice::Female,
+                          QVoice::Other,
+                          QString::fromWCharArray(voiceId.GetRawBuffer(0)));
+}
+
+/*
+    Iterates over all available voices and calls \a lambda with the
+    IVoiceInformation for each. If the lambda returns true, the iteration
+    ends.
+
+    This helper is used in all voice and locale related engine implementations.
+    While not particular fast, none of these functions are performance critical,
+    and always operating on the official list of all voices avoids that we need
+    to maintain our own mappings, or keep all voice information instances in
+    memory.
+*/
+template <typename Fn>
+void QTextToSpeechEngineWinRTPrivate::forEachVoice(Fn &&lambda) const
+{
+    HRESULT hr;
+
+    ComPtr<IInstalledVoicesStatic> stat;
+    hr = RoGetActivationFactory(HString::MakeReference(RuntimeClass_Windows_Media_SpeechSynthesis_SpeechSynthesizer).Get(),
+                                IID_PPV_ARGS(&stat));
+    Q_ASSERT_SUCCEEDED(hr);
+
+    ComPtr<IVectorView<VoiceInformation*>> voiceInformations;
+    hr = stat->get_AllVoices(&voiceInformations);
+    RETURN_VOID_IF_FAILED("Could not get voice information.");
+
+    quint32 voiceSize;
+    hr = voiceInformations->get_Size(&voiceSize);
+    RETURN_VOID_IF_FAILED("Could not access size of voice information.");
+
+    for (quint32 i = 0; i < voiceSize; ++i) {
+        ComPtr<IVoiceInformation> voiceInfo;
+        hr = voiceInformations->GetAt(i, &voiceInfo);
+        Q_ASSERT_SUCCEEDED(hr);
+
+        if (lambda(voiceInfo))
+            break;
+    }
 }
 
 QList<QLocale> QTextToSpeechEngineWinRT::availableLocales() const
 {
     Q_D(const QTextToSpeechEngineWinRT);
-    return d->locales;
+    QSet<QLocale> uniqueLocales;
+    d->forEachVoice([&uniqueLocales](const ComPtr<IVoiceInformation> &voiceInfo) {
+        HString voiceLanguage;
+        HRESULT hr = voiceInfo->get_Language(voiceLanguage.GetAddressOf());
+        Q_ASSERT_SUCCEEDED(hr);
+
+        uniqueLocales.insert(QLocale(QString::fromWCharArray(voiceLanguage.GetRawBuffer(0))));
+        return false;
+    });
+    return uniqueLocales.values();
 }
 
 QList<QVoice> QTextToSpeechEngineWinRT::availableVoices() const
 {
     Q_D(const QTextToSpeechEngineWinRT);
-    return d->voices;
-}
-
-void QTextToSpeechEngineWinRT::say(const QString &text)
-{
-    Q_D(QTextToSpeechEngineWinRT);
-
-    HRESULT hr;
-
-    hr = QEventDispatcherWinRT::runOnXamlThread([text, d]() {
-        HRESULT hr;
-        HStringReference nativeText(reinterpret_cast<LPCWSTR>(text.utf16()), text.length());
-        ComPtr<IAsyncOperation<SpeechSynthesisStream*>> op;
-
-        hr = d->synth->SynthesizeTextToStreamAsync(nativeText.Get(), &op);
-        RETURN_HR_IF_FAILED("Could not synthesize text.");
-
-        ComPtr<ISpeechSynthesisStream> stream;
-        hr = QWinRTFunctions::await(op, stream.GetAddressOf());
-        RETURN_HR_IF_FAILED("Synthesizing failed.");
-
-        ComPtr<IRandomAccessStream> randomStream;
-        hr = stream.As(&randomStream);
-        RETURN_HR_IF_FAILED("Could not cast to RandomAccessStream.");
-
-        // Directly instantiating a MediaElement works, but it throws an exception
-        // when setting the source. Using a XamlReader appears to set it up properly.
-        ComPtr<IInspectable> element;
-        hr = d->xamlReader->Load(HString::MakeReference(webviewXaml).Get(), &element);
+    QList<QVoice> voices;
+    const QLocale currentLocale = locale();
+    d->forEachVoice([&](const ComPtr<IVoiceInformation> &voiceInfo) {
+        HString voiceLanguage;
+        HRESULT hr = voiceInfo->get_Language(voiceLanguage.GetAddressOf());
         Q_ASSERT_SUCCEEDED(hr);
 
-        if (d->media)
-            d->media.Reset();
-
-        hr = element.As(&d->media);
-        RETURN_HR_IF_FAILED("Could not create MediaElement for playback.");
-
-        // Volume and Playback Rate cannot be changed for synthesized audio once
-        // it has been created. Hence QTextToSpeechEngineWinRT::setVolume/Rate
-        // only cache the value until playback is started.
-        hr = d->media->put_DefaultPlaybackRate(d->rate + 1);
-        if (FAILED(hr))
-            qWarning("Could not set playback rate.");
-
-        const DOUBLE vol = DOUBLE(d->volume);
-        hr = d->media->put_Volume(vol);
-        if (FAILED(hr))
-            qWarning("Could not set volume.");
-
-        static const HStringReference empty(L"");
-        hr = d->media->SetSource(randomStream.Get(), empty.Get());
-        RETURN_HR_IF_FAILED("Could not set media source.");
-
-        hr = d->media->Play();
-        RETURN_HR_IF_FAILED("Could not initiate playback.");
-
-        return S_OK;
+        if (currentLocale == QLocale(QString::fromWCharArray(voiceLanguage.GetRawBuffer(0))))
+            voices.append(d->createVoiceForInformation(voiceInfo));
+        return false;
     });
-    if (SUCCEEDED(hr)) {
-        d->timer.start();
-        d->state = QTextToSpeech::Speaking;
-    } else {
-        d->state = QTextToSpeech::BackendError;
-    }
-    emit stateChanged(d->state);
-}
-
-void QTextToSpeechEngineWinRT::stop()
-{
-    Q_D(QTextToSpeechEngineWinRT);
-
-    if (!d->media)
-        return;
-
-    HRESULT hr;
-    hr = QEventDispatcherWinRT::runOnXamlThread([d]() {
-        HRESULT hr = d->media->Stop();
-        RETURN_HR_IF_FAILED("Could not stop playback.");
-
-        d->media.Reset();
-        return hr;
-    });
-    if (SUCCEEDED(hr)) {
-        d->timer.stop();
-        d->state = QTextToSpeech::Ready;
-        emit stateChanged(d->state);
-    }
-}
-
-void QTextToSpeechEngineWinRT::pause()
-{
-    Q_D(QTextToSpeechEngineWinRT);
-
-    if (!d->media)
-        return;
-
-    // Stop timer first to not have checkElementState being invoked
-    // while context switch to/from Xaml thread happens.
-    d->timer.stop();
-
-    HRESULT hr;
-    hr = QEventDispatcherWinRT::runOnXamlThread([d]() {
-        HRESULT hr = d->media->Pause();
-        RETURN_HR_IF_FAILED("Could not pause playback.");
-        return hr;
-    });
-    if (SUCCEEDED(hr)) {
-        d->state = QTextToSpeech::Paused;
-        emit stateChanged(d->state);
-    }
-}
-
-void QTextToSpeechEngineWinRT::resume()
-{
-    Q_D(QTextToSpeechEngineWinRT);
-
-    if (!d->media)
-        return;
-
-    HRESULT hr;
-    hr = QEventDispatcherWinRT::runOnXamlThread([d]() {
-        HRESULT hr = d->media->Play();
-        RETURN_HR_IF_FAILED("Could not resume playback.");
-        return hr;
-    });
-    if (SUCCEEDED(hr)) {
-        d->timer.start();
-        d->state = QTextToSpeech::Speaking;
-        emit stateChanged(d->state);
-    }
-}
-
-double QTextToSpeechEngineWinRT::rate() const
-{
-    Q_D(const QTextToSpeechEngineWinRT);
-
-    return d->rate;
-}
-
-bool QTextToSpeechEngineWinRT::setRate(double rate)
-{
-    Q_D(QTextToSpeechEngineWinRT);
-
-    d->rate = rate;
-    return true;
-}
-
-double QTextToSpeechEngineWinRT::pitch() const
-{
-    // Not supported for WinRT
-    Q_UNIMPLEMENTED();
-    return 1.;
-}
-
-bool QTextToSpeechEngineWinRT::setPitch(double pitch)
-{
-    // Not supported for WinRT
-    Q_UNUSED(pitch);
-    Q_UNIMPLEMENTED();
-    return false;
+    return voices;
 }
 
 QLocale QTextToSpeechEngineWinRT::locale() const
 {
     Q_D(const QTextToSpeechEngineWinRT);
 
-    HRESULT hr;
-    ComPtr<IVoiceInformation> info;
-    hr = d->synth->get_Voice(&info);
+    ComPtr<IVoiceInformation> voiceInfo;
+    HRESULT hr = d->synth->get_Voice(&voiceInfo);
 
     HString language;
-    hr = info->get_Language(language.GetAddressOf());
+    hr = voiceInfo->get_Language(language.GetAddressOf());
 
     return QLocale(QString::fromWCharArray(language.GetRawBuffer(0)));
 }
@@ -295,51 +253,65 @@ bool QTextToSpeechEngineWinRT::setLocale(const QLocale &locale)
 {
     Q_D(QTextToSpeechEngineWinRT);
 
-    const int index = d->locales.indexOf(locale);
-    if (index == -1)
+    ComPtr<IVoiceInformation> foundVoice;
+    d->forEachVoice([&locale, &foundVoice](const ComPtr<IVoiceInformation> &voiceInfo) {
+        HString voiceLanguage;
+        HRESULT hr = voiceInfo->get_Language(voiceLanguage.GetAddressOf());
+        Q_ASSERT_SUCCEEDED(hr);
+
+        if (locale == QLocale(QString::fromWCharArray(voiceLanguage.GetRawBuffer(0)))) {
+            foundVoice = voiceInfo;
+            return true;
+        }
         return false;
+    });
 
-    return setVoice(d->voices.at(index));
-}
+    if (!foundVoice) {
+        qWarning() << "No voice found for locale" << locale;
+        return false;
+    }
 
-double QTextToSpeechEngineWinRT::volume() const
-{
-    Q_D(const QTextToSpeechEngineWinRT);
-
-    return d->volume;
-}
-
-bool QTextToSpeechEngineWinRT::setVolume(double volume)
-{
-    Q_D(QTextToSpeechEngineWinRT);
-
-    d->volume = volume;
-    return true;
+    return SUCCEEDED(d->synth->put_Voice(foundVoice.Get()));
 }
 
 QVoice QTextToSpeechEngineWinRT::voice() const
 {
     Q_D(const QTextToSpeechEngineWinRT);
 
-    HRESULT hr;
-    ComPtr<IVoiceInformation> info;
-    hr = d->synth->get_Voice(&info);
+    ComPtr<IVoiceInformation> voiceInfo;
+    d->synth->get_Voice(&voiceInfo);
 
-    return createVoiceForInformation(info);
+    return d->createVoiceForInformation(voiceInfo);
 }
 
 bool QTextToSpeechEngineWinRT::setVoice(const QVoice &voice)
 {
     Q_D(QTextToSpeechEngineWinRT);
 
-    const int index = d->voices.indexOf(voice);
-    if (index == -1)
+    const QString data = QTextToSpeechEngine::voiceData(voice).toString();
+    if (data.isEmpty())
         return false;
 
-    HRESULT hr;
-    hr = d->synth->put_Voice(d->infos.at(index).Get());
-    return SUCCEEDED(hr);
+    ComPtr<IVoiceInformation> foundVoice;
+    d->forEachVoice([&data, &foundVoice](const ComPtr<IVoiceInformation> &voiceInfo) {
+        HString voiceId;
+        HRESULT hr = voiceInfo->get_Id(voiceId.GetAddressOf());
+        if (data == QString::fromWCharArray(voiceId.GetRawBuffer(0))) {
+            foundVoice = voiceInfo;
+            return true;
+        }
+        return false;
+    });
+
+    if (!foundVoice) {
+        qWarning() << "No voice found for " << voice;
+        return false;
+    }
+
+    return SUCCEEDED(d->synth->put_Voice(foundVoice.Get()));
 }
+
+/* State and speech control */
 
 QTextToSpeech::State QTextToSpeechEngineWinRT::state() const
 {
@@ -347,102 +319,209 @@ QTextToSpeech::State QTextToSpeechEngineWinRT::state() const
     return d->state;
 }
 
-void QTextToSpeechEngineWinRT::checkElementState()
+void QTextToSpeechEngineWinRTPrivate::initializeAudioSink(const QAudioFormat &format)
 {
-    Q_D(QTextToSpeechEngineWinRT);
-
-    // MediaElement does not move into Stopped or Closed state when it finished
-    // playback of synthesised text. Instead it goes into Pause mode.
-    // Because of this MediaElement::add_MediaEnded() is not invoked and we
-    // cannot add an event listener to the Media Element to properly emit
-    // state changes.
-    // To still be able to capture when it is ready, use a periodic timer and
-    // check if the MediaElement went into Pause state.
-    bool finished = false;
-    HRESULT hr;
-    hr = QEventDispatcherWinRT::runOnXamlThread([d, &finished]() {
-        HRESULT hr;
-        ABI::Windows::UI::Xaml::Media::MediaElementState s;
-        hr = d->media.Get()->get_CurrentState(&s);
-        if (SUCCEEDED(hr) && s == MediaElementState_Paused)
-            finished = true;
-        return hr;
+    Q_Q(const QTextToSpeechEngineWinRT);
+    audioSink.reset(new QAudioSink(format));
+    audioSink->start(audioSource.Get());
+    QObject::connect(audioSink.get(), &QAudioSink::stateChanged,
+                     q, [this](QAudio::State sinkState) {
+        sinkStateChanged(sinkState);
     });
-
-    if (finished)
-        stop();
 }
 
-void QTextToSpeechEngineWinRT::init()
+void QTextToSpeechEngineWinRTPrivate::sinkStateChanged(QAudio::State sinkState)
+{
+    Q_Q(QTextToSpeechEngineWinRT);
+
+    const auto oldState = state;
+    switch (sinkState) {
+    case QAudio::StoppedState:
+    case QAudio::IdleState:
+        state = QTextToSpeech::Ready;
+        break;
+    case QAudio::ActiveState:
+        state = QTextToSpeech::Speaking;
+        break;
+    case QAudio::SuspendedState:
+        state = QTextToSpeech::Paused;
+        break;
+    }
+    if (state != oldState)
+        emit q->stateChanged(state);
+}
+
+void QTextToSpeechEngineWinRT::say(const QString &text)
 {
     Q_D(QTextToSpeechEngineWinRT);
 
-    d->state = QTextToSpeech::BackendError;
+    // always stop the audio sink first
 
-    HRESULT hr;
-
-    hr = QEventDispatcherWinRT::runOnXamlThread([d]() {
-        HRESULT hr = RoGetActivationFactory(HString::MakeReference(RuntimeClass_Windows_UI_Xaml_Markup_XamlReader).Get(),
-                                            IID_PPV_ARGS(&d->xamlReader));
-        Q_ASSERT_SUCCEEDED(hr);
-
-        return hr;
-    });
-
-    ComPtr<IInstalledVoicesStatic> stat;
-    hr = RoGetActivationFactory(HString::MakeReference(RuntimeClass_Windows_Media_SpeechSynthesis_SpeechSynthesizer).Get(),
-                                IID_PPV_ARGS(&stat));
-    Q_ASSERT_SUCCEEDED(hr);
-
-    hr = RoActivateInstance(HString::MakeReference(RuntimeClass_Windows_Media_SpeechSynthesis_SpeechSynthesizer).Get(),
-                            &d->synth);
-    Q_ASSERT_SUCCEEDED(hr);
-
-    ComPtr<IVectorView<VoiceInformation*>> voices;
-    hr = stat->get_AllVoices(&voices);
-    RETURN_VOID_IF_FAILED("Could not get voice information.");
-
-    quint32 voiceSize;
-    hr = voices->get_Size(&voiceSize);
-    RETURN_VOID_IF_FAILED("Could not access size of voice information.");
-
-    for (quint32 i = 0; i < voiceSize; ++i) {
-        ComPtr<IVoiceInformation> info;
-        hr = voices->GetAt(i, &info);
-        Q_ASSERT_SUCCEEDED(hr);
-
-        HString nativeLanguage;
-        hr = info->get_Language(nativeLanguage.GetAddressOf());
-        Q_ASSERT_SUCCEEDED(hr);
-
-        const QString languageString = QString::fromWCharArray(nativeLanguage.GetRawBuffer(0));
-        QLocale locale(languageString);
-        if (!d->locales.contains(locale))
-            d->locales.append(locale);
-
-        QVoice voice = createVoiceForInformation(info);
-        d->voices.append(voice);
-        d->infos.append(info);
+    if (d->audioSource) {
+        d->audioSource->close();
+        d->audioSource.Reset();
     }
 
-    d->state = QTextToSpeech::Ready;
+    HRESULT hr = S_OK;
+
+    HStringReference nativeText(reinterpret_cast<LPCWSTR>(text.utf16()), text.length());
+
+    ComPtr<IAsyncOperation<SpeechSynthesisStream*>> synthOperation;
+    hr = d->synth->SynthesizeTextToStreamAsync(nativeText.Get(), &synthOperation);
+    RETURN_VOID_IF_FAILED("Could not synthesize text.");
+
+    if (!SUCCEEDED(hr)) {
+        d->state = QTextToSpeech::BackendError;
+        return;
+    }
+
+    // The source will start to consume the data resulting out of the synthOperation,
+    // and send the data to a QAudioSink. The sink starts playing as soon as the data
+    // is available, and from that point on the state of the sync and the state of
+    // the QTextToSpeech object are aligned.
+    d->audioSource.Attach(new AudioSource(synthOperation));
+
+    connect(d->audioSource.Get(), &AudioSource::streamReady, this, [d](const QAudioFormat &format){
+        d->initializeAudioSink(format);
+    });
+    connect(d->audioSource.Get(), &QIODevice::aboutToClose, this, [d]{
+        d->audioSink.reset();
+    });
 }
 
-QVoice QTextToSpeechEngineWinRT::createVoiceForInformation(ComPtr<IVoiceInformation> info) const
+void QTextToSpeechEngineWinRT::stop()
 {
-    HRESULT hr;
-    HString nativeName;
-    hr = info->get_DisplayName(nativeName.GetAddressOf());
-    Q_ASSERT_SUCCEEDED(hr);
+    Q_D(QTextToSpeechEngineWinRT);
 
-    const QString name = QString::fromWCharArray(nativeName.GetRawBuffer(0));
+    if (d->audioSource) {
+        d->audioSource->close();
+        d->audioSource.Reset();
+    }
+}
 
-    VoiceGender gender;
-    hr = info->get_Gender(&gender);
-    Q_ASSERT_SUCCEEDED(hr);
+void QTextToSpeechEngineWinRT::pause()
+{
+    Q_D(QTextToSpeechEngineWinRT);
 
-    return QTextToSpeechEngine::createVoice(name, gender == VoiceGender_Male ? QVoice::Male : QVoice::Female,
-                                            QVoice::Other, QVariant());
+    if (d->audioSink)
+        d->audioSink->suspend();
+}
+
+void QTextToSpeechEngineWinRT::resume()
+{
+    Q_D(QTextToSpeechEngineWinRT);
+
+    if (d->audioSink)
+        d->audioSink->resume();
+}
+
+/* Properties */
+
+/*
+    The native value can range from 0.5 (half the default rate) to 6.0 (6x the default rate), inclusive.
+    The default value is 1.0 (the "normal" speaking rate for the current voice).
+
+    QTextToSpeech rate is from -1.0 to 1.0.
+*/
+double QTextToSpeechEngineWinRT::rate() const
+{
+    Q_D(const QTextToSpeechEngineWinRT);
+
+    if (!d->options) {
+        Q_UNIMPLEMENTED();
+        return 0.0;
+    }
+
+    double value;
+    d->options->get_SpeakingRate(&value);
+    if (value < 1.0) // 0.5 to 1.0 maps to -1.0 to 0.0
+        value = (value - 1.0) * 2.0;
+    else // 1.0 to 6.0 maps to 0.0 to 1.0
+        value = (value - 1.0) / 5.0;
+    return value;
+}
+
+bool QTextToSpeechEngineWinRT::setRate(double rate)
+{
+    Q_D(QTextToSpeechEngineWinRT);
+
+    if (!d->options) {
+        Q_UNIMPLEMENTED();
+        return false;
+    }
+
+    if (rate < 0.0) // -1.0 to 0.0 maps to 0.5 to 1.0
+        rate = 0.5 * rate + 1.0;
+    else // 0.0 to 1.0 maps to 1.0 to 6.0
+        rate = rate * 5.0 + 1.0;
+    HRESULT hr = d->options->put_SpeakingRate(rate);
+    return SUCCEEDED(hr);
+}
+
+/*
+    The native value can range from 0.0 (lowest pitch) to 2.0 (highest pitch), inclusive.
+    The default value is 1.0.
+
+    The QTextToSpeech value is from -1.0 to 1.0.
+*/
+double QTextToSpeechEngineWinRT::pitch() const
+{
+    Q_D(const QTextToSpeechEngineWinRT);
+
+    if (!d->options) {
+        Q_UNIMPLEMENTED();
+        return 0.0;
+    }
+
+    double value;
+    d->options->get_AudioPitch(&value);
+    return value - 1.0;
+}
+
+bool QTextToSpeechEngineWinRT::setPitch(double pitch)
+{
+    Q_D(QTextToSpeechEngineWinRT);
+
+    if (!d->options) {
+        Q_UNIMPLEMENTED();
+        return false;
+    }
+
+    HRESULT hr = d->options->put_AudioPitch(pitch + 1.0);
+    return SUCCEEDED(hr);
+}
+
+/*
+    The native value can range from 0.0 (lowest volume) to 1.0 (highest volume), inclusive.
+    The default value is 1.0.
+
+    This maps directly to the QTextToSpeech volume range.
+*/
+double QTextToSpeechEngineWinRT::volume() const
+{
+    Q_D(const QTextToSpeechEngineWinRT);
+
+    if (!d->options) {
+        Q_UNIMPLEMENTED();
+        return 0.0;
+    }
+
+    double value;
+    d->options->get_AudioVolume(&value);
+    return value;
+}
+
+bool QTextToSpeechEngineWinRT::setVolume(double volume)
+{
+    Q_D(QTextToSpeechEngineWinRT);
+
+    if (!d->options) {
+        Q_UNIMPLEMENTED();
+        return false;
+    }
+
+    HRESULT hr = d->options->put_AudioVolume(volume);
+    return SUCCEEDED(hr);
 }
 
 QT_END_NAMESPACE

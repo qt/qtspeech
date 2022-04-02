@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -42,21 +42,8 @@
 
 #include <QtCore/QList>
 #include <QtCore/QLocale>
-#include <QtCore/QObject>
 #include <QtCore/QScopedPointer>
 #include <QtCore/QString>
-#include <QtCore/qt_windows.h>
-#include <wrl.h>
-
-namespace ABI {
-    namespace Windows {
-        namespace Media {
-            namespace SpeechSynthesis {
-                struct IVoiceInformation;
-            }
-        }
-    }
-}
 
 QT_BEGIN_NAMESPACE
 
@@ -88,12 +75,7 @@ public:
     bool setVoice(const QVoice &voice) override;
     QTextToSpeech::State state() const override;
 
-public slots:
-    void checkElementState();
 private:
-    void init();
-    QVoice createVoiceForInformation(Microsoft::WRL::ComPtr<ABI::Windows::Media::SpeechSynthesis::IVoiceInformation> info) const;
-
     QScopedPointer<QTextToSpeechEngineWinRTPrivate> d_ptr;
     Q_DECLARE_PRIVATE(QTextToSpeechEngineWinRT)
 };

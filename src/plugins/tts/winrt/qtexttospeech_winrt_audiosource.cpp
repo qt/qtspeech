@@ -1,0 +1,317 @@
+/****************************************************************************
+**
+** Copyright (C) 2022 The Qt Company Ltd.
+** Contact: http://www.qt.io/licensing/
+**
+** This file is part of the Qt Speech module of the Qt Toolkit.
+**
+** $QT_BEGIN_LICENSE:LGPL3$
+** Commercial License Usage
+** Licensees holding valid commercial Qt licenses may use this file in
+** accordance with the commercial license agreement provided with the
+** Software or, alternatively, in accordance with the terms contained in
+** a written agreement between you and The Qt Company. For licensing terms
+** and conditions see http://www.qt.io/terms-conditions. For further
+** information use the contact form at http://www.qt.io/contact-us.
+**
+** GNU Lesser General Public License Usage
+** Alternatively, this file may be used under the terms of the GNU Lesser
+** General Public License version 3 as published by the Free Software
+** Foundation and appearing in the file LICENSE.LGPLv3 included in the
+** packaging of this file. Please review the following information to
+** ensure the GNU Lesser General Public License version 3 requirements
+** will be met: https://www.gnu.org/licenses/lgpl.html.
+**
+** GNU General Public License Usage
+** Alternatively, this file may be used under the terms of the GNU
+** General Public License version 2.0 or later as published by the Free
+** Software Foundation and appearing in the file LICENSE.GPL included in
+** the packaging of this file. Please review the following information to
+** ensure the GNU General Public License version 2.0 requirements will be
+** met: http://www.gnu.org/licenses/gpl-2.0.html.
+**
+** $QT_END_LICENSE$
+**
+****************************************************************************/
+
+#include "qtexttospeech_winrt_audiosource.h"
+
+#include <QtCore/QDebug>
+
+#include <QtCore/private/qfunctions_winrt_p.h>
+
+#include <robuffer.h>
+#include <winrt/base.h>
+#include <windows.foundation.h>
+#include <windows.media.speechsynthesis.h>
+#include <windows.storage.streams.h>
+
+#include <wrl.h>
+
+
+using namespace ABI::Windows::Foundation;
+using namespace ABI::Windows::Media::SpeechSynthesis;
+using namespace ABI::Windows::Storage::Streams;
+using namespace Microsoft::WRL;
+using namespace Microsoft::WRL::Wrappers;
+
+QT_BEGIN_NAMESPACE
+
+/*
+    AudioSource implements a sequential QIODevice for a stream of synthesized speech.
+    It also implements the handler interfaces for responding to the asynchronous
+    operations of the synthesized speech stream being avialable, and reading data from
+    the stream via a COM buffer.
+
+    Whenever the QIODevice has read all the data from the COM buffer, more data is
+    requested. When the data is available (the BytesReadyHandler's handler's Invoke
+    implementation is called), readyRead is emitted.
+
+    The AudioSource directly controls a QAudioSink. As soon as the data stream is
+    available, the source calls QAudioSink::start. Pause/resume are delegated to the
+    sink; closing the source stops the sink.
+*/
+AudioSource::AudioSource(ComPtr<IAsyncOperation<SpeechSynthesisStream*>> synthOperation)
+    : synthOperation(synthOperation)
+{
+    synthOperation->put_Completed(this);
+
+    audioFormat.setSampleFormat(QAudioFormat::Int16);
+    audioFormat.setSampleRate(16000);
+    audioFormat.setChannelConfig(QAudioFormat::ChannelConfigMono);
+}
+
+/*
+    Calls close, which is virtual and called from ~QIODevice,
+    but that won't call our override.
+*/
+AudioSource::~AudioSource()
+{
+    Q_ASSERT(ref == 0);
+    close();
+}
+
+/*
+    Cancel any incomplete asynchronous operations, and stop the
+    sink before closing the QIODevice.\
+*/
+void AudioSource::close()
+{
+    ComPtr<IAsyncInfo> asyncInfo;
+    AsyncStatus status = AsyncStatus::Completed;
+    if (synthOperation) {
+        if (HRESULT hr = synthOperation.As(&asyncInfo); SUCCEEDED(hr)) {
+            asyncInfo->get_Status(&status);
+            if (status != AsyncStatus::Completed)
+                asyncInfo->Cancel();
+            asyncInfo->Close();
+        }
+    }
+    if (readOperation) {
+        if (HRESULT hr = readOperation.As(&asyncInfo); SUCCEEDED(hr)) {
+            asyncInfo->get_Status(&status);
+            if (status != AsyncStatus::Completed)
+                asyncInfo->Cancel();
+            asyncInfo->Close();
+        }
+    }
+    QIODevice::close();
+}
+
+qint64 AudioSource::bytesAvailable() const
+{
+    return bytesInBuffer() + QIODevice::bytesAvailable();
+}
+
+/*
+    Fills data with as many bytes from the COM buffer as possible. If this
+    empties the COM buffer, calls fetchMore to start a new asynchronous
+    read operation.
+*/
+qint64 AudioSource::readData(char *data, qint64 maxlen)
+{
+    // this may happen as per the documentation
+    if (!maxlen)
+        return 0;
+
+    Q_ASSERT(bufferByteAccess);
+
+    const qint64 available = bytesInBuffer();
+    maxlen = qMin(available, maxlen);
+
+    if (!maxlen && atEnd())
+        return -1;
+
+    byte *pbyte = nullptr;
+    bufferByteAccess->Buffer(&pbyte);
+    pbyte += m_bufferOffset;
+    memcpy(data, pbyte, maxlen);
+
+    // If we emptied the buffer, fetch more. This should always happen, as the
+    // IBuffer has the same capacity as QIODevice's default read chunk size.
+    if (available <= maxlen)
+        fetchMore();
+    else
+        m_bufferOffset += maxlen;
+
+    return maxlen;
+}
+
+bool AudioSource::atEnd() const
+{
+    // not done as long as QIODevice's buffer is not empty
+    if (!QIODevice::atEnd())
+        return false;
+
+    // If we get here, bytesAvailable() has returned 0, so our buffers are
+    // exhaused. Try to see if we are waiting for readOperation to finish.
+    AsyncStatus status = AsyncStatus::Completed;
+    if (readOperation) {
+        ComPtr<IAsyncInfo> asyncInfo;
+        if (HRESULT hr = readOperation.As(&asyncInfo); SUCCEEDED(hr))
+            asyncInfo->get_Status(&status);
+    }
+    if (status == AsyncStatus::Started)
+        return false;
+
+    // ... or if there is more in the stream
+    UINT64 ioPos = 0;
+    UINT64 ioSize = 0;
+    if (inputStream) {
+        ComPtr<IRandomAccessStream> ioStream;
+        if (HRESULT hr = inputStream.As(&ioStream); SUCCEEDED(hr)) {
+            ioStream->get_Size(&ioSize);
+            ioStream->get_Position(&ioPos);
+        }
+    }
+    return ioPos >= ioSize;
+}
+
+HRESULT AudioSource::QueryInterface(REFIID riid, VOID **ppvInterface)
+{
+    if (!ppvInterface)
+        return E_POINTER;
+
+    if (riid == __uuidof(IUnknown)) {
+        *ppvInterface = static_cast<IUnknown*>(static_cast<StreamReadyHandler *>(this));
+    } else if (riid == __uuidof(StreamReadyHandler)) {
+        *ppvInterface = static_cast<StreamReadyHandler *>(this);
+    } else if (riid == __uuidof(BytesReadyHandler)) {
+        *ppvInterface = static_cast<BytesReadyHandler *>(this);
+    } else {
+        *ppvInterface = nullptr;
+        return E_NOINTERFACE;
+    }
+    AddRef();
+    return S_OK;
+}
+
+/*
+    Completion handler for synthesising the stream.
+
+    Is called as soon as synthesized pcm data is available, at which point we can
+    open the QIODevice, fetch data, and start the audio sink.
+*/
+HRESULT AudioSource::Invoke(IAsyncOperation<SpeechSynthesisStream*> *operation, AsyncStatus status)
+{
+    if (status != AsyncStatus::Completed)
+        return E_FAIL;
+
+    Q_ASSERT(operation == synthOperation.Get());
+
+    ComPtr<ISpeechSynthesisStream> speechStream;
+    HRESULT hr = operation->GetResults(&speechStream);
+    RETURN_HR_IF_FAILED("Could not access stream.");
+
+    hr = speechStream.As(&inputStream);
+    RETURN_HR_IF_FAILED("Could not cast to inputStream.");
+
+    ComPtr<IBufferFactory> bufferFactory;
+    hr = RoGetActivationFactory(HString::MakeReference(RuntimeClass_Windows_Storage_Streams_Buffer).Get(),
+                                IID_PPV_ARGS(&bufferFactory));
+    RETURN_HR_IF_FAILED("Could not create buffer factory.");
+    // use the same buffer size as default read chunk size
+    bufferFactory->Create(16384, m_buffer.GetAddressOf());
+
+    hr = m_buffer->QueryInterface(IID_PPV_ARGS(&bufferByteAccess));
+    RETURN_HR_IF_FAILED("Could not access buffer.");
+
+    // release our reference to the speech stream operation
+    ComPtr<IAsyncInfo> asyncInfo;
+    if (HRESULT hr = synthOperation.As(&asyncInfo); SUCCEEDED(hr))
+        asyncInfo->Close();
+    synthOperation.Reset();
+
+    // we are buffered, but we don't want QIODevice to buffer as well
+    open(QIODevice::ReadOnly|QIODevice::Unbuffered);
+    fetchMore();
+    emit streamReady(audioFormat);
+    return S_OK;
+}
+
+/*
+    Completion handler for reading from the stream.
+
+    Resets the COM buffer so that it points at the correct position in the
+    stream, and emits readyRead so that the sink pulls more data.
+*/
+HRESULT AudioSource::Invoke(IAsyncOperationWithProgress<IBuffer*, unsigned int> *read,
+                            AsyncStatus status)
+{
+    if (status != AsyncStatus::Completed)
+        return E_FAIL;
+
+    // there should never be multiple read operations
+    Q_ASSERT(readOperation.Get() == read);
+
+    HRESULT hr = read->GetResults(&m_buffer);
+    RETURN_HR_IF_FAILED("Could not access buffer.");
+    m_bufferOffset = 0;
+
+    ComPtr<IAsyncInfo> asyncInfo;
+    if (HRESULT hr = readOperation.As(&asyncInfo); SUCCEEDED(hr))
+        asyncInfo->Close();
+    readOperation.Reset();
+
+    // inform the sink that more data has arrived
+    emit readyRead();
+
+    return S_OK;
+}
+
+qint64 AudioSource::bytesInBuffer() const
+{
+    if (!m_buffer)
+        return 0;
+
+    UINT32 bytes;
+    m_buffer->get_Length(&bytes);
+    return bytes - m_bufferOffset;
+}
+
+/*
+    Starts an asynchronous read operation. There can only be one such
+    operation pending at any given time, so fetchMore must only be called
+    if the buffer provided by a previous operation is exhaused.
+*/
+bool AudioSource::fetchMore()
+{
+    Q_ASSERT(m_buffer);
+
+    if (readOperation) {
+        qWarning () << "Fetching more while a read operation is already pending";
+        return false;
+    }
+
+    UINT32 capacity;
+    m_buffer->get_Capacity(&capacity);
+    InputStreamOptions streamOptions = {};
+    HRESULT hr = inputStream->ReadAsync(m_buffer.Get(), capacity, streamOptions, readOperation.GetAddressOf());
+    if (!SUCCEEDED(hr))
+        return false;
+
+    readOperation->put_Completed(this);
+    return true;
+}
+
+QT_END_NAMESPACE
