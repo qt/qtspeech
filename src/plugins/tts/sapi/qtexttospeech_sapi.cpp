@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -149,11 +149,10 @@ void QTextToSpeechEngineSapi::resume()
     if (m_pauseCount > 0) {
         --m_pauseCount;
         m_voice->Resume();
-        if (isSpeaking()) {
+        if (isSpeaking())
             m_state = QTextToSpeech::Speaking;
-        } else {
+        else
             m_state = QTextToSpeech::Ready;
-        }
         emit stateChanged(m_state);
     }
 }
@@ -195,9 +194,7 @@ double QTextToSpeechEngineSapi::volume() const
 {
     USHORT baseVolume;
     if (m_voice->GetVolume(&baseVolume) == S_OK)
-    {
         return baseVolume / 100.0;
-    }
     return 0.0;
 }
 
@@ -245,9 +242,8 @@ QMap<QString, QString> QTextToSpeechEngineSapi::voiceAttributes(ISpObjectToken *
             continue;
         }
 
-        if (0 != wcscmp(val, L"")) {
+        if (0 != wcscmp(val, L""))
             result[QString::fromWCharArray(val)] = QString::fromWCharArray(data);
-        }
 
         // FIXME: Do we need to free the memory here?
         CoTaskMemFree(val);
@@ -265,12 +261,10 @@ QLocale QTextToSpeechEngineSapi::lcidToLocale(const QString &lcid) const
         qWarning() << "Could not convert language attribute to LCID";
         return QLocale();
     }
-    int nchars = GetLocaleInfoW(locale, LOCALE_SISO639LANGNAME, NULL, 0);
-    wchar_t* languageCode = new wchar_t[nchars];
-    GetLocaleInfoW(locale, LOCALE_SISO639LANGNAME, languageCode, nchars);
-    QString iso = QString::fromWCharArray(languageCode);
-    delete[] languageCode;
-    return QLocale(iso);
+    const int nchars = GetLocaleInfoW(locale, LOCALE_SISO639LANGNAME, NULL, 0);
+    QVarLengthArray<wchar_t, 12> languageCode(nchars);
+    GetLocaleInfoW(locale, LOCALE_SISO639LANGNAME, languageCode.data(), nchars);
+    return QLocale(QString::fromWCharArray(languageCode.data()));
 }
 
 void QTextToSpeechEngineSapi::updateVoices()
@@ -281,9 +275,8 @@ void QTextToSpeechEngineSapi::updateVoices()
     ULONG ulCount = 0;
 
     hr = SpEnumTokens(SPCAT_VOICES, NULL, NULL, &cpEnum);
-    if (SUCCEEDED(hr)) {
+    if (SUCCEEDED(hr))
         hr = cpEnum->GetCount(&ulCount);
-    }
 
     // Loop through all voices
     while (SUCCEEDED(hr) && ulCount--) {
@@ -294,10 +287,10 @@ void QTextToSpeechEngineSapi::updateVoices()
         hr = cpEnum->Next(1, &cpVoiceToken, NULL);
 
         // Get attributes of the voice
-        QMap<QString, QString> vAttr = voiceAttributes(cpVoiceToken);
+        const QMap<QString, QString> vAttr = voiceAttributes(cpVoiceToken);
 
         // Transform Windows LCID to QLocale
-        QLocale vLocale = lcidToLocale(vAttr["Language"]);
+        const QLocale vLocale = lcidToLocale(vAttr["Language"]);
         if (!m_locales.contains(vLocale))
             m_locales.append(vLocale);
 
@@ -309,8 +302,8 @@ void QTextToSpeechEngineSapi::updateVoices()
                                 vAttr["Gender"] == "Female" ? QVoice::Female :
                                 QVoice::Unknown;
         // Getting the ID of the voice to set the voice later
-        QString vId = voiceId(cpVoiceToken);
-        QVoice voice = createVoice(name, gender, age, vId);
+        const QString vId = voiceId(cpVoiceToken);
+        const QVoice voice = createVoice(name, gender, age, vId);
         m_voices.insert(vLocale.name(), voice);
     }
     if (cpVoiceToken)
@@ -325,14 +318,14 @@ QList<QLocale> QTextToSpeechEngineSapi::availableLocales() const
 
 bool QTextToSpeechEngineSapi::setLocale(const QLocale &locale)
 {
-    QList<QVoice> voicesForLocale = m_voices.values(locale.name());
-    if (voicesForLocale.length() > 0) {
-        setVoice(voicesForLocale[0]);
-        return true;
-    } else {
+    const QList<QVoice> voicesForLocale = m_voices.values(locale.name());
+    if (voicesForLocale.isEmpty()) {
         qWarning() << "No voice found for given locale";
+        return false;
     }
-    return false;
+
+    setVoice(voicesForLocale[0]);
+    return true;
 }
 
 QLocale QTextToSpeechEngineSapi::locale() const
@@ -345,9 +338,9 @@ QLocale QTextToSpeechEngineSapi::locale() const
         return QLocale();
     }
     // read attributes
-    QMap<QString, QString> vAttr = voiceAttributes(cpVoiceToken);
+    const QMap<QString, QString> vAttr = voiceAttributes(cpVoiceToken);
     cpVoiceToken->Release();
-    return lcidToLocale(vAttr["Language"]);
+    return lcidToLocale(vAttr.value(QStringLiteral("Language")));
 }
 
 QList<QVoice> QTextToSpeechEngineSapi::availableVoices() const
@@ -358,15 +351,15 @@ QList<QVoice> QTextToSpeechEngineSapi::availableVoices() const
 bool QTextToSpeechEngineSapi::setVoice(const QVoice &voice)
 {
     // Convert voice id to null-terminated wide char string
-    QString vId = voiceData(voice).toString();
-    wchar_t* tokenId = new wchar_t[vId.size()+1];
-    vId.toWCharArray(tokenId);
+    const QString vId = voiceData(voice).toString();
+    QVarLengthArray<wchar_t, 255> tokenId(vId.size() + 1);
+    vId.toWCharArray(tokenId.data());
     tokenId[vId.size()] = 0;
 
     // create the voice token via the id
     HRESULT hr = S_OK;
     ISpObjectToken *cpVoiceToken = nullptr;
-    hr = SpCreateNewToken(tokenId, &cpVoiceToken);
+    hr = SpCreateNewToken(tokenId.constData(), &cpVoiceToken);
     if (FAILED(hr)) {
         qWarning() << "Creating the voice token from ID failed";
         if (cpVoiceToken)
@@ -381,7 +374,6 @@ bool QTextToSpeechEngineSapi::setVoice(const QVoice &voice)
         emit stateChanged(m_state);
     }
 
-    delete[] tokenId;
     m_voice->SetVoice(cpVoiceToken);
     cpVoiceToken->Release();
     return true;
@@ -398,9 +390,8 @@ QVoice QTextToSpeechEngineSapi::voice() const
     QString vId = voiceId(cpVoiceToken);
     cpVoiceToken->Release();
     for (const QVoice &voice : m_voices) {
-        if (voiceData(voice).toString() == vId) {
+        if (voiceData(voice).toString() == vId)
             return voice;
-        }
     }
     return QVoice();
 }
@@ -413,13 +404,12 @@ QTextToSpeech::State QTextToSpeechEngineSapi::state() const
 HRESULT QTextToSpeechEngineSapi::NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/)
 {
     QTextToSpeech::State newState = QTextToSpeech::Ready;
-    if (isPaused()) {
+    if (isPaused())
         newState = QTextToSpeech::Paused;
-    } else if (isSpeaking()) {
+    else if (isSpeaking())
         newState = QTextToSpeech::Speaking;
-    } else {
+    else
         newState = QTextToSpeech::Ready;
-    }
 
     if (m_state != newState) {
         m_state = newState;
