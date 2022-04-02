@@ -124,13 +124,13 @@ void tst_QTextToSpeech::availableLocales()
 void tst_QTextToSpeech::say_hello()
 {
     QFETCH_GLOBAL(QString, engine);
-    QString text = QStringLiteral("saying hello as a test");
+    const QString text = QStringLiteral("saying hello with %1");
     QTextToSpeech tts(engine);
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
 
     QElapsedTimer timer;
     timer.start();
-    tts.say(text);
+    tts.say(text.arg(engine));
     QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
     QSignalSpy spy(&tts, &QTextToSpeech::stateChanged);
     QVERIFY(spy.wait(SpeechDuration));
@@ -141,7 +141,7 @@ void tst_QTextToSpeech::say_hello()
 void tst_QTextToSpeech::speech_rate()
 {
     QFETCH_GLOBAL(QString, engine);
-    QString text = QStringLiteral("example text at different rates");
+    const QString text = QStringLiteral("example text at different rates");
     QTextToSpeech tts(engine);
     tts.setRate(0.5);
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
@@ -181,7 +181,7 @@ void tst_QTextToSpeech::pitch()
 void tst_QTextToSpeech::set_voice()
 {
     QFETCH_GLOBAL(QString, engine);
-    QString text = QStringLiteral("example text with voices");
+    const QString text = QStringLiteral("engine %1 with voice of %2");
     QTextToSpeech tts(engine);
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
 
@@ -195,7 +195,7 @@ void tst_QTextToSpeech::set_voice()
 
         QElapsedTimer timer;
         timer.start();
-        tts.say(text);
+        tts.say(text.arg(engine, voice.name()));
         QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
         QSignalSpy spy(&tts, &QTextToSpeech::stateChanged);
         QVERIFY(spy.wait(SpeechDuration));
