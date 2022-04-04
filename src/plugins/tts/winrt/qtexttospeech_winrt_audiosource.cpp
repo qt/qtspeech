@@ -145,6 +145,38 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
     byte *pbyte = nullptr;
     bufferByteAccess->Buffer(&pbyte);
     pbyte += m_bufferOffset;
+
+    switch (m_pause) {
+    case NoPause:
+        break;
+    case PauseRequested: {
+        Q_ASSERT(audioFormat.sampleFormat() == QAudioFormat::Int16);
+        // we are dealing with artificially created sound, so we don't have
+        // to find a large enough window with overall low energy; we can just
+        // look for a series (e.g. 1/20th of a second) of samples with value 0.
+        const int silenceDuration = audioFormat.sampleRate() / 20;
+        const short *sample = reinterpret_cast<short*>(pbyte);
+        qint64 silenceCount = 0;
+        for (qint64 index = 0; index < maxlen; ++index) {
+            if (!sample[index]) {
+                ++silenceCount;
+            } else if (silenceCount > silenceDuration) {
+                // long enough silence found, only provide the data until we are in the
+                // silence. The next attempt to pull data will return nothing, and the
+                // audio sink will move to idle state.
+                maxlen = index - silenceCount / 2;
+                m_pause = Paused;
+                break;
+            } else {
+                silenceCount = 0;
+            }
+        }
+        break;
+    }
+    case Paused:
+        return 0;
+    }
+
     memcpy(data, pbyte, maxlen);
 
     // If we emptied the buffer, fetch more. This should always happen, as the
@@ -274,7 +306,8 @@ HRESULT AudioSource::Invoke(IAsyncOperationWithProgress<IBuffer*, unsigned int> 
     readOperation.Reset();
 
     // inform the sink that more data has arrived
-    emit readyRead();
+    if (m_pause == NoPause)
+        emit readyRead();
 
     return S_OK;
 }

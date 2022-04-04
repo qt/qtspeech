@@ -60,6 +60,8 @@ private slots:
     void availableVoices();
     void availableLocales();
     void say_hello();
+    void pauseResume();
+
     void speech_rate();
     void pitch();
     void set_voice();
@@ -136,6 +138,24 @@ void tst_QTextToSpeech::say_hello()
     QVERIFY(spy.wait(SpeechDuration));
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
     QVERIFY(timer.elapsed() > 100);
+}
+
+void tst_QTextToSpeech::pauseResume()
+{
+    QFETCH_GLOBAL(QString, engine);
+    const QString text = QStringLiteral("Hello. World.");
+    QTextToSpeech tts(engine);
+    QCOMPARE(tts.state(), QTextToSpeech::Ready);
+
+    tts.say(text);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
+    // tts engines will either pause immediately, or in a suitable break,
+    // which would be after "Hello."
+    tts.pause();
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Paused);
+    tts.resume();
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
 }
 
 void tst_QTextToSpeech::speech_rate()

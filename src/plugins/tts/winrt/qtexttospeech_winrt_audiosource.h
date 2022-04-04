@@ -75,6 +75,23 @@ public:
     bool atEnd() const override;
     qint64 bytesAvailable() const override;
 
+    enum PauseState {
+        NoPause,
+        PauseRequested,
+        Paused
+    } m_pause = NoPause;
+
+    void pause()
+    {
+        m_pause = PauseRequested;
+    }
+
+    void resume()
+    {
+        m_pause = NoPause;
+        emit readyRead();
+    }
+
     // IUnknown
     ULONG AddRef() { return ++ref; }
     ULONG Release() {

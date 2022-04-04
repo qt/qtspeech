@@ -328,6 +328,10 @@ void QTextToSpeechEngineWinRTPrivate::initializeAudioSink(const QAudioFormat &fo
                      q, [this](QAudio::State sinkState) {
         sinkStateChanged(sinkState);
     });
+    // ### this shouldn't be needed, but readyRead doesn't wake up
+    // an idle sink.
+    QObject::connect(audioSource.Get(), &QIODevice::readyRead,
+                     audioSink.get(), &QAudioSink::resume);
 }
 
 void QTextToSpeechEngineWinRTPrivate::sinkStateChanged(QAudio::State sinkState)
@@ -336,8 +340,18 @@ void QTextToSpeechEngineWinRTPrivate::sinkStateChanged(QAudio::State sinkState)
 
     const auto oldState = state;
     switch (sinkState) {
-    case QAudio::StoppedState:
     case QAudio::IdleState:
+        if (audioSource) {
+            if (audioSource->atEnd()) {
+                state = QTextToSpeech::Ready;
+            } else {
+                // ### an unsuspended sink doesn't wake up from readyRead,
+                // and it only resumes (see above) if we suspend it first.
+                audioSink->suspend();
+            }
+        }
+        break;
+    case QAudio::StoppedState:
         state = QTextToSpeech::Ready;
         break;
     case QAudio::ActiveState:
@@ -403,16 +417,16 @@ void QTextToSpeechEngineWinRT::pause()
 {
     Q_D(QTextToSpeechEngineWinRT);
 
-    if (d->audioSink)
-        d->audioSink->suspend();
+    if (d->audioSource)
+        d->audioSource->pause();
 }
 
 void QTextToSpeechEngineWinRT::resume()
 {
     Q_D(QTextToSpeechEngineWinRT);
 
-    if (d->audioSink)
-        d->audioSink->resume();
+    if (d->audioSource)
+        d->audioSource->resume();
 }
 
 /* Properties */
