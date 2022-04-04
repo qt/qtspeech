@@ -2,5 +2,6 @@
     "Keys": ["ios"],
     "Provider": "ios",
     "Version": 100,
+    "Priority": 100,
     "Features": []
 }

@@ -59,7 +59,15 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech, const QString 
 {
     qRegisterMetaType<QTextToSpeech::State>();
     if (m_providerName.isEmpty()) {
-        m_providerName = QTextToSpeech::availableEngines().value(0);
+        const auto plugins = QTextToSpeechPrivate::plugins();
+        int priority = -1;
+        for (const auto &&[provider, metadata] : plugins.asKeyValueRange()) {
+            const int pluginPriority = metadata.value(QStringLiteral("Priority")).toInteger();
+            if (pluginPriority > priority) {
+                priority = pluginPriority;
+                m_providerName = provider;
+            }
+        }
         if (m_providerName.isEmpty()) {
             qCritical() << "No text-to-speech plug-ins were found.";
             return;

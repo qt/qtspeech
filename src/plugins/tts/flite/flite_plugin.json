@@ -2,5 +2,6 @@
     "Keys": ["flite"],
     "Provider": "flite",
     "Version": 100,
+    "Priority": 50,
     "Features": []
 }
