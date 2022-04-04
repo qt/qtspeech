@@ -54,7 +54,7 @@ class QTextToSpeechEngineFlite : public QTextToSpeechEngine
     Q_OBJECT
 
 public:
-    QTextToSpeechEngineFlite(const QVariantMap &parameters, QObject *parent);
+    QTextToSpeechEngineFlite(QString *errorString, const QVariantMap &parameters, QObject *parent);
     ~QTextToSpeechEngineFlite() override;
 
     // Plug-in API:
@@ -76,18 +76,25 @@ public:
     bool setVoice(const QVoice &voice) override;
     QTextToSpeech::State state() const override;
 
-    // Internal API:
-    bool init(QString *errorString);
-
-public slots:
-    void onNotSpeaking(int statusCode);
+Q_SIGNALS:
+    void speaking();
+private slots:
+    void changeState(QTextToSpeech::State newState);
 
 private:
-    QTextToSpeech::State m_state;
-    QSharedPointer<QTextToSpeechProcessorFlite> m_processor;
-    QVoice m_currentVoice;
+    QTextToSpeech::State m_state = QTextToSpeech::BackendError;
+
+    QVoice m_voice;
+    double m_rate = 0;
+    double m_pitch = 1;
+    double m_volume = 1;
+
     // Voices mapped by their locale name.
     QMultiHash<QLocale, QVoice> m_voices;
+
+    // Thread for blocking operations
+    QThread m_thread;
+    QTextToSpeechProcessorFlite m_processor;
 };
 
 QT_END_NAMESPACE

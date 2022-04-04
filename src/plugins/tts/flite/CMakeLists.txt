@@ -4,7 +4,6 @@ qt_internal_add_plugin(QTextToSpeechFlitePlugin
     OUTPUT_NAME qtexttospeech_flite
     PLUGIN_TYPE texttospeech
     SOURCES
-        qtexttospeechprocessor.cpp qtexttospeechprocessor_p.h
         qtexttospeech_flite.cpp qtexttospeech_flite.h
         qtexttospeech_flite_plugin.cpp qtexttospeech_flite_plugin.h
         qtexttospeech_flite_processor.cpp qtexttospeech_flite_processor.h

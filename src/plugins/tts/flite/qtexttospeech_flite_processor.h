@@ -37,45 +37,38 @@
 #ifndef QTEXTTOSPEECHPROCESSOR_FLITE_H
 #define QTEXTTOSPEECHPROCESSOR_FLITE_H
 
-#include "qtexttospeechprocessor_p.h"
-
 #include "qtexttospeechengine.h"
 #include "qvoice.h"
 
 #include <QtCore/QList>
 #include <QtCore/QMutex>
+#include <QtCore/QThread>
 #include <QtCore/QSharedPointer>
+#include <QtCore/QLibrary>
 #include <QtCore/QString>
+#include <QtCore/QBasicTimer>
+#include <QtCore/QTimerEvent>
+#include <QtCore/QAbstractEventDispatcher>
+#include <QtCore/QProcessEnvironment>
+#include <QtCore/QDateTime>
+#include <QtMultimedia/QAudioSink>
+#include <QtMultimedia/QMediaDevices>
 
 #include <flite/flite.h>
 
 QT_BEGIN_NAMESPACE
 
-// This is a reference counted singleton class.
-// The instance is automatically deleted when no users remain.
-class QTextToSpeechProcessorFlite : public QTextToSpeechProcessor
+class QTextToSpeechProcessorFlite : public QObject
 {
     Q_OBJECT
 
 public:
-    static QSharedPointer<QTextToSpeechProcessorFlite> instance();
-    ~QTextToSpeechProcessorFlite() override;
-    const QList<VoiceInfo> &voices() const override;
-
-private:
     QTextToSpeechProcessorFlite();
-    static int fliteOutputCb(const cst_wave *w, int start, int size,
-                            int last, cst_audio_streaming_info *asi);
-    int fliteOutput(const cst_wave *w, int start, int size,
-                    int last, cst_audio_streaming_info *asi);
-    int processText(const QString &text, int voiceId) override;
-    void setRateForVoice(cst_voice *voice, float rate);
-    void setPitchForVoice(cst_voice *voice, float pitch);
-    bool init();
-    void deinit();
+    ~QTextToSpeechProcessorFlite();
 
-private:
-    struct FliteVoice {
+    struct VoiceInfo
+    {
+        int id;
         cst_voice *vox;
         void (*unregister_func)(cst_voice *vox);
         QString name;
@@ -83,12 +76,74 @@ private:
         QVoice::Gender gender;
         QVoice::Age age;
     };
-    static QWeakPointer<QTextToSpeechProcessorFlite> m_instance;
-    static QMutex m_instanceLock;
-    bool m_initialized;
+
+    Q_INVOKABLE void say(const QString &text, int voiceId, double pitch, double rate, double volume);
+    Q_INVOKABLE void pause();
+    Q_INVOKABLE void resume();
+    Q_INVOKABLE void stop();
+
+    const QList<QTextToSpeechProcessorFlite::VoiceInfo> &voices() const;
+    static constexpr QTextToSpeech::State audioStateToTts(QAudio::State audioState);
+
+private:
+    // Process a single text
+    void processText(const QString &text, int voiceId, double pitch, double rate);
+
+    // Flite callbacks
+    static int fliteOutputCb(const cst_wave *w, int start, int size,
+                            int last, cst_audio_streaming_info *asi);
+    int fliteOutput(const cst_wave *w, int start, int size,
+                    int last, cst_audio_streaming_info *asi);
+
+    bool audioOutput(const char *data, qint64 dataSize, QString &errorString);
+    void setRateForVoice(cst_voice *voice, float rate);
+    void setPitchForVoice(cst_voice *voice, float pitch);
+
+    bool init();
+    bool initAudio(double rate, int channelCount);
+    void deinitAudio();
+    bool checkFormat(const QAudioFormat &format, const QAudioDevice &device);
+    bool checkVoice(int voiceId);
+    void deleteSink();
+    void createSink();
+    QAudio::State audioSinkState() const;
+
+    inline int remainingTime() const;
+
+    void startTimer(int msecs);
+    enum TimeoutReason {TimeOut, Stop};
+    int stopTimer(TimeoutReason reason = Stop);
+    void timerEvent(QTimerEvent *event) override;
+    void setError(QAudio::Error err, const QString &errorString);
+    QAudio::Error error() const;
+    void clearError() { setError(QAudio::NoError, QString()); };
+
+    // Read available flite voices
+    QStringList fliteAvailableVoices(const QString &langCode) const;
+
+private slots:
+    void changeState(QAudio::State newState);
+
+Q_SIGNALS:
+    void errorChanged(QAudio::Error error, const QString &errorString);
+    void stateChanged(QTextToSpeech::State);
+
+private:
+    QAudioSink *m_audioSink = nullptr;
+    QAudio::State m_state = QAudio::IdleState;
+    QIODevice *m_audioBuffer = nullptr;
+    QBasicTimer m_sinkTimer;
+    int m_sinkTimerPausedAt = 0;
+    QAudio::Error m_error = QAudio::NoError;
+
+    QAudioFormat m_format;
+    double m_volume = 1;
+
     QList<VoiceInfo> m_voices;
-    QList<FliteVoice> m_fliteVoices;
-    int m_currentVoice;
+
+    // Statistics for debugging
+    qint64 numberChunks = 0;
+    qint64 totalBytes = 0;
 };
 
 QT_END_NAMESPACE

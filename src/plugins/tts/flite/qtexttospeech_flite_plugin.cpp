@@ -44,12 +44,8 @@ Q_LOGGING_CATEGORY(lcSpeechTtsFlite, "qt.speech.tts.flite")
 QTextToSpeechEngine *QTextToSpeechFlitePlugin::createTextToSpeechEngine(
         const QVariantMap &parameters, QObject *parent, QString *errorString) const
 {
-    QTextToSpeechEngineFlite *flite = new QTextToSpeechEngineFlite(parameters, parent);
-    if (flite && flite->init(errorString)) {
-        return flite;
-    }
-    delete flite;
-    return 0;
+    Q_UNUSED(errorString);
+    return new QTextToSpeechEngineFlite(errorString, parameters, parent);
 }
 
 QT_END_NAMESPACE
