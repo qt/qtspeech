@@ -50,12 +50,18 @@ QT_DECLARE_QESDP_SPECIALIZATION_DTOR_WITH_EXPORT(QVoicePrivate, Q_TEXTTOSPEECH_E
 
 class Q_TEXTTOSPEECH_EXPORT QVoice
 {
+    Q_GADGET
+    Q_PROPERTY(QString name READ name CONSTANT)
+    Q_PROPERTY(Gender gender READ gender CONSTANT)
+    Q_PROPERTY(Age age READ age CONSTANT)
+
 public:
     enum Gender {
         Male,
         Female,
         Unknown
     };
+    Q_ENUM(Gender)
 
     enum Age {
         Child,
@@ -64,6 +70,7 @@ public:
         Senior,
         Other
     };
+    Q_ENUM(Age)
 
     QVoice();
     ~QVoice();

@@ -54,6 +54,7 @@ class QTextToSpeechPrivate;
 class Q_TEXTTOSPEECH_EXPORT QTextToSpeech : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(QString engine READ engine WRITE setEngine NOTIFY engineChanged)
     Q_PROPERTY(State state READ state NOTIFY stateChanged)
     Q_PROPERTY(double volume READ volume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(double rate READ rate WRITE setRate NOTIFY rateChanged)
@@ -72,19 +73,24 @@ public:
 
     explicit QTextToSpeech(QObject *parent = nullptr);
     explicit QTextToSpeech(const QString &engine, QObject *parent = nullptr);
+    ~QTextToSpeech() override;
+
+    bool setEngine(const QString &engine);
+    QString engine() const;
+
     State state() const;
 
-    QList<QLocale> availableLocales() const;
+    Q_INVOKABLE QList<QLocale> availableLocales() const;
     QLocale locale() const;
 
     QVoice voice() const;
-    QList<QVoice> availableVoices() const;
+    Q_INVOKABLE QList<QVoice> availableVoices() const;
 
     double rate() const;
     double pitch() const;
     double volume() const;
 
-    static QStringList availableEngines();
+    Q_INVOKABLE static QStringList availableEngines();
 
 public Q_SLOTS:
     void say(const QString &text);
@@ -100,6 +106,7 @@ public Q_SLOTS:
     void setVoice(const QVoice &voice);
 
 Q_SIGNALS:
+    void engineChanged(const QString &engine);
     void stateChanged(QTextToSpeech::State state);
     void localeChanged(const QLocale &locale);
     void rateChanged(double rate);

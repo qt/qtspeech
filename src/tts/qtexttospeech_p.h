@@ -62,19 +62,22 @@ QT_BEGIN_NAMESPACE
 class QTextToSpeech;
 class QTextToSpeechPrivate : public QObjectPrivate
 {
+    Q_DECLARE_PUBLIC(QTextToSpeech)
 public:
-    QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine);
+    QTextToSpeechPrivate(QTextToSpeech *speech);
     ~QTextToSpeechPrivate();
+
+    void setEngineProvider(const QString &engine);
     static QMultiHash<QString, QCborMap> plugins(bool reload = false);
 
-    QTextToSpeechEngine *m_engine;
 private:
     bool loadMeta();
     void loadPlugin();
     static void loadPluginMetadata(QMultiHash<QString, QCborMap> &list);
-    QTextToSpeech *m_speech;
+    QTextToSpeech *q_ptr;
+    QTextToSpeechPlugin *m_plugin = nullptr;
+    QTextToSpeechEngine *m_engine = nullptr;
     QString m_providerName;
-    QTextToSpeechPlugin *m_plugin;
     QCborMap m_metaData;
     static QMutex m_mutex;
 };

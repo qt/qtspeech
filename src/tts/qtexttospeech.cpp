@@ -51,13 +51,25 @@ Q_GLOBAL_STATIC_WITH_ARGS(QFactoryLoader, loader,
 
 QMutex QTextToSpeechPrivate::m_mutex;
 
-QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech, const QString &engine)
-    : m_engine(0),
-      m_speech(speech),
-      m_providerName(engine),
-      m_plugin(0)
+QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech)
+    : q_ptr(speech)
 {
     qRegisterMetaType<QTextToSpeech::State>();
+}
+
+QTextToSpeechPrivate::~QTextToSpeechPrivate()
+{
+    delete m_engine;
+}
+
+void QTextToSpeechPrivate::setEngineProvider(const QString &engine)
+{
+    Q_Q(QTextToSpeech);
+
+    q->stop();
+    delete m_engine;
+
+    m_providerName = engine;
     if (m_providerName.isEmpty()) {
         const auto plugins = QTextToSpeechPrivate::plugins();
         int priority = -1;
@@ -84,17 +96,17 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech, const QString 
         if (!m_engine) {
             qCritical() << "Error creating text-to-speech engine" << m_providerName
                         << (errorString.isEmpty() ? QStringLiteral("") : (QStringLiteral(": ") + errorString));
+        } else {
+            m_engine->setProperty("providerName", m_providerName);
         }
         m_engine->setProperty("providerName", m_providerName);
     } else {
         qCritical() << "Error loading text-to-speech plug-in" << m_providerName;
     }
-}
 
-QTextToSpeechPrivate::~QTextToSpeechPrivate()
-{
-    m_speech->stop();
-    delete m_engine;
+    // Connect state change signal directly from the engine to the public API signal
+    if (m_engine)
+        QObject::connect(m_engine, &QTextToSpeechEngine::stateChanged, q, &QTextToSpeech::stateChanged);
 }
 
 bool QTextToSpeechPrivate::loadMeta()
@@ -201,12 +213,10 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
     \sa availableEngines()
 */
 QTextToSpeech::QTextToSpeech(QObject *parent)
-    : QObject(*new QTextToSpeechPrivate(this, QString()), parent)
+    : QObject(*new QTextToSpeechPrivate(this), parent)
 {
     Q_D(QTextToSpeech);
-    // Connect state change signal directly from the engine to the public API signal
-    if (d->m_engine)
-        connect(d->m_engine, &QTextToSpeechEngine::stateChanged, this, &QTextToSpeech::stateChanged);
+    d->setEngineProvider(QString());
 }
 
 /*!
@@ -221,12 +231,42 @@ QTextToSpeech::QTextToSpeech(QObject *parent)
   \sa availableEngines()
 */
 QTextToSpeech::QTextToSpeech(const QString &engine, QObject *parent)
-    : QObject(*new QTextToSpeechPrivate(this, engine), parent)
+    : QObject(*new QTextToSpeechPrivate(this), parent)
 {
     Q_D(QTextToSpeech);
-    // Connect state change signal directly from the engine to the public API signal
-    if (d->m_engine)
-        connect(d->m_engine, &QTextToSpeechEngine::stateChanged, this, &QTextToSpeech::stateChanged);
+    d->setEngineProvider(engine);
+}
+
+/*!
+  Destroys this QTextToSpeech object, stopping any speech.
+*/
+QTextToSpeech::~QTextToSpeech()
+{
+    stop();
+}
+
+/*!
+    \property QTextToSpeech::engine
+    \brief the engine used to synthesize text to speech.
+
+    Changing the engine stops any ongoing speech.
+*/
+bool QTextToSpeech::setEngine(const QString &engine)
+{
+    Q_D(QTextToSpeech);
+    if (d->m_providerName == engine)
+        return true;
+
+    d->setEngineProvider(engine);
+
+    emit engineChanged(d->m_providerName);
+    return d->m_engine;
+}
+
+QString QTextToSpeech::engine() const
+{
+    Q_D(const QTextToSpeech);
+    return d->m_providerName;
 }
 
 /*!
