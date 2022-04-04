@@ -2,6 +2,6 @@
     "Keys": ["macos"],
     "Provider": "macos",
     "Version": 100,
-    "Priority": 100,
+    "Priority": 50,
     "Features": []
 }
