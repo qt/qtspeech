@@ -143,14 +143,14 @@ bool QVoice::isEqual(const QVoice &other) const noexcept
 
 /*!
     \fn bool QVoice::operator==(const QVoice &lhs, const QVoice &rhs)
-    \returns whether the \a lhs voice and the \a rhs voice are identical.
+    \return whether the \a lhs voice and the \a rhs voice are identical.
 
     Two voices are identical if \l name, \l gender, and \l age are identical.
 */
 
 /*!
     \fn bool QVoice::operator!=(const QVoice &lhs, const QVoice &rhs)
-    \returns whether the \a lhs voice and the \a rhs voice are different.
+    \return whether the \a lhs voice and the \a rhs voice are different.
 */
 
 /*!

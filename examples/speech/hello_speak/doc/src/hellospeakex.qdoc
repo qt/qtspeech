@@ -26,7 +26,7 @@
 ****************************************************************************/
 
 /*!
-    \example hello_speak
+    \example speech/hello_speak
     \title Hello Speak Example
 
     \brief The Hello Speak example reads out a small piece of text.
