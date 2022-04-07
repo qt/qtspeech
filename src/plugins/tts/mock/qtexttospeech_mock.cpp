@@ -66,19 +66,20 @@ QList<QVoice> QTextToSpeechEngineMock::availableVoices() const
 {
     QList<QVoice> voices;
 
-    const QVariant voiceData = QVariant::fromValue(this);
+    const QString voiceData = m_locale.bcp47Name();
     switch (m_locale.language()) {
-    case QLocale::English:
-        voices << createVoice("Bob", QVoice::Male, QVoice::Adult, voiceData)
-               << createVoice("Anne", QVoice::Female, QVoice::Adult, voiceData);
+    case QLocale::English: {
+        voices << createVoice("Bob", QVoice::Male, QVoice::Adult, voiceData + QLatin1String("-1"))
+               << createVoice("Anne", QVoice::Female, QVoice::Adult, voiceData + QLatin1String("-2"));
         break;
+    }
     case QLocale::NorwegianBokmal:
-        voices << createVoice("Eivind", QVoice::Male, QVoice::Adult, voiceData)
-               << createVoice("Kjersti", QVoice::Female, QVoice::Adult, voiceData);
+        voices << createVoice("Eivind", QVoice::Male, QVoice::Adult, voiceData + QLatin1String("-1"))
+               << createVoice("Kjersti", QVoice::Female, QVoice::Adult, voiceData + QLatin1String("-2"));
         break;
     case QLocale::Finnish:
-        voices << createVoice("Kari", QVoice::Male, QVoice::Adult, voiceData)
-               << createVoice("Anneli", QVoice::Female, QVoice::Adult, voiceData);
+        voices << createVoice("Kari", QVoice::Male, QVoice::Adult, voiceData + QLatin1String("-1"))
+               << createVoice("Anneli", QVoice::Female, QVoice::Adult, voiceData + QLatin1String("-2"));
         break;
     default:
         Q_ASSERT_X(false, "availableVoices", "Unsupported locale!");
