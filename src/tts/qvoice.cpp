@@ -45,9 +45,9 @@ QT_BEGIN_NAMESPACE
 QT_DEFINE_QESDP_SPECIALIZATION_DTOR(QVoicePrivate)
 
 /*!
-  \class QVoice
-  \brief The QVoice class represents a particular voice.
-  \inmodule QtSpeech
+    \class QVoice
+    \brief The QVoice class represents a particular voice.
+    \inmodule QtSpeech
 */
 
 /*!
@@ -153,7 +153,8 @@ bool QVoice::isEqual(const QVoice &other) const noexcept
 */
 
 /*!
-   Returns the name of a voice.
+    \property QVoice::name
+    \brief the name of a voice
 */
 QString QVoice::name() const
 {
@@ -161,7 +162,8 @@ QString QVoice::name() const
 }
 
 /*!
-   Returns the gender of a voice.
+    \property QVoice::gender
+    \brief the gender of a voice
 */
 QVoice::Gender QVoice::gender() const
 {
@@ -169,7 +171,8 @@ QVoice::Gender QVoice::gender() const
 }
 
 /*!
-   Returns the age of a voice.
+    \property QVoice::age
+    \brief the age of a voice
 */
 QVoice::Age QVoice::age() const
 {
@@ -185,7 +188,7 @@ QVariant QVoice::data() const
 }
 
 /*!̈́
-   Returns the \a gender name of a voice.
+    Returns the \a gender name of a voice.
 */
 QString QVoice::genderName(QVoice::Gender gender)
 {
@@ -205,7 +208,7 @@ QString QVoice::genderName(QVoice::Gender gender)
 }
 
 /*!
-   Returns a string representing the \a age class of a voice.
+    Returns a string representing the \a age class of a voice.
 */
 QString QVoice::ageName(QVoice::Age age)
 {

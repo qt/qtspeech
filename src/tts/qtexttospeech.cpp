@@ -171,31 +171,39 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
 }
 
 /*!
-  \class QTextToSpeech
-  \brief The QTextToSpeech class provides a convenient access to text-to-speech engines.
-  \inmodule QtSpeech
+    \class QTextToSpeech
+    \brief The QTextToSpeech class provides a convenient access to text-to-speech engines.
+    \inmodule QtSpeech
 
-  Use \l say() to start synthesizing text.
-  It is possible to specify the language with \l setLocale().
-  To select between the available voices use \l setVoice().
-  The languages and voices depend on the available synthesizers on each platform.
-  On Linux, \c speech-dispatcher is used by default.
+    Use \l say() to start synthesizing text, and \l stop(), \l pause(), and \l resume()
+    to control the reading of the text.
+
+    It is possible to specify the language with \l setLocale(). To set a voice, get the
+    list of \l availableVoices() and set the desired voice using \l setVoice(). The list
+    of available voices depends on the active locale on most platforms.
+
+    The languages and voices depend on the available synthesizers on each platform.
+    On Linux, \c speech-dispatcher is used by default.
 */
 
 /*!
-  \enum QTextToSpeech::State
-  \value Ready          The synthesizer is ready to start a new text. This is
-                        also the state after a text was finished.
-  \value Speaking       The current text is being spoken.
-  \value Paused         The synthesis was paused and can be resumed with \l resume().
-  \value BackendError   The backend was unable to synthesize the current string.
+    \enum QTextToSpeech::State
+
+    This enum describes the current state of the text-to-speech engine.
+
+    \value Ready          The synthesizer is ready to start a new text. This is
+                          also the state after a text was finished.
+    \value Speaking       Text is being spoken.
+    \value Paused         The synthesis was paused and can be resumed with \l resume().
+    \value BackendError   The backend was unable to initialize, or failed to synthesize
+                          the provided text.
 */
 
 /*!
-  \property QTextToSpeech::state
-  This property holds the current state of the speech synthesizer.
-  Use \l say() to start synthesizing text with the current voice and locale.
+    \property QTextToSpeech::state
+    \brief the current state of the speech synthesizer.
 
+    Use \l say() to start synthesizing text with the current \l voice and \l locale.
 */
 
 /*!
@@ -203,10 +211,11 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
     engine plug-in and constructs a QTextToSpeech object as the child
     of \a parent.
 
-    The default engine may be platform-specific.
+    The default engine is platform-specific.
 
-    If the plugin fails to load, QTextToSpeech::state() returns
-    QTextToSpeech::BackendError.
+    If the engine initializes correctly, then the \l state of the engine will
+    change to QTextToSpeech::Ready; note that this might happen asynchronously.
+    If the plugin fails to load, then \l state will be set to QTextToSpeech::BackendError.
 
     \sa availableEngines()
 */
@@ -218,15 +227,17 @@ QTextToSpeech::QTextToSpeech(QObject *parent)
 }
 
 /*!
-  Loads a text-to-speech engine from a plug-in that matches parameter \a engine and
-  constructs a QTextToSpeech object as the child of \a parent.
+    Loads a text-to-speech engine from a plug-in that matches parameter \a engine and
+    constructs a QTextToSpeech object as the child of \a parent.
 
-  If \a engine is empty, the default engine plug-in is used. The default
-  engine may be platform-specific.
+    If \a engine is empty, the default engine plug-in is used. The default
+    engine is platform-specific.
 
-  If the plugin fails to load, QTextToSpeech::state() returns QTextToSpeech::BackendError.
+    If the engine initializes correctly, the \l state of the engine will be set
+    to QTextToSpeech::Ready. If the plugin fails to load, or if the engine fails to
+    initialize, the engine's \l state will be set to QTextToSpeech::BackendError.
 
-  \sa availableEngines()
+    \sa availableEngines()
 */
 QTextToSpeech::QTextToSpeech(const QString &engine, QObject *parent)
     : QObject(*new QTextToSpeechPrivate(this), parent)
@@ -236,7 +247,7 @@ QTextToSpeech::QTextToSpeech(const QString &engine, QObject *parent)
 }
 
 /*!
-  Destroys this QTextToSpeech object, stopping any speech.
+    Destroys this QTextToSpeech object, stopping any speech.
 */
 QTextToSpeech::~QTextToSpeech()
 {
@@ -248,6 +259,14 @@ QTextToSpeech::~QTextToSpeech()
     \brief the engine used to synthesize text to speech.
 
     Changing the engine stops any ongoing speech.
+
+    On most platforms, changing the engine will update the list of
+    \l{availableLocales()}{available locales} and \l{availableVoices()}{available voices}.
+*/
+
+/*!
+    Sets the engine used by this QTextToSpeech object to \a engine.
+    \return whether \a engine could be set successfully.
 */
 bool QTextToSpeech::setEngine(const QString &engine)
 {
@@ -268,12 +287,15 @@ QString QTextToSpeech::engine() const
 }
 
 /*!
- Gets the list of supported text-to-speech engine plug-ins.
+    Gets the list of supported text-to-speech engine plug-ins.
+
+    \sa engine
 */
 QStringList QTextToSpeech::availableEngines()
 {
     return QTextToSpeechPrivate::plugins().keys();
 }
+
 
 QTextToSpeech::State QTextToSpeech::state() const
 {
@@ -284,11 +306,19 @@ QTextToSpeech::State QTextToSpeech::state() const
 }
 
 /*!
-  Start synthesizing the \a text.
-  This function will start the asynchronous reading of the text.
-  The current state is available using the \l state property. Once the
-  synthesis is done, a \l stateChanged() signal with the \l Ready state
-  is emitted.
+    Starts synthesizing the \a text.
+
+    This function starts sythesizing the speech asynchronously, and reads the text to the
+    default audio output device.
+
+    \note All in-progress readings are stopped before beginning to read the recently
+    synthesized text.
+
+    The current state is available using the \l state property, and is
+    set to \l Speaking once the reading starts. When the reading is done,
+    \l state will be set to \l Ready.
+
+    \sa stop() pause() resume()
 */
 void QTextToSpeech::say(const QString &text)
 {
@@ -298,7 +328,11 @@ void QTextToSpeech::say(const QString &text)
 }
 
 /*!
-  Stop the text that is being read.
+    Stops the current reading.
+
+    The reading cannot be resumed.
+
+    \sa say() pause()
 */
 void QTextToSpeech::stop()
 {
@@ -308,21 +342,15 @@ void QTextToSpeech::stop()
 }
 
 /*!
-  Pauses the current speech.
+    Pauses the current speech.
 
-  Note:
-  \list
-      \li This function depends on the platform and the backend. It may not
-      work at all, it may take several seconds before it takes effect,
-      or it may pause instantly.
-      Some synthesizers will look for a break that they can later resume
-      from, such as a sentence end.
-      \li Due to Android platform limitations, pause() stops what is presently
-      being said, while resume() starts the previously queued sentence from
-      the beginning.
-  \endlist
+    \note The behavior of this function depends on the platform and the \l engine.
+    Some synthesizers will look for a break that they can later resume from,
+    such as a sentence end, while others may pause instantly. Due to
+    Android platform limitations, pause() stops what is presently being said,
+    while resume() starts the previously queued sentence from the beginning.
 
-  \sa resume()
+    \sa resume()
 */
 void QTextToSpeech::pause()
 {
@@ -332,8 +360,9 @@ void QTextToSpeech::pause()
 }
 
 /*!
-  Resume speaking after \l pause() has been called.
-  \sa pause()
+    Resume speaking after \l pause() has been called.
+
+    \sa pause()
 */
 void QTextToSpeech::resume()
 {
@@ -343,9 +372,10 @@ void QTextToSpeech::resume()
 }
 
 /*!
- \property QTextToSpeech::pitch
- This property holds the voice pitch, ranging from -1.0 to 1.0.
- The default of 0.0 is the normal speech pitch.
+    \property QTextToSpeech::pitch
+    \brief the voice pitch, ranging from -1.0 to 1.0.
+
+    The default of 0.0 is the normal speech pitch.
 */
 
 void QTextToSpeech::setPitch(double pitch)
@@ -370,9 +400,10 @@ double QTextToSpeech::pitch() const
 }
 
 /*!
- \property QTextToSpeech::rate
- This property holds the current voice rate, ranging from -1.0 to 1.0.
- The default value of 0.0 is normal speech flow.
+    \property QTextToSpeech::rate
+    \brief the current voice rate, ranging from -1.0 to 1.0.
+
+    The default value of 0.0 is normal speech flow.
 */
 void QTextToSpeech::setRate(double rate)
 {
@@ -395,9 +426,10 @@ double QTextToSpeech::rate() const
 }
 
 /*!
- \property QTextToSpeech::volume
- This property holds the current volume, ranging from 0.0 to 1.0.
- The default value is the platform's default volume.
+    \property QTextToSpeech::volume
+    \brief the current volume, ranging from 0.0 to 1.0.
+
+    The default value is the platform's default volume.
 */
 void QTextToSpeech::setVolume(double volume)
 {
@@ -422,8 +454,14 @@ double QTextToSpeech::volume() const
 }
 
 /*!
- Sets the \a locale to a given locale if possible.
- The default is the system locale.
+    \property QTextToSpeech::locale
+    \brief the current locale in use. By default, the system locale is used.
+
+    On some platforms, changing the locale will update the list of
+    \l{availableVoices()}{available voices}, and if the current voice is not
+    available with the new locale, a new voice will be set.
+
+    \sa voice
 */
 void QTextToSpeech::setLocale(const QLocale &locale)
 {
@@ -442,11 +480,6 @@ void QTextToSpeech::setLocale(const QLocale &locale)
     }
 }
 
-/*!
- \property QTextToSpeech::locale
- This property holds the current locale in use. By default, the system locale
- is used.
-*/
 QLocale QTextToSpeech::locale() const
 {
     Q_D(const QTextToSpeech);
@@ -456,9 +489,10 @@ QLocale QTextToSpeech::locale() const
 }
 
 /*!
- Gets a list of locales that are currently supported.
- \note On some platforms these can change, for example,
-       when the backend changes synthesizers.
+    \return the list of locales that are supported by the active \l engine.
+
+    \note On some platforms these can change, for example,
+    when the backend changes synthesizers.
 */
 QList<QLocale> QTextToSpeech::availableLocales() const
 {
@@ -469,10 +503,12 @@ QList<QLocale> QTextToSpeech::availableLocales() const
 }
 
 /*!
- Sets the \a voice to use.
+    \property QTextToSpeech::voice
+    \brief the voice that will be used for the speech.
 
- \note On some platforms, setting the voice changes other voice attributes
- such as locale, pitch, and so on. These changes trigger the emission of signals.
+    On some platforms, setting the voice changes other voice attributes such
+    as \l locale, \l pitch, and so on. These changes trigger the emission of
+    signals.
 */
 void QTextToSpeech::setVoice(const QVoice &voice)
 {
@@ -491,10 +527,6 @@ void QTextToSpeech::setVoice(const QVoice &voice)
     }
 }
 
-/*!
- \property QTextToSpeech::voice
- This property holds the current voice used for the speech.
-*/
 QVoice QTextToSpeech::voice() const
 {
     Q_D(const QTextToSpeech);
@@ -504,8 +536,9 @@ QVoice QTextToSpeech::voice() const
 }
 
 /*!
- Gets a list of voices available for the current locale.
- \note if no locale has been set, the system locale is used.
+    \return the list of voices available for the current \l locale.
+
+    \note If no locale has been set, the system locale is used.
 */
 QList<QVoice> QTextToSpeech::availableVoices() const
 {
