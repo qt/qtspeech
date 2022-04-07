@@ -59,13 +59,15 @@ private slots:
 
     void availableVoices();
     void availableLocales();
-    void say_hello();
-    void pauseResume();
 
-    void speech_rate();
+    void rate();
     void pitch();
-    void set_voice();
     void volume();
+
+    void sayHello();
+    void pauseResume();
+    void sayWithVoices();
+    void sayWithRates();
 };
 
 void tst_QTextToSpeech::initTestCase_data()
@@ -123,7 +125,61 @@ void tst_QTextToSpeech::availableLocales()
         qInfo().noquote() << "-" << locale;
 }
 
-void tst_QTextToSpeech::say_hello()
+void tst_QTextToSpeech::rate()
+{
+    QFETCH_GLOBAL(QString, engine);
+    const QString text = QStringLiteral("example text at different rates");
+    QTextToSpeech tts(engine);
+    QCOMPARE(tts.state(), QTextToSpeech::Ready);
+
+    tts.setRate(0.5);
+#ifndef HAVE_SPEECHD_BEFORE_090
+    QCOMPARE(tts.rate(), 0.5);
+#endif
+    QSignalSpy spy(&tts, &QTextToSpeech::rateChanged);
+    tts.setRate(0.0);
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.value(0).first().toDouble(), 0.0);
+}
+
+void tst_QTextToSpeech::pitch()
+{
+    QFETCH_GLOBAL(QString, engine);
+    QTextToSpeech tts(engine);
+    tts.setPitch(0.0);
+    QCOMPARE(tts.pitch(), 0.0);
+
+    QSignalSpy spy(&tts, &QTextToSpeech::pitchChanged);
+    int signalCount = 0;
+    for (int i = -10; i <= 10; ++i) {
+        tts.setPitch(i / 10.0);
+#ifndef HAVE_SPEECHD_BEFORE_090
+        QCOMPARE(tts.pitch(), i / 10.0);
+#endif
+        QCOMPARE(spy.count(), ++signalCount);
+    }
+}
+
+void tst_QTextToSpeech::volume()
+{
+    QFETCH_GLOBAL(QString, engine);
+    QTextToSpeech tts(engine);
+    tts.setVolume(0.0);
+
+    QSignalSpy spy(&tts, &QTextToSpeech::volumeChanged);
+    tts.setVolume(0.7);
+    QTRY_COMPARE(spy.count(), 1);
+    QVERIFY(spy.value(0).first().toDouble() > 0.6);
+
+#ifndef HAVE_SPEECHD_BEFORE_090  // older speechd doesn't signal any volume changes
+    // engines use different systems (integers etc), even fuzzy compare is off
+    QVERIFY2(tts.volume() > 0.65, QByteArray::number(tts.volume()));
+    QVERIFY2(tts.volume() < 0.75, QByteArray::number(tts.volume()));
+#endif
+}
+
+
+void tst_QTextToSpeech::sayHello()
 {
     QFETCH_GLOBAL(QString, engine);
     const QString text = QStringLiteral("saying hello with %1");
@@ -158,47 +214,7 @@ void tst_QTextToSpeech::pauseResume()
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
 }
 
-void tst_QTextToSpeech::speech_rate()
-{
-    QFETCH_GLOBAL(QString, engine);
-    const QString text = QStringLiteral("example text at different rates");
-    QTextToSpeech tts(engine);
-    tts.setRate(0.5);
-    QCOMPARE(tts.state(), QTextToSpeech::Ready);
-#ifndef HAVE_SPEECHD_BEFORE_090
-    QCOMPARE(tts.rate(), 0.5);
-#endif
-
-    qint64 lastTime = 0;
-    // check that speaking at slower rate takes more time (for 0.5, 0.0, -0.5)
-    for (int i = 1; i >= -1; --i) {
-        tts.setRate(i * 0.5);
-        QElapsedTimer timer;
-        timer.start();
-        tts.say(text);
-        QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
-        QSignalSpy spy(&tts, &QTextToSpeech::stateChanged);
-        QVERIFY(spy.wait(SpeechDuration));
-        QCOMPARE(tts.state(), QTextToSpeech::Ready);
-        qint64 time = timer.elapsed();
-        QVERIFY(time > lastTime);
-        lastTime = time;
-    }
-}
-
-void tst_QTextToSpeech::pitch()
-{
-    QFETCH_GLOBAL(QString, engine);
-    QTextToSpeech tts(engine);
-    for (int i = -10; i <= 10; ++i) {
-        tts.setPitch(i / 10.0);
-#ifndef HAVE_SPEECHD_BEFORE_090
-        QCOMPARE(tts.pitch(), i / 10.0);
-#endif
-    }
-}
-
-void tst_QTextToSpeech::set_voice()
+void tst_QTextToSpeech::sayWithVoices()
 {
     QFETCH_GLOBAL(QString, engine);
     const QString text = QStringLiteral("engine %1 with voice of %2");
@@ -225,21 +241,28 @@ void tst_QTextToSpeech::set_voice()
     }
 }
 
-void tst_QTextToSpeech::volume()
+void tst_QTextToSpeech::sayWithRates()
 {
     QFETCH_GLOBAL(QString, engine);
+    const QString text = QStringLiteral("test at different rates");
     QTextToSpeech tts(engine);
-    double volumeSignalEmitted = -99.0;
-    connect(&tts, static_cast<void (QTextToSpeech::*)(double)>(&QTextToSpeech::volumeChanged),
-            [&volumeSignalEmitted](double volume){ volumeSignalEmitted = volume; } );
-    tts.setVolume(0.7);
-    QTRY_VERIFY(volumeSignalEmitted > 0.6);
+    QCOMPARE(tts.state(), QTextToSpeech::Ready);
 
-#ifndef HAVE_SPEECHD_BEFORE_090  // older speechd doesn't signal any volume changes
-    // engines use different systems (integers etc), even fuzzy compare is off
-    QVERIFY2(tts.volume() > 0.65, QByteArray::number(tts.volume()));
-    QVERIFY2(tts.volume() < 0.75, QByteArray::number(tts.volume()));
-#endif
+    qint64 lastTime = 0;
+    // check that speaking at slower rate takes more time (for 0.5, 0.0, -0.5)
+    for (int i = 1; i >= -1; --i) {
+        tts.setRate(i * 0.5);
+        QElapsedTimer timer;
+        timer.start();
+        tts.say(text);
+        QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
+        QSignalSpy spy(&tts, &QTextToSpeech::stateChanged);
+        QVERIFY(spy.wait(SpeechDuration));
+        QCOMPARE(tts.state(), QTextToSpeech::Ready);
+        qint64 time = timer.elapsed();
+        QVERIFY(time > lastTime);
+        lastTime = time;
+    }
 }
 
 QTEST_MAIN(tst_QTextToSpeech)

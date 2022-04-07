@@ -1,0 +1,10 @@
+[sayHello:flite]
+*
+[sayWithVoices:flite]
+*
+[sayWithVoices:speechd]
+*
+[sayWithRates:flite]
+*
+[pauseResume:speechd]
+*

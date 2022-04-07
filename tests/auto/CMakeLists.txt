@@ -1,1 +1,1 @@
-add_subdirectory(texttospeech)
+add_subdirectory(qtexttospeech)

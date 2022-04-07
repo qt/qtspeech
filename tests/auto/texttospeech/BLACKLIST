@@ -1,8 +1,0 @@
-[say_hello:flite]
-*
-[set_voice:flite]
-*
-[set_voice:speechd]
-*
-[speech_rate:flite]
-*
