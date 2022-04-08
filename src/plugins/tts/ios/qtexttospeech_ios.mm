@@ -97,14 +97,14 @@ QT_BEGIN_NAMESPACE
 QTextToSpeechEngineIos::QTextToSpeechEngineIos(const QVariantMap &/*parameters*/, QObject *parent)
     : QTextToSpeechEngine(parent)
     , m_speechSynthesizer([AVSpeechSynthesizer new])
-    , m_locale(QLocale())
-    , m_voice(QVoice())
     , m_state(QTextToSpeech::Ready)
     , m_pitch(0)
     , m_rate(0)
     , m_volume(1)
 {
     m_speechSynthesizer.delegate = [[QIOSSpeechSynthesizerDelegate alloc] initWithQIOSTextToSpeechEngineIos:this];
+    if (!setLocale(QLocale()))
+        setLocale(QLocale().language());
 }
 
 QTextToSpeechEngineIos::~QTextToSpeechEngineIos()
@@ -188,25 +188,18 @@ double QTextToSpeechEngineIos::volume() const
 
 QList<QLocale> QTextToSpeechEngineIos::availableLocales() const
 {
-    QList<QLocale> locales;
-    QString prevVoiceLanguage;
+    QSet<QLocale> locales;
     for (AVSpeechSynthesisVoice *voice in [AVSpeechSynthesisVoice speechVoices]) {
         QString language = QString::fromNSString(voice.language);
-        // Filter out languages already added. A language will occur several times
-        // in sequence if more than one voice name exists for them.
-        if (language == prevVoiceLanguage)
-            continue;
         locales << QLocale(language);
-        prevVoiceLanguage = language;
     }
 
-    return locales;
+    return locales.values();
 }
 
 bool QTextToSpeechEngineIos::setLocale(const QLocale &locale)
 {
-    NSString *bcp47 = locale.bcp47Name().toNSString();
-    AVSpeechSynthesisVoice *defaultAvVoice = [AVSpeechSynthesisVoice voiceWithLanguage:bcp47];
+    AVSpeechSynthesisVoice *defaultAvVoice = [AVSpeechSynthesisVoice voiceWithLanguage:locale.bcp47Name().toNSString()];
     if (!defaultAvVoice)
         return false;
 
@@ -223,10 +216,10 @@ QLocale QTextToSpeechEngineIos::locale() const
 QList<QVoice> QTextToSpeechEngineIos::availableVoices() const
 {
     QList<QVoice> voices;
-    const QString countryCode = m_locale.name().mid(3);
 
     for (AVSpeechSynthesisVoice *avVoice in [AVSpeechSynthesisVoice speechVoices]) {
-        if (QString::fromNSString(avVoice.language).endsWith(countryCode))
+        const QLocale voiceLocale(QString::fromNSString(avVoice.language));
+        if (m_locale == voiceLocale)
             voices << toQVoice(avVoice);
     }
 
@@ -240,6 +233,7 @@ bool QTextToSpeechEngineIos::setVoice(const QVoice &voice)
         return false;
 
     m_voice = voice;
+    m_locale = QLocale(QString::fromNSString(avVoice.language));
     return true;
 }
 
@@ -250,17 +244,29 @@ QVoice QTextToSpeechEngineIos::voice() const
 
 AVSpeechSynthesisVoice *QTextToSpeechEngineIos::fromQVoice(const QVoice &voice) const
 {
-    for (AVSpeechSynthesisVoice *avVoice in [AVSpeechSynthesisVoice speechVoices]) {
-        if (voice.name() == QString::fromNSString(avVoice.name))
-            return avVoice;
-    }
-
-    return nullptr;
+    const QString identifier = voiceData(voice).toString();
+    AVSpeechSynthesisVoice *avVoice = [AVSpeechSynthesisVoice voiceWithIdentifier:identifier.toNSString()];
+    return avVoice;
 }
 
 QVoice QTextToSpeechEngineIos::toQVoice(AVSpeechSynthesisVoice *avVoice) const
 {
-    return createVoice(QString::fromNSString(avVoice.name), QVoice::Unknown, QVoice::Other, QVariant());
+    // only from macOS 10.15 and iOS 13 on
+    const QVoice::Gender gender = [avVoice]{
+        if (@available(macos 10.15, ios 13, *)) {
+            switch (avVoice.gender) {
+            case AVSpeechSynthesisVoiceGenderMale:
+                return QVoice::Male;
+            case AVSpeechSynthesisVoiceGenderFemale:
+                return QVoice::Female;
+            default:
+                break;
+            };
+        }
+        return QVoice::Unknown;
+    }();
+
+    return createVoice(QString::fromNSString(avVoice.name), gender, QVoice::Other, QString::fromNSString(avVoice.identifier));
 }
 
 void QTextToSpeechEngineIos::setState(QTextToSpeech::State state)
