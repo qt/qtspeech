@@ -428,9 +428,17 @@ double QTextToSpeech::volume() const
 void QTextToSpeech::setLocale(const QLocale &locale)
 {
     Q_D(QTextToSpeech);
-    if (d->m_engine && d->m_engine->setLocale(locale)) {
+    if (!d->m_engine)
+        return;
+
+    if (d->m_engine->locale() == locale)
+        return;
+
+    const QVoice oldVoice = voice();
+    if (d->m_engine->setLocale(locale)) {
         emit localeChanged(locale);
-        emit voiceChanged(d->m_engine->voice());
+        if (const QVoice newVoice = d->m_engine->voice(); oldVoice != newVoice)
+            emit voiceChanged(newVoice);
     }
 }
 
@@ -469,8 +477,18 @@ QList<QLocale> QTextToSpeech::availableLocales() const
 void QTextToSpeech::setVoice(const QVoice &voice)
 {
     Q_D(QTextToSpeech);
-    if (d->m_engine && d->m_engine->setVoice(voice))
+    if (!d->m_engine)
+        return;
+
+    if (d->m_engine->voice() == voice)
+        return;
+
+    const QLocale oldLocale = locale();
+    if (d->m_engine->setVoice(voice)) {
         emit voiceChanged(voice);
+        if (const QLocale newLocale = d->m_engine->locale(); newLocale != oldLocale)
+            emit localeChanged(newLocale);
+    }
 }
 
 /*!

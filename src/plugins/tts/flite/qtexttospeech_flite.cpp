@@ -52,12 +52,12 @@ QTextToSpeechEngineFlite::~QTextToSpeechEngineFlite()
 
 QList<QLocale> QTextToSpeechEngineFlite::availableLocales() const
 {
-    return m_locales;
+    return m_voices.uniqueKeys();
 }
 
 QList<QVoice> QTextToSpeechEngineFlite::availableVoices() const
 {
-    return m_voices.values(m_currentLocale.name());
+    return m_voices.values(m_currentLocale);
 }
 
 void QTextToSpeechEngineFlite::say(const QString &text)
@@ -120,16 +120,12 @@ QLocale QTextToSpeechEngineFlite::locale() const
 
 bool QTextToSpeechEngineFlite::setLocale(const QLocale &locale)
 {
-    for (const QLocale &l : qAsConst(m_locales)) {
-        if (l.name() == locale.name()) {
-            if (m_currentLocale.name() != locale.name()) {
-                m_currentLocale = locale;
-                m_currentVoice = availableVoices().first();
-            }
-            return true;
-        }
-    }
-    return false;
+    const auto &voices = m_voices.values(locale);
+    if (voices.isEmpty())
+        return false;
+    m_currentLocale = locale;
+    setVoice(voices.first());
+    return true;
 }
 
 double QTextToSpeechEngineFlite::volume() const
@@ -149,14 +145,15 @@ QVoice QTextToSpeechEngineFlite::voice() const
 
 bool QTextToSpeechEngineFlite::setVoice(const QVoice &voice)
 {
-    const auto voices = availableVoices();
-    for (const QVoice &availableVoice : voices) {
-        if (QTextToSpeechEngine::voiceData(availableVoice) == QTextToSpeechEngine::voiceData(voice)) {
-            m_currentVoice = voice;
-            return true;
-        }
+    QLocale locale = m_voices.key(voice); // returns default locale if not found, so
+    if (!m_voices.contains(locale, voice)) {
+        qWarning() << "Voice" << voice << "is not supported by this engine";
+        return false;
     }
-    return false;
+
+    m_currentVoice = voice;
+    m_currentLocale = locale;
+    return true;
 }
 
 QTextToSpeech::State QTextToSpeechEngineFlite::state() const
@@ -169,13 +166,11 @@ bool QTextToSpeechEngineFlite::init(QString *errorString)
     int i = 0;
     const QList<QTextToSpeechProcessor::VoiceInfo> &voices = m_processor->voices();
     for (const QTextToSpeechProcessor::VoiceInfo &voiceInfo : voices) {
-        QString name = voiceInfo.name;
-        QLocale locale(voiceInfo.locale);
-        QVoice voice = QTextToSpeechEngine::createVoice(name, voiceInfo.gender, voiceInfo.age,
-                                                        QVariant(voiceInfo.id));
-        m_voices.insert(voiceInfo.locale, voice);
-        if (!m_locales.contains(locale))
-            m_locales.append(locale);
+        const QString name = voiceInfo.name;
+        const QLocale locale(voiceInfo.locale);
+        const QVoice voice = QTextToSpeechEngine::createVoice(name, voiceInfo.gender, voiceInfo.age,
+                                                              QVariant(voiceInfo.id));
+        m_voices.insert(locale, voice);
         // Use the first available locale/voice as a fallback
         if (i == 0) {
             m_currentVoice = voice;
@@ -184,7 +179,7 @@ bool QTextToSpeechEngineFlite::init(QString *errorString)
         i++;
     }
     // Attempt to switch to the system locale
-    setLocale(QLocale::system());
+    setLocale(QLocale());
     connect(m_processor.data(), &QTextToSpeechProcessor::notSpeaking,
             this, &QTextToSpeechEngineFlite::onNotSpeaking);
     if (errorString)

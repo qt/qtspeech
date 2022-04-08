@@ -190,6 +190,9 @@ bool QTextToSpeechEngineMock::setLocale(const QLocale &locale)
     if (!availableLocales().contains(locale))
         return false;
     m_locale = locale;
+    const auto voices = availableVoices();
+    if (!voices.contains(m_voice))
+        m_voice = voices.isEmpty() ? QVoice() : voices.first();
     return true;
 }
 
@@ -214,8 +217,19 @@ QVoice QTextToSpeechEngineMock::voice() const
 
 bool QTextToSpeechEngineMock::setVoice(const QVoice &voice)
 {
-    if (!availableVoices().contains(voice))
+    const QString voiceId = voiceData(voice).toString();
+    const QLocale voiceLocale = QLocale(voiceId.left(voiceId.lastIndexOf("-")));
+    if (!availableLocales().contains(voiceLocale)) {
+        qWarning("Engine does not support voice's locale %s",
+                 qPrintable(voiceLocale.bcp47Name()));
         return false;
+    }
+    m_locale = voiceLocale;
+    if (!availableVoices().contains(voice)) {
+        qWarning("Engine does not support voice %s in the locale %s",
+                 qPrintable(voice.name()), qPrintable(voiceLocale.bcp47Name()));
+        return false;
+    }
     m_voice = voice;
     return true;
 }

@@ -40,6 +40,7 @@
 #include "qtexttospeechengine.h"
 #include "qvoice.h"
 
+#include <QtCore/qhash.h>
 #include <QtCore/qlist.h>
 #include <QtCore/qlocale.h>
 #include <QtCore/qobject.h>
@@ -78,7 +79,10 @@ public:
     void spdStateChanged(SPDNotificationType state);
 
 private:
-
+    struct VoiceData {
+        QLocale locale;
+        QByteArray module;
+    };
     QLocale localeForVoice(SPDVoice *voice) const;
     bool connectToSpeechDispatcher();
     void updateVoices();
@@ -86,11 +90,11 @@ private:
     QTextToSpeech::State m_state;
     SPDConnection *speechDispatcher;
     QLocale m_currentLocale;
-    QList<QLocale> m_locales;
     QVoice m_currentVoice;
     // Voices mapped by their locale name.
-    QMultiMap<QString, QVoice> m_voices;
+    QMultiHash<QLocale, QVoice> m_voices;
 };
+
 QT_END_NAMESPACE
 
 #endif

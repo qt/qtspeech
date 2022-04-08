@@ -60,6 +60,9 @@ private slots:
     void availableVoices();
     void availableLocales();
 
+    void locale();
+    void voice();
+
     void rate();
     void pitch();
     void volume();
@@ -123,6 +126,122 @@ void tst_QTextToSpeech::availableLocales()
     qInfo("Available locales:");
     for (const auto &locale : availableLocales)
         qInfo().noquote() << "-" << locale;
+}
+
+/*
+    Testing the locale property, and its dependency on the voice
+    property.
+*/
+void tst_QTextToSpeech::locale()
+{
+    QFETCH_GLOBAL(QString, engine);
+    QTextToSpeech tts(engine);
+    QTRY_VERIFY(tts.state() == QTextToSpeech::Ready);
+
+    const auto availableLocales = tts.availableLocales();
+    // every engine must have a working default locale if it's Ready
+    QVERIFY(availableLocales.contains(tts.locale()));
+    if (availableLocales.count() < 2)
+        QSKIP("Engine doesn't support more than one locale");
+
+    tts.setLocale(availableLocales[0]);
+    // changing the locale results in a voice that is supported by that locale
+    const auto voices0 = tts.availableVoices();
+    const QVoice voice0 = tts.voice();
+    QVERIFY(voices0.contains(voice0));
+
+    QSignalSpy localeSpy(&tts, &QTextToSpeech::localeChanged);
+    QSignalSpy voiceSpy(&tts, &QTextToSpeech::voiceChanged);
+
+    // repeat, watch signal emissions
+    tts.setLocale(availableLocales[1]);
+    QCOMPARE(localeSpy.count(), 1);
+
+    // a locale is only available if it has voices
+    const auto voices1 = tts.availableVoices();
+    QVERIFY(voices1.count());
+    // If the voice is supported in the new locale, then it shouldn't change,
+    // otherwise the voice should change as well.
+    if (voices1.contains(voice0))
+        QCOMPARE(voiceSpy.count(), 0);
+    else
+        QCOMPARE(voiceSpy.count(), 1);
+}
+
+/*
+    Testing the voice property, and its dependency on the locale
+    property.
+
+    We cannot test all things on engines that have only a single voice, or no
+    locale that supports multiple voices.
+*/
+void tst_QTextToSpeech::voice()
+{
+    QFETCH_GLOBAL(QString, engine);
+    QTextToSpeech tts(engine);
+    QTRY_VERIFY(tts.state() == QTextToSpeech::Ready);
+
+    const QVoice defaultVoice = tts.voice();
+    const QLocale defaultLocale = tts.locale();
+    // every engine must have a working default voice if it's Ready
+    QVERIFY(defaultVoice != QVoice());
+
+    // find a locale with more than one voice, and a voice from another locale
+    QList<QVoice> availableVoices;
+    QLocale voicesLocale;
+    QVoice otherVoice;
+    QLocale otherLocale;
+    for (const auto &locale : tts.availableLocales()) {
+        tts.setLocale(locale);
+        const auto voices = tts.availableVoices();
+        if (voices.count() > 1 && availableVoices.isEmpty()) {
+            availableVoices = voices;
+            voicesLocale = locale;
+        }
+        if (voices != availableVoices && voices.first() != defaultVoice) {
+            otherVoice = voices.first();
+            otherLocale = locale;
+        }
+        // we found everything
+        if (availableVoices.count() > 1 && otherVoice != QVoice())
+            break;
+    }
+    // if we found neither, then we cannot test
+    if (availableVoices.count() < 2 && otherVoice == QVoice())
+        QSKIP("Engine %s supports only a single voice", qPrintable(engine));
+
+    tts.setVoice(defaultVoice);
+    QCOMPARE(tts.locale(), defaultLocale);
+
+    int expectedVoiceChanged = 0;
+    int expectedLocaleChanged = 0;
+    QSignalSpy voiceSpy(&tts, &QTextToSpeech::voiceChanged);
+    QSignalSpy localeSpy(&tts, &QTextToSpeech::localeChanged);
+
+    if (otherVoice != QVoice() && otherVoice != defaultVoice) {
+        QVERIFY(otherLocale != voicesLocale);
+        // at this point, setting to otherVoice only changes things when it's not the default
+        ++expectedVoiceChanged;
+        ++expectedLocaleChanged;
+        tts.setVoice(otherVoice);
+        QCOMPARE(voiceSpy.count(), expectedVoiceChanged);
+        QCOMPARE(tts.locale(), otherLocale);
+        QCOMPARE(localeSpy.count(), expectedLocaleChanged);
+    } else {
+        otherLocale = defaultLocale;
+    }
+
+    // two voices from the same locale
+    if (availableVoices.count() > 1) {
+        tts.setVoice(availableVoices[0]);
+        QCOMPARE(voiceSpy.count(), ++expectedVoiceChanged);
+        if (voicesLocale != otherLocale)
+            ++expectedLocaleChanged;
+        QCOMPARE(localeSpy.count(), expectedLocaleChanged);
+        tts.setVoice(availableVoices[1]);
+        QCOMPARE(voiceSpy.count(), ++expectedVoiceChanged);
+        QCOMPARE(localeSpy.count(), expectedLocaleChanged);
+    }
 }
 
 void tst_QTextToSpeech::rate()

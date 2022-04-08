@@ -45,7 +45,7 @@
 #include <QtCore/QList>
 #include <QtCore/QLocale>
 #include <QtCore/QSharedPointer>
-#include <QtCore/QMultiMap>
+#include <QtCore/QMultiHash>
 
 QT_BEGIN_NAMESPACE
 
@@ -86,10 +86,9 @@ private:
     QTextToSpeech::State m_state;
     QSharedPointer<QTextToSpeechProcessorFlite> m_processor;
     QLocale m_currentLocale;
-    QList<QLocale> m_locales;
     QVoice m_currentVoice;
     // Voices mapped by their locale name.
-    QMultiMap<QString, QVoice> m_voices;
+    QMultiHash<QLocale, QVoice> m_voices;
 };
 
 QT_END_NAMESPACE
