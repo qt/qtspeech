@@ -351,6 +351,12 @@ void QTextToSpeech::resume()
 void QTextToSpeech::setPitch(double pitch)
 {
     Q_D(QTextToSpeech);
+    if (!d->m_engine)
+        return;
+
+    pitch = qBound(-1.0, pitch, 1.0);
+    if (d->m_engine->pitch() == pitch)
+        return;
     if (d->m_engine && d->m_engine->setPitch(pitch))
         emit pitchChanged(pitch);
 }
@@ -371,6 +377,11 @@ double QTextToSpeech::pitch() const
 void QTextToSpeech::setRate(double rate)
 {
     Q_D(QTextToSpeech);
+    if (!d->m_engine)
+        return;
+    rate = qBound(-1.0, rate, 1.0);
+    if (d->m_engine->rate() == rate)
+        return;
     if (d->m_engine && d->m_engine->setRate(rate))
         emit rateChanged(rate);
 }
@@ -391,8 +402,14 @@ double QTextToSpeech::rate() const
 void QTextToSpeech::setVolume(double volume)
 {
     Q_D(QTextToSpeech);
+    if (!d->m_engine)
+        return;
+
     volume = qBound(0.0, volume, 1.0);
-    if (d->m_engine && d->m_engine->setVolume(volume))
+    if (d->m_engine->volume() == volume)
+        return;
+
+    if (d->m_engine->setVolume(volume))
         emit volumeChanged(volume);
 }
 

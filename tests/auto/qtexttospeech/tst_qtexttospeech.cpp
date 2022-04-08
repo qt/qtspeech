@@ -140,6 +140,9 @@ void tst_QTextToSpeech::rate()
     tts.setRate(0.0);
     QCOMPARE(spy.count(), 1);
     QCOMPARE(spy.value(0).first().toDouble(), 0.0);
+
+    tts.setRate(tts.rate());
+    QCOMPARE(spy.count(), 1);
 }
 
 void tst_QTextToSpeech::pitch()
@@ -157,6 +160,8 @@ void tst_QTextToSpeech::pitch()
         QCOMPARE(tts.pitch(), i / 10.0);
 #endif
         QCOMPARE(spy.count(), ++signalCount);
+        tts.setPitch(tts.pitch());
+        QCOMPARE(spy.count(), signalCount);
     }
 }
 
@@ -176,6 +181,9 @@ void tst_QTextToSpeech::volume()
     QVERIFY2(tts.volume() > 0.65, QByteArray::number(tts.volume()));
     QVERIFY2(tts.volume() < 0.75, QByteArray::number(tts.volume()));
 #endif
+
+    tts.setVolume(tts.volume());
+    QCOMPARE(spy.count(), 1);
 }
 
 
