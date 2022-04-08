@@ -78,14 +78,13 @@ public:
     QTextToSpeech::State state() const override;
 
     void speechStopped(bool);
+    void speaking();
 
 private:
     void updateVoices();
-    bool isSpeaking() const;
-    bool isPaused() const;
 
     QTextToSpeech::State m_state;
-//    QVoice m_currentVoice;
+    bool pauseRequested = false;
 
     QVoice voiceForNSVoice(NSString *voiceString) const;
     NSSpeechSynthesizer *speechSynthesizer;

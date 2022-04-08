@@ -54,10 +54,16 @@
     return self;
 }
 
-- (void)speechSynthesizer:(NSSpeechSynthesizer *)sender didFinishSpeaking:(BOOL)success
+- (void)speechSynthesizer:(NSSpeechSynthesizer *)sender willSpeakWord:(NSRange)characterRange ofString:(NSString *)string
 {
     Q_UNUSED(sender);
-    speechPrivate->speechStopped(success);
+    speechPrivate->speaking();
+}
+
+- (void)speechSynthesizer:(NSSpeechSynthesizer *)sender didFinishSpeaking:(BOOL)finishedSpeaking
+{
+    Q_UNUSED(sender);
+    speechPrivate->speechStopped(finishedSpeaking == YES);
 }
 @end
 
@@ -87,18 +93,26 @@ QTextToSpeech::State QTextToSpeechEngineMacOS::state() const
     return m_state;
 }
 
-bool QTextToSpeechEngineMacOS::isSpeaking() const
+
+void QTextToSpeechEngineMacOS::speaking()
 {
-    return speechSynthesizer.isSpeaking;
+    if (m_state != QTextToSpeech::Speaking) {
+        m_state = QTextToSpeech::Speaking;
+        emit stateChanged(m_state);
+    }
 }
 
 void QTextToSpeechEngineMacOS::speechStopped(bool success)
 {
     Q_UNUSED(success);
     if (m_state != QTextToSpeech::Ready) {
-        m_state = QTextToSpeech::Ready;
+        if (pauseRequested)
+            m_state = QTextToSpeech::Paused;
+        else
+            m_state = QTextToSpeech::Ready;
         emit stateChanged(m_state);
     }
+    pauseRequested = false;
 }
 
 void QTextToSpeechEngineMacOS::say(const QString &text)
@@ -106,45 +120,32 @@ void QTextToSpeechEngineMacOS::say(const QString &text)
     if (text.isEmpty())
         return;
 
+    pauseRequested = false;
     if (m_state != QTextToSpeech::Ready)
         stop();
 
-    if (speechSynthesizer.isSpeaking)
-        [speechSynthesizer stopSpeakingAtBoundary:NSSpeechImmediateBoundary];
-
     NSString *ntext = text.toNSString();
     [speechSynthesizer startSpeakingString:ntext];
-
-    if (m_state != QTextToSpeech::Speaking) {
-        m_state = QTextToSpeech::Speaking;
-        emit stateChanged(m_state);
-    }
+    speaking();
 }
 
 void QTextToSpeechEngineMacOS::stop()
 {
-    if (speechSynthesizer.isSpeaking)
+    if (speechSynthesizer.isSpeaking || m_state == QTextToSpeech::Paused)
         [speechSynthesizer stopSpeakingAtBoundary:NSSpeechImmediateBoundary];
 }
 
 void QTextToSpeechEngineMacOS::pause()
 {
     if (speechSynthesizer.isSpeaking) {
+        pauseRequested = true;
         [speechSynthesizer pauseSpeakingAtBoundary: NSSpeechWordBoundary];
-        m_state = QTextToSpeech::Paused;
-        emit stateChanged(m_state);
     }
-}
-
-bool QTextToSpeechEngineMacOS::isPaused() const
-{
-    return m_state == QTextToSpeech::Paused;
 }
 
 void QTextToSpeechEngineMacOS::resume()
 {
-    m_state = QTextToSpeech::Speaking;
-    emit stateChanged(m_state);
+    pauseRequested = false;
     [speechSynthesizer continueSpeaking];
 }
 
