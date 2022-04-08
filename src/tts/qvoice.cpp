@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -116,7 +116,7 @@ QVoice &QVoice::operator=(const QVoice &other) noexcept
 /*!
     \internal
 */
-QVoice::QVoice(const QString &name, Gender gender, Age age, const EngineData &data)
+QVoice::QVoice(const QString &name, Gender gender, Age age, const QVariant &data)
     :d(new QVoicePrivate(name, gender, age, data))
 {
 }
@@ -137,8 +137,7 @@ bool QVoice::isEqual(const QVoice &other) const noexcept
     return d->name == other.d->name
         && d->gender == other.d->gender
         && d->age == other.d->age
-        && d->data.engineName == other.d->data.engineName
-        && d->data.data == other.d->data.data;
+        && d->data == other.d->data;
 }
 
 /*!
@@ -180,9 +179,9 @@ QVoice::Age QVoice::age() const
 /*!
     \internal
 */
-QVoice::EngineData QVoice::engineData() const
+QVariant QVoice::data() const
 {
-    return d ? d->data : EngineData();
+    return d ? d->data : QVariant();
 }
 
 /*!̈́
@@ -232,72 +231,18 @@ QString QVoice::ageName(QVoice::Age age)
 }
 
 #ifndef QT_NO_DATASTREAM
-QDataStream &operator<<(QDataStream &stream, const QVoice &voice)
+QDataStream &QVoice::writeTo(QDataStream &stream) const
 {
-    stream << voice.name() << voice.gender() << voice.age() << voice.engineData().engineName;
+    stream << name() << gender() << age() << data();
     return stream;
 }
 
-QDataStream &operator>>(QDataStream &stream, QVoice &voice)
+QDataStream &QVoice::readFrom(QDataStream &stream)
 {
-    QString name;
-    QVoice::Gender gender;
-    QVoice::Age age;
-    QString engineName;
-    stream >> name >> gender >> age >> engineName;
+    if (!d)
+        d.reset(new QVoicePrivate);
 
-    const auto sameVoice = [name, gender, age](const QVoice &voice) {
-        return age == voice.age()
-            && gender == voice.gender()
-            && name == voice.name();
-    };
-
-    // Do we have a matching voice in the stored backend?
-    QList<QVoice> allVoices = QTextToSpeech(engineName).availableVoices();
-    const auto perfectMatch = std::find_if(allVoices.begin(), allVoices.end(), sameVoice);
-    if (perfectMatch != allVoices.end()) {
-        voice = *perfectMatch;
-        return stream;
-    }
-
-    // if not, search the other available engines for the same voice
-    for (const auto &engine : QTextToSpeech::availableEngines()) {
-        if (engine == engineName) // tried that already
-            continue;
-        QTextToSpeech tts(engine);
-        const auto availableVoices = tts.availableVoices();
-        const auto perfectMatch = std::find_if(availableVoices.begin(), availableVoices.end(), sameVoice);
-        if (perfectMatch != availableVoices.end()) {
-            voice = *perfectMatch;
-            return stream;
-        } else {
-            allVoices += availableVoices;
-        }
-    }
-
-    // nothing found so far, find a close match
-    // Voice with the same name is the first choice
-    for (const auto &candidate : qAsConst(allVoices)) {
-        if (candidate.name() == name) {
-            voice = candidate;
-            return stream;
-        }
-    }
-    // Otherwise, a voice with the same gender and age will do
-    for (const auto &candidate : qAsConst(allVoices)) {
-        if (candidate.gender() == gender && candidate.age() == age) {
-            voice = candidate;
-            return stream;
-        }
-    }
-    // If nothing, then same gender will be as close as it gets
-    for (const auto &candidate : qAsConst(allVoices)) {
-        if (candidate.gender() == gender) {
-            voice = candidate;
-            return stream;
-        }
-    }
-
+    stream >> d->name >> d->gender >> d->age >> d->data;
     return stream;
 }
 #endif
@@ -309,7 +254,7 @@ QDebug operator<<(QDebug dbg, const QVoice &voice)
     dbg.noquote().nospace();
     dbg << voice.name() << ", " << QVoice::genderName(voice.gender())
                         << ", " << QVoice::ageName(voice.age())
-                        << "; engine data: " << voice.data();
+                        << "; data: " << voice.data();
     return dbg;
 }
 #endif

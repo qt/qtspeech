@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -62,33 +62,26 @@ QT_BEGIN_NAMESPACE
 class QVoicePrivate : public QSharedData
 {
 public:
-    QVoicePrivate();
+    QVoicePrivate() = default;
     QVoicePrivate(const QVoicePrivate &other);
-    QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, const QVoice::EngineData &d);
-    ~QVoicePrivate() {}
+    QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, const QVariant &d);
+    ~QVoicePrivate() = default;
 
     QString name;
-    QVoice::Gender gender;
-    QVoice::Age age;
+    QVoice::Gender gender = QVoice::Unknown;
+    QVoice::Age age = QVoice::Other;
     // Various data depending on the platform:
     // On OS X the VoiceIdentifier is stored.
     // On unix the synthesizer (output module) is stored.
-    QVoice::EngineData data;
+    QVariant data;
 };
 
-QVoicePrivate::QVoicePrivate()
-{
-    name = qApp->translate("QVoice", "Default");
-    age = QVoice::Other;
-    gender = QVoice::Unknown;
-}
-
 QVoicePrivate::QVoicePrivate(const QVoicePrivate &other)
- :QSharedData(other), name(other.name), gender(other.gender), age(other.age), data(other.data)
+    : QSharedData(other), name(other.name), gender(other.gender), age(other.age), data(other.data)
 {
 }
 
-QVoicePrivate::QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, const QVoice::EngineData &d)
+QVoicePrivate::QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, const QVariant &d)
     :name(n), gender(g), age(a), data(d)
 {
 }
@@ -96,4 +89,3 @@ QVoicePrivate::QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, 
 QT_END_NAMESPACE
 
 #endif
-

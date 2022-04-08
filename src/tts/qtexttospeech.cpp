@@ -96,8 +96,6 @@ void QTextToSpeechPrivate::setEngineProvider(const QString &engine)
         if (!m_engine) {
             qCritical() << "Error creating text-to-speech engine" << m_providerName
                         << (errorString.isEmpty() ? QStringLiteral("") : (QStringLiteral(": ") + errorString));
-        } else {
-            m_engine->setProperty("providerName", m_providerName);
         }
         m_engine->setProperty("providerName", m_providerName);
     } else {

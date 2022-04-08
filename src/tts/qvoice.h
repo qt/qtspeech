@@ -87,6 +87,13 @@ public:
     friend inline bool operator!=(const QVoice &lhs, const QVoice &rhs) noexcept
     { return !lhs.isEqual(rhs); }
 
+#ifndef QT_NO_DATASTREAM
+    friend inline QDataStream &operator<<(QDataStream &str, const QVoice &voice)
+    { return voice.writeTo(str); }
+    friend inline QDataStream &operator>>(QDataStream &str, QVoice &voice)
+    { return voice.readFrom(str); }
+#endif
+
     QString name() const;
     Gender gender() const;
     Age age() const;
@@ -95,30 +102,20 @@ public:
     static QString ageName(QVoice::Age age);
 
 private:
-    struct EngineData
-    {
-        QString engineName;
-        QVariant data;
-    };
-
-    QVoice(const QString &name, Gender gender, Age age, const EngineData &data);
+    QVoice(const QString &name, Gender gender, Age age, const QVariant &data);
     bool isEqual(const QVoice &other) const noexcept;
+#ifndef QT_NO_DATASTREAM
+    QDataStream &writeTo(QDataStream &) const;
+    QDataStream &readFrom(QDataStream &);
+#endif
 
-    QVariant data() const { return engineData().data; }
-    EngineData engineData() const;
+    QVariant data() const;
 
     QExplicitlySharedDataPointer<QVoicePrivate> d;
     friend class QVoicePrivate;
     friend class QTextToSpeechEngine;
     friend Q_TEXTTOSPEECH_EXPORT QDebug operator<<(QDebug, const QVoice &);
-    friend Q_TEXTTOSPEECH_EXPORT QDataStream &operator<<(QDataStream &, const QVoice &);
-    friend Q_TEXTTOSPEECH_EXPORT QDataStream &operator>>(QDataStream &, QVoice &);
 };
-
-#ifndef QT_NO_DATASTREAM
-Q_TEXTTOSPEECH_EXPORT QDataStream &operator<<(QDataStream &, const QVoice &);
-Q_TEXTTOSPEECH_EXPORT QDataStream &operator>>(QDataStream &, QVoice &);
-#endif
 
 #ifndef QT_NO_DEBUG_STREAM
 Q_TEXTTOSPEECH_EXPORT QDebug operator<<(QDebug, const QVoice &);

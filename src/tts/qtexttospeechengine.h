@@ -74,7 +74,7 @@ public:
     virtual QTextToSpeech::State state() const = 0;
 
 protected:
-    QVoice createVoice(const QString &name, QVoice::Gender gender, QVoice::Age age, const QVariant &data) const;
+    static QVoice createVoice(const QString &name, QVoice::Gender gender, QVoice::Age age, const QVariant &data);
     static QVariant voiceData(const QVoice &voice);
 
 Q_SIGNALS:
