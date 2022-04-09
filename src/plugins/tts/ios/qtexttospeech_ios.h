@@ -74,6 +74,7 @@ public:
 
     void setState(QTextToSpeech::State state);
 
+    bool ignoreNextUtterance = false;
 private:
     AVSpeechSynthesisVoice *fromQVoice(const QVoice &voice) const;
     QVoice toQVoice(AVSpeechSynthesisVoice *avVoice) const;
@@ -81,11 +82,12 @@ private:
     AVSpeechSynthesizer *m_speechSynthesizer;
     QLocale m_locale;
     QVoice m_voice;
-    QTextToSpeech::State m_state;
+    QTextToSpeech::State m_state = QTextToSpeech::Ready;
 
-    double m_pitch;
-    double m_rate;
-    double m_volume;
+    double m_pitch = 0.0;
+    double m_actualPitch = 1.0;
+    double m_rate = 0.0;
+    double m_volume = 1.0;
 };
 
 QT_END_NAMESPACE

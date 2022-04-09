@@ -57,6 +57,9 @@
 {
     Q_UNUSED(synthesizer);
     Q_UNUSED(utterance);
+    if (_engine->ignoreNextUtterance)
+        return;
+
     _engine->setState(QTextToSpeech::Ready);
 }
 
@@ -64,6 +67,9 @@
 {
     Q_UNUSED(synthesizer);
     Q_UNUSED(utterance);
+    if (_engine->ignoreNextUtterance)
+        return;
+
     _engine->setState(QTextToSpeech::Speaking);
 }
 
@@ -71,6 +77,10 @@
 {
     Q_UNUSED(synthesizer);
     Q_UNUSED(utterance);
+    if (_engine->ignoreNextUtterance) {
+        _engine->ignoreNextUtterance = false;
+        return;
+    }
     _engine->setState(QTextToSpeech::Ready);
 }
 
@@ -85,6 +95,9 @@
 {
     Q_UNUSED(synthesizer);
     Q_UNUSED(utterance);
+    if (_engine->ignoreNextUtterance)
+        return;
+
     _engine->setState(QTextToSpeech::Speaking);
 }
 
@@ -97,10 +110,6 @@ QT_BEGIN_NAMESPACE
 QTextToSpeechEngineIos::QTextToSpeechEngineIos(const QVariantMap &/*parameters*/, QObject *parent)
     : QTextToSpeechEngine(parent)
     , m_speechSynthesizer([AVSpeechSynthesizer new])
-    , m_state(QTextToSpeech::Ready)
-    , m_pitch(0)
-    , m_rate(0)
-    , m_volume(1)
 {
     m_speechSynthesizer.delegate = [[QIOSSpeechSynthesizerDelegate alloc] initWithQIOSTextToSpeechEngineIos:this];
     if (!setLocale(QLocale()))
@@ -117,23 +126,47 @@ void QTextToSpeechEngineIos::say(const QString &text)
 {
     stop();
 
+    // Qt pitch: [-1.0, 1.0], 0 is normal
+    // AVF range: [0.5, 2.0], 1.0 is normal
+    const double desiredPitch = 1.0 + (m_pitch >= 0 ? m_pitch : (m_pitch * 0.5));
+
+    // As the name suggests, pitchMultiplier accumulates with each utterance, so when speaking
+    // multiple times with the same != 1.0 pitch, the pitch goes higher or lower with each step!
+    // So we keep track of the actual pitch after the last utterance, and multiply the target
+    // pitch with that value to compensate.
+    // With the compensation, we might now have a pitch multipler outside of the AVF range, e.g.
+    // to get from 2.0 to 0.5 we need a pitch multiplier of 1/4th. Sadly, the API blocks values
+    // lower than 0.5, but does allow values larger than 2.0. So we need to play a silent
+    // utterance (the string can't be empty) with a pitchMultiplier of 0.5 first!
+    if (desiredPitch / m_actualPitch < 0.5) {
+        ignoreNextUtterance = true; // signal delegate to ignore the next one
+        NSString *empty = @" ";
+        AVSpeechUtterance *correctionUtterance = [AVSpeechUtterance speechUtteranceWithString:empty];
+        correctionUtterance.volume = 0;
+        correctionUtterance.rate = AVSpeechUtteranceMaximumSpeechRate;
+        correctionUtterance.voice = fromQVoice(m_voice);
+        correctionUtterance.pitchMultiplier = 0.5;
+        m_actualPitch *= 0.5;
+        [m_speechSynthesizer speakUtterance:correctionUtterance];
+    }
     AVSpeechUtterance *utterance = [AVSpeechUtterance speechUtteranceWithString:text.toNSString()];
+    utterance.pitchMultiplier = desiredPitch / m_actualPitch;
+    m_actualPitch *= utterance.pitchMultiplier;
+
+    // Qt range: [-1.0, 1.0], 0 is normal
+    // AVF range: [AVSpeechUtteranceMinimumSpeechRate, AVSpeechUtteranceMaximumSpeechRate],
+    //             AVSpeechUtteranceDefaultSpeechRate is normal
+    // The QtTextToSpeech documentation states that a rate of 0.0 represents normal speech flow.
+    // To map that to AVSpeechUtteranceDefaultSpeechRate while at the same time preserve the Qt
+    // range [-1.0, 1.0], we choose to operate with two differente rate convertions; one for
+    // values in the range [-1, 0), and for [0, 1].
+    const float range = m_rate >= 0
+                      ? AVSpeechUtteranceMaximumSpeechRate - AVSpeechUtteranceDefaultSpeechRate
+                      : AVSpeechUtteranceDefaultSpeechRate - AVSpeechUtteranceMinimumSpeechRate;
+    utterance.rate = AVSpeechUtteranceDefaultSpeechRate + (m_rate * range);
+
     utterance.volume = m_volume;
     utterance.voice = fromQVoice(m_voice);
-    // Pitch: Qt range: [-1.0, 1.0], iOS range: [0.5, 2.0]
-    utterance.pitchMultiplier = 0.5 + ((m_pitch + 1.0) / 2.0 * 1.5);
-
-    if (m_rate >= 0) {
-        // The QtTextToSpeech documentation states that a rate of 0.0 represents normal speech flow.
-        // To map that to AVSpeechUtteranceDefaultSpeechRate while at the same time preserve the Qt
-        // range [-1.0, 1.0], we choose to operate with two differente rate convertions; one for
-        // values in the range [-1, 0), and for [0, 1].
-        float range = AVSpeechUtteranceMaximumSpeechRate - AVSpeechUtteranceDefaultSpeechRate;
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate + (m_rate * range);
-    } else {
-        float range = AVSpeechUtteranceDefaultSpeechRate - AVSpeechUtteranceMinimumSpeechRate;
-        utterance.rate = AVSpeechUtteranceMinimumSpeechRate + (m_rate * range);
-    }
 
     [m_speechSynthesizer speakUtterance:utterance];
 }
