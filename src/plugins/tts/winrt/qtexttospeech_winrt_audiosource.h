@@ -61,6 +61,23 @@ public:
             emit readyRead();
     }
 
+    struct Boundary {
+        enum Type { Word, Sentence, Unknown } type;
+        QString text;
+        int beginIndex;
+        int endIndex;
+        qint64 startTime;
+        friend inline bool operator<(const Boundary &lhs, const Boundary &rhs)
+        {
+            return lhs.startTime < rhs.startTime;
+        }
+    };
+
+    QList<Boundary> boundaryData() const
+    {
+        return boundaries;
+    }
+
     // IUnknown
     ULONG AddRef() { return ++ref; }
     ULONG Release() {
@@ -97,6 +114,7 @@ private:
     // async operation so that we can cancel it if we get destroyed prematurely.
     ComPtr<IAsyncOperation<SpeechSynthesisStream*>> synthOperation;
     ComPtr<IInputStream> inputStream;
+    ComPtr<IRandomAccessStream> randomAccessStream;
     // the current ReadAsync operation that yields an IBuffer
     ComPtr<IAsyncOperationWithProgress<IBuffer*, UINT32>> readOperation;
     ComPtr<IBuffer> m_buffer;
@@ -104,6 +122,9 @@ private:
     ComPtr<::Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
     // The data in the IBuffer might be paritally consumed
     UINT32 m_bufferOffset = 0;
+
+    void populateBoundaries();
+    QList<Boundary> boundaries;
 
     ULONG ref = 1;
 };

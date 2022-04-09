@@ -47,6 +47,7 @@ public Q_SLOTS:
     void processNotifyReady();
     void processNotifyError(int reason);
     void processNotifySpeaking();
+    void processNotifyRangeStart(int start, int end, int frame);
 
 private:
     void setState(QTextToSpeech::State state);

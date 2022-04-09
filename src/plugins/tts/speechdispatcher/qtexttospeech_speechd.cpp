@@ -378,8 +378,9 @@ QList<QVoice> QTextToSpeechEngineSpeechd::availableVoices() const
 
 // We have no way of knowing our own client_id since speech-dispatcher seems to be incomplete
 // (history functions are just stubs)
-void speech_finished_callback(size_t /*msg_id*/, size_t /*client_id*/, SPDNotificationType state)
+void speech_finished_callback(size_t msg_id, size_t client_id, SPDNotificationType state)
 {
+    qDebug() << "Message from speech dispatcher" << msg_id << client_id;
     for (QTextToSpeechEngineSpeechd *backend : std::as_const(*backends))
         backend->spdStateChanged(state);
 }

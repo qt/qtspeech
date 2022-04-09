@@ -45,6 +45,9 @@ public:
     QTextToSpeech::ErrorReason errorReason() const override;
     QString errorString() const override;
 
+protected:
+    void timerEvent(QTimerEvent *e) override;
+
 private:
     QScopedPointer<QTextToSpeechEngineWinRTPrivate> d_ptr;
     Q_DECLARE_PRIVATE(QTextToSpeechEngineWinRT)

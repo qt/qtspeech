@@ -8,7 +8,9 @@
 #include <QtMultimedia/QMediaDevices>
 #include <QtMultimedia/QAudioDevice>
 
+#include <QtCore/QBasicTimer>
 #include <QtCore/QCoreApplication>
+#include <QtCore/QElapsedTimer>
 #include <QtCore/private/qfunctions_winrt_p.h>
 
 #include <winrt/base.h>
@@ -50,6 +52,11 @@ public:
     // data streaming - AudioSource implements COM interfaces as well as
     // QIODevice, so we store it in a ComPtr instead of a std::unique_ptr
     ComPtr<AudioSource> audioSource;
+    QList<AudioSource::Boundary> boundaries;
+    QList<AudioSource::Boundary>::const_iterator currentBoundary;
+    QBasicTimer boundaryTimer;
+    QElapsedTimer elapsedTimer;
+    qint64 playedTime = 0;
     // the sink is connected to the source
     std::unique_ptr<QAudioSink> audioSink;
 
@@ -134,6 +141,10 @@ QTextToSpeechEngineWinRT::QTextToSpeechEngineWinRT(const QVariantMap &params, QO
     ComPtr<ISpeechSynthesizerOptions> options1;
     hr = synth2->get_Options(&options1);
     Q_ASSERT_SUCCEEDED(hr);
+
+    // ask for boundary data, we might not get it
+    options1->put_IncludeSentenceBoundaryMetadata(true);
+    options1->put_IncludeWordBoundaryMetadata(true);
 
     hr = options1->QueryInterface(__uuidof(ISpeechSynthesizerOptions2), &d->options);
     RETURN_VOID_IF_FAILED("ISpeechSynthesizerOptions2 not implemented.");
@@ -326,6 +337,25 @@ bool QTextToSpeechEngineWinRT::setVoice(const QVoice &voice)
     return SUCCEEDED(d->synth->put_Voice(foundVoice.Get()));
 }
 
+void QTextToSpeechEngineWinRT::timerEvent(QTimerEvent *e)
+{
+    Q_D(QTextToSpeechEngineWinRT);
+    if (e->timerId() == d->boundaryTimer.timerId()) {
+        const qint64 expected = d->currentBoundary->startTime;
+        const qint64 elapsed = d->elapsedTimer.nsecsElapsed() / 1000 + d->playedTime;
+        if (d->currentBoundary->type == AudioSource::Boundary::Word)
+            emit sayingWord(d->currentBoundary->beginIndex, d->currentBoundary->endIndex - d->currentBoundary->beginIndex + 1);
+        ++d->currentBoundary;
+        const qint64 msecsToNext = qMax((d->currentBoundary->startTime - elapsed) / 1000, 0);
+        if (d->audioSource && d->currentBoundary != d->boundaries.constEnd()) {
+            d->boundaryTimer.start(msecsToNext, Qt::PreciseTimer, this);
+        } else {
+            d->boundaryTimer.stop();
+        }
+    }
+    QObject::timerEvent(e);
+}
+
 /* State and speech control */
 
 QTextToSpeech::State QTextToSpeechEngineWinRT::state() const
@@ -354,6 +384,9 @@ void QTextToSpeechEngineWinRTPrivate::initializeAudioSink(const QAudioFormat &fo
     if (!audioSource)
         return;
 
+    boundaries = audioSource->boundaryData();
+    currentBoundary = boundaries.constBegin();
+
     audioSink.reset(new QAudioSink(audioDevice, format));
     QObject::connect(audioSink.get(), &QAudioSink::stateChanged,
                      q, [this](QAudio::State sinkState) {
@@ -370,16 +403,28 @@ void QTextToSpeechEngineWinRTPrivate::sinkStateChanged(QAudio::State sinkState)
     switch (sinkState) {
     case QAudio::IdleState:
         if (audioSource) {
-            if (audioSource->atEnd())
+            if (audioSource->atEnd()) {
                 state = QTextToSpeech::Ready;
-            else
+                playedTime = 0;
+                elapsedTimer.invalidate();
+            } else {
+                boundaryTimer.stop();
+                playedTime += elapsedTimer.nsecsElapsed() / 1000;
+                elapsedTimer.invalidate();
                 audioSink->suspend();
+            }
         }
         break;
     case QAudio::StoppedState:
         state = QTextToSpeech::Ready;
+        playedTime = 0;
+        elapsedTimer.invalidate();
         break;
     case QAudio::ActiveState:
+        // boundaries are in micro-seconds, timers have msec precision
+        if (currentBoundary != boundaries.constEnd())
+            boundaryTimer.start(qMax(currentBoundary->startTime - playedTime, 0) / 1000, Qt::PreciseTimer, q);
+        elapsedTimer.start();
         state = QTextToSpeech::Speaking;
         break;
     case QAudio::SuspendedState:
@@ -422,6 +467,7 @@ void QTextToSpeechEngineWinRT::say(const QString &text)
                     QCoreApplication::translate("QTextToSpeech", "Error in audio stream."));
     });
     connect(d->audioSource.Get(), &QIODevice::aboutToClose, this, [d]{
+        d->boundaryTimer.stop();
         d->audioSink.reset();
     });
 }

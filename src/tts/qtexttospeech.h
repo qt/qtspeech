@@ -58,6 +58,7 @@ public:
     enum class Capability {
         None                = 0,
         Speak               = 1 << 0,
+        WordByWordProgress  = 1 << 1,
     };
     Q_DECLARE_FLAGS(Capabilities, Capability)
     Q_FLAG(Capabilities)
@@ -110,6 +111,8 @@ Q_SIGNALS:
     void pitchChanged(double pitch);
     void volumeChanged(double volume);
     void voiceChanged(const QVoice &voice);
+
+    void sayingWord(qsizetype start, qsizetype length);
 
 private:
     Q_DISABLE_COPY(QTextToSpeech)

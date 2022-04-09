@@ -9,7 +9,20 @@
 #include <QtCore/private/qfunctions_winrt_p.h>
 #include <QtCore/private/qsystemerror_p.h>
 
+#include <robuffer.h>
+#include <winrt/base.h>
+#include <QtCore/private/qfactorycacheregistration_p.h>
+#include <windows.foundation.h>
+#include <windows.foundation.collections.h>
+#include <windows.media.core.h>
+#include <windows.media.speechsynthesis.h>
+#include <windows.storage.streams.h>
+
+#include <wrl.h>
+
 using namespace ABI::Windows::Foundation;
+using namespace ABI::Windows::Foundation::Collections;
+using namespace ABI::Windows::Media::Core;
 using namespace ABI::Windows::Media::SpeechSynthesis;
 using namespace ABI::Windows::Storage::Streams;
 using namespace Microsoft::WRL;
@@ -53,7 +66,7 @@ AudioSource::~AudioSource()
 
 /*
     Cancel any incomplete asynchronous operations, and stop the
-    sink before closing the QIODevice.\
+    sink before closing the QIODevice.
 */
 void AudioSource::close()
 {
@@ -177,12 +190,9 @@ bool AudioSource::atEnd() const
     // ... or if there is more in the stream
     UINT64 ioPos = 0;
     UINT64 ioSize = 0;
-    if (inputStream) {
-        ComPtr<IRandomAccessStream> ioStream;
-        if (HRESULT hr = inputStream.As(&ioStream); SUCCEEDED(hr)) {
-            ioStream->get_Size(&ioSize);
-            ioStream->get_Position(&ioPos);
-        }
+    if (randomAccessStream) {
+        randomAccessStream->get_Size(&ioSize);
+        randomAccessStream->get_Position(&ioPos);
     }
     return ioPos >= ioSize;
 }
@@ -248,6 +258,7 @@ HRESULT AudioSource::Invoke(IAsyncOperation<SpeechSynthesisStream*> *operation, 
 
     hr = speechStream.As(&inputStream);
     RETURN_HR_IF_FAILED("Could not cast to inputStream.");
+    inputStream.As(&randomAccessStream);
 
     ComPtr<IBufferFactory> bufferFactory;
     hr = RoGetActivationFactory(HString::MakeReference(RuntimeClass_Windows_Storage_Streams_Buffer).Get(),
@@ -259,6 +270,8 @@ HRESULT AudioSource::Invoke(IAsyncOperation<SpeechSynthesisStream*> *operation, 
     hr = m_buffer->QueryInterface(IID_PPV_ARGS(&bufferByteAccess));
     RETURN_HR_IF_FAILED("Could not access buffer.");
 
+    populateBoundaries();
+
     // release our reference to the speech stream operation
     if (asyncInfo)
         asyncInfo->Close();
@@ -269,6 +282,80 @@ HRESULT AudioSource::Invoke(IAsyncOperation<SpeechSynthesisStream*> *operation, 
     fetchMore();
     emit streamReady(audioFormat);
     return S_OK;
+}
+
+/*
+*/
+void AudioSource::populateBoundaries()
+{
+    ComPtr<ITimedMetadataTrackProvider> metaData;
+    if (!SUCCEEDED(inputStream.As(&metaData)))
+        return;
+
+    ComPtr<IVectorView<TimedMetadataTrack*>> metaDataTracks;
+    metaData->get_TimedMetadataTracks(&metaDataTracks);
+    quint32 trackCount = 0;
+    metaDataTracks->get_Size(&trackCount);
+
+    for (quint32 i = 0; i < trackCount; ++i) {
+        ComPtr<ITimedMetadataTrack> metaDataTrack;
+        HRESULT hr = metaDataTracks->GetAt(i, &metaDataTrack);
+        Q_ASSERT_SUCCEEDED(hr);
+
+        const auto boundaryType = [metaDataTrack]{
+            ComPtr<IMediaTrack> mediaTrack;
+            HRESULT hr = metaDataTrack.As(&mediaTrack);
+            Q_ASSERT_SUCCEEDED(hr);
+
+            if (HString hstr; SUCCEEDED(mediaTrack->get_Id(hstr.GetAddressOf()))) {
+                const QString trackName = QString::fromWCharArray(hstr.GetRawBuffer(0));
+                if (trackName == QStringLiteral("SpeechWord"))
+                    return Boundary::Word;
+                if (trackName == QStringLiteral("SpeechSentence"))
+                    return Boundary::Sentence;
+            }
+            return Boundary::Unknown;
+        }();
+        if (boundaryType == Boundary::Unknown)
+            continue;
+
+        ComPtr<IVectorView<IMediaCue*>> cues;
+        if (!SUCCEEDED(metaDataTrack->get_Cues(&cues)))
+            continue;
+
+        quint32 cueCount = 0;
+        cues->get_Size(&cueCount);
+        boundaries.reserve(boundaries.size() + cueCount);
+
+        for (quint32 j = 0; j < cueCount; ++j) {
+            ComPtr<IMediaCue> cue;
+            hr = cues->GetAt(j, &cue);
+            Q_ASSERT_SUCCEEDED(hr);
+
+            ComPtr<ISpeechCue> speechCue;
+            if (!SUCCEEDED(cue.As(&speechCue))) {
+                qWarning("Invalid cue");
+                break;
+            }
+
+            QString text;
+            if (HString hstr; SUCCEEDED(speechCue->get_Text(hstr.GetAddressOf())))
+                text = QString::fromWCharArray(hstr.GetRawBuffer(0));
+            int startIndex = -1;
+            if (IReference<int> *refInt; SUCCEEDED(speechCue->get_StartPositionInInput(&refInt)))
+                refInt->get_Value(&startIndex);
+            int endIndex = -1;
+            if (IReference<int> *refInt; SUCCEEDED(speechCue->get_EndPositionInInput(&refInt)))
+                refInt->get_Value(&endIndex);
+
+            // A time period expressed in 100-nanosecond units. the Duration property is always 0 for speech.
+            TimeSpan startTime = {};
+            cue->get_StartTime(&startTime);
+            const qint64 usec = startTime.Duration / 10; // QAudioSink APIs operate on microseconds
+            boundaries.append(Boundary{boundaryType, text, startIndex, endIndex, usec});
+        }
+    }
+    std::sort(boundaries.begin(), boundaries.end());
 }
 
 /*

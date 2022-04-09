@@ -10,6 +10,8 @@
 @interface QT_MANGLE_NAMESPACE(StateDelegate) : NSObject <NSSpeechSynthesizerDelegate>
 @end
 
+using namespace Qt::StringLiterals;
+
 @implementation QT_MANGLE_NAMESPACE(StateDelegate)
 {
     QT_PREPEND_NAMESPACE(QTextToSpeechEngineMacOS) *speechPrivate;
@@ -26,6 +28,18 @@
 - (void)speechSynthesizer:(NSSpeechSynthesizer *)sender willSpeakWord:(NSRange)characterRange ofString:(NSString *)string
 {
     Q_UNUSED(sender);
+    const QString text = QString::fromNSString(string);
+    if (characterRange.location + characterRange.length > size_t(text.length())) {
+        qCritical() << characterRange.location << characterRange.length << "are out of bounds of" << text;
+        return;
+    }
+
+    // the macOS engine doesn't strip all punctuation characters
+    auto length = characterRange.length;
+    if (text.at(characterRange.location + length - 1).isPunct())
+        --length;
+    if (length)
+        emit speechPrivate->sayingWord(characterRange.location, length);
     speechPrivate->speaking();
 }
 

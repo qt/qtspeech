@@ -68,10 +68,11 @@ void QTextToSpeechPrivate::setEngineProvider(const QString &engine, const QVaria
         qCritical() << "Error loading text-to-speech plug-in" << m_providerName;
     }
 
-    // Connect state and error change signals directly from the engine to the public API signals
+    // Connect signals directly from the engine to the public API signals
     if (m_engine) {
         QObject::connect(m_engine, &QTextToSpeechEngine::stateChanged, q, &QTextToSpeech::stateChanged);
         QObject::connect(m_engine, &QTextToSpeechEngine::errorOccurred, q, &QTextToSpeech::errorOccurred);
+        QObject::connect(m_engine, &QTextToSpeechEngine::sayingWord, q, &QTextToSpeech::sayingWord);
     }
 }
 
@@ -379,6 +380,8 @@ QString QTextToSpeech::engine() const
 
     \value None                 The engine implements none of the capabilities.
     \value Speak                The engine can play audio output from text.
+    \value WordByWordProgress   The engine emits the sayingWord() signal for
+                                each word that gets spoken.
 
     \sa engineCapabilities()
 */
@@ -468,6 +471,35 @@ QTextToSpeech::State QTextToSpeech::state() const
         return d->m_engine->state();
     return QTextToSpeech::Error;
 }
+
+/*!
+    \qmlsignal void TextToSpeech::sayingWord(int start, int length)
+    \since 6.6
+
+    This signal is emitted when the word indicated by \a start and \a length
+    in the currently spoken text gets played to the audio device.
+
+    \note This signal requires that the engine has the
+    \l {QTextToSpeech::Capability::}{WordByWordProgress} capability.
+
+    The following code highlights the word that is spoken in a TextArea \c input:
+    \snippet quickspeech/main.qml sayingWord
+
+    \sa QTextToSpeech::Capability, say()
+*/
+
+/*!
+    \fn void QTextToSpeech::sayingWord(qsizetype start, qsizetype length)
+    \since 6.6
+
+    This signal is emitted when the word indicated by \a start and \a length
+    in the currently spoken text gets played to the audio device.
+
+    \note This signal requires that the engine has the
+    \l {QTextToSpeech::Capability::}{WordByWordProgress} capability.
+
+    \sa Capability, say()
+*/
 
 /*!
     \qmlsignal void TextToSpeech::errorOccured(enumeration reason, string errorString)

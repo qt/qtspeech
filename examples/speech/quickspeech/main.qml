@@ -39,6 +39,12 @@ ApplicationWindow {
             }
         }
 //! [stateChanged]
+
+//! [sayingWord]
+        onSayingWord: (start, length)=> {
+            input.select(start, start + length)
+        }
+//! [sayingWord]
     }
 
     ColumnLayout {
@@ -52,6 +58,7 @@ ApplicationWindow {
             text: qsTr("Hello, world!")
             Layout.fillWidth: true
             Layout.minimumHeight: implicitHeight
+            font.pointSize: 24
         }
 //! [say0]
         RowLayout {

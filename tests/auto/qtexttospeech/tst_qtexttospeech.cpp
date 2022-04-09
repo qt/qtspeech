@@ -8,6 +8,7 @@
 #include <QMediaDevices>
 #include <QAudioDevice>
 #include <QOperatingSystemVersion>
+#include <QRegularExpression>
 #include <qttexttospeech-config.h>
 
 #if QT_CONFIG(speechd)
@@ -45,6 +46,12 @@ private slots:
     void pauseResume();
     void sayWithVoices();
     void sayWithRates();
+
+    void sayingWord_data();
+    void sayingWord();
+
+    void sayingWordWithPause_data();
+    void sayingWordWithPause();
 
 private:
     static bool hasDefaultAudioOutput()
@@ -467,6 +474,131 @@ void tst_QTextToSpeech::sayWithRates()
         lastTime = time;
     }
     logger.dismiss();
+}
+
+void tst_QTextToSpeech::sayingWord_data()
+{
+    QTest::addColumn<QString>("text");
+
+    QTest::addRow("one word") << "supercalifragilisticexpialidocious";
+    QTest::addRow("sentence") << "this is one word.";
+    QTest::addRow("punctuation") << "this, if you want: a word!";
+    QTest::addRow("two sentences") << "First word. Second word.";
+}
+
+void tst_QTextToSpeech::sayingWord()
+{
+    QFETCH_GLOBAL(QString, engine);
+    if (engine != "mock" && !hasDefaultAudioOutput())
+        QSKIP("No audio device present");
+    if (engine == "android" && QOperatingSystemVersion::current() < QOperatingSystemVersion::Android10)
+        QSKIP("Only testing on recent Android versions");
+
+    QFETCH(QString, text);
+
+    const QStringList expectedWords = text.split(QRegularExpression("\\W"), Qt::SkipEmptyParts);
+
+    QTextToSpeech tts(engine);
+    if (!(tts.engineCapabilities() & QTextToSpeech::Capability::WordByWordProgress))
+        QSKIP("This engine doesn't support word-by-word progress");
+
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    selectWorkingVoice(&tts);
+
+    QElapsedTimer timer;
+    QStringList words;
+    QList<qint64> times;
+    connect(&tts, &QTextToSpeech::sayingWord, [&words, &times, &timer, text](qsizetype start, qsizetype length) {
+        words << text.sliced(start, length);
+        times << timer.elapsed();
+    });
+
+    timer.start();
+    tts.say(text);
+    auto debugHelper = qScopeGuard([&]{
+        qWarning() << "Recorded words:" << words;
+        qWarning() << "Expected words:" << expectedWords;
+    });
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    qint64 totalTime = timer.elapsed();
+
+    QCOMPARE(words, expectedWords);
+
+    // Makes sure that the last word is reported late. Engines need to warm up,
+    // and some test data has a "slow" word at the end, but empirically,
+    // 40% into the total time is reliable and still makes sure that the signal
+    // doesn't get emitted with all words immediately.
+    if (words.count() > 1)
+        QCOMPARE_GE(times.last(), totalTime * 0.4);
+
+    debugHelper.dismiss();
+}
+
+void tst_QTextToSpeech::sayingWordWithPause_data()
+{
+    QTest::addColumn<QStringList>("words");
+    QTest::addColumn<int>("pauseAt");
+
+    const QStringList words{"this", "is", "a", "sentence", "with", "words"};
+    QTest::addRow("pause1") << words << 1;
+    QTest::addRow("pause4") << words << 4;
+}
+
+void tst_QTextToSpeech::sayingWordWithPause()
+{
+    QFETCH_GLOBAL(QString, engine);
+    if (engine != "mock" && !hasDefaultAudioOutput())
+        QSKIP("No audio device present");
+    if (engine == "macos")
+        QSKIP("macos engine's pause support is faulty");
+    if (engine == "android" && QOperatingSystemVersion::current() < QOperatingSystemVersion::Android10)
+        QSKIP("Only testing on recent Android versions");
+
+    QFETCH(QStringList, words);
+    QFETCH(int, pauseAt);
+
+    const QString text = words.join(u' ');
+
+    QTextToSpeech tts(engine);
+
+    if (!(tts.engineCapabilities() & QTextToSpeech::Capability::WordByWordProgress))
+        QSKIP("This engine doesn't support word-by-word progress");
+
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    selectWorkingVoice(&tts);
+
+    QStringList spokenWords;
+    connect(&tts, &QTextToSpeech::sayingWord, [&](qsizetype start, qsizetype length) {
+        spokenWords << text.sliced(start, length);
+        if (spokenWords.size() == pauseAt)
+            tts.pause(QTextToSpeech::BoundaryHint::Word);
+    });
+
+    auto debugHelper = qScopeGuard([&]{
+        qWarning() << "Spoken words:" << spokenWords;
+    });
+
+    tts.say(text);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Paused);
+
+    // the engine might still signal us about the next word
+    QCOMPARE_LE(spokenWords.size(), words.size());
+    // wait and verify that no more words are reported
+    QTest::qWait(500);
+    QCOMPARE_LE(spokenWords.size(), pauseAt + 1);
+
+    // Resume, and make sure that all words are reported.
+    // We might get some words reported twice, depending on how
+    // the engine supports word bounaries when pausing, and how
+    // much of the text it repeats when resuming.
+    tts.resume();
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    QTRY_COMPARE_GE(spokenWords.size(), words.size());
+    for (const auto &word : words)
+        QVERIFY(spokenWords.contains(word));
+
+    debugHelper.dismiss();
 }
 
 QTEST_MAIN(tst_QTextToSpeech)

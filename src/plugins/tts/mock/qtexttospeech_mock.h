@@ -47,7 +47,7 @@ private:
     int wordTime() const { return 100 - int(50.0 * m_rate); }
 
     const QVariantMap m_parameters;
-    QStringList m_words;
+    QString m_text;
     QLocale m_locale;
     QVoice m_voice;
     QBasicTimer m_timer;
@@ -58,6 +58,7 @@ private:
     QTextToSpeech::ErrorReason m_errorReason = QTextToSpeech::ErrorReason::Initialization;
     QString m_errorString;
     bool m_pauseRequested = false;
+    qsizetype m_currentIndex = -1;
 };
 
 QT_END_NAMESPACE

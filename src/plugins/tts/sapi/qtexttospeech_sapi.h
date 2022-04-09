@@ -50,7 +50,6 @@ public:
 
 private:
     bool isSpeaking() const;
-    bool isPaused() const { return m_pauseCount; }
     QMap<QString, QString> voiceAttributes(ISpObjectToken *speechToken) const;
     QString voiceId(ISpObjectToken *speechToken) const;
     QLocale lcidToLocale(const QString &lcid) const;
@@ -68,7 +67,7 @@ private:
     qsizetype textOffset = 0;
     ISpVoice *m_voice = nullptr;
     double m_pitch = 0.0;
-    int m_pauseCount = 0;
+    bool m_pauseRequested = false;
 };
 QT_END_NAMESPACE
 

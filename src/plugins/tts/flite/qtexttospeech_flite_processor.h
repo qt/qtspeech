@@ -84,8 +84,23 @@ private slots:
 Q_SIGNALS:
     void errorOccurred(QTextToSpeech::ErrorReason error, const QString &errorString);
     void stateChanged(QTextToSpeech::State);
+    void sayingWord(qsizetype begin, qsizetype length);
+
+protected:
+    void timerEvent(QTimerEvent *event) override;
 
 private:
+    struct TokenData {
+        qint64 startTime;
+        QString text;
+    };
+    QString m_text;
+    qsizetype m_index = -1;
+    QList<TokenData> m_tokens;
+    qsizetype m_currentToken = -1;
+    QBasicTimer m_tokenTimer;
+    void startTokenTimer();
+
     QAudioSink *m_audioSink = nullptr;
     QAudio::State m_state = QAudio::IdleState;
     QIODevice *m_audioBuffer = nullptr;

@@ -70,6 +70,22 @@
     _engine->setState(QTextToSpeech::Speaking);
 }
 
+- (void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer willSpeakRangeOfSpeechString:(NSRange)characterRange
+                utterance:(AVSpeechUtterance *)utterance
+{
+    const QString text = QString::fromNSString(utterance.speechString);
+    if (characterRange.location + characterRange.length > size_t(text.length())) {
+        qDebug() << characterRange.location << characterRange.length << "are out of bounds of" << text;
+        return;
+    }
+    // the Darwin engine doesn't strip all punctuation characters
+    auto length = characterRange.length;
+    if (text.at(characterRange.location + length - 1).isPunct())
+        --length;
+    if (length)
+        _engine->sayingWord(characterRange.location, length);
+}
+
 @end
 
 // -------------------------------------------------------------------------

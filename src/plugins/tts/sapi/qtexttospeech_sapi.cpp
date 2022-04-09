@@ -38,6 +38,23 @@ static inline HRESULT SpCreateNewToken(const WCHAR *pszTokenId, ISpObjectToken *
     // Forcefully create the token
     return SpGetTokenFromId(pszTokenId, ppToken, TRUE);
 }
+
+inline void SpClearEvent(SPEVENT *pe)
+{
+    switch (pe->elParamType) {
+    case SPET_LPARAM_IS_TOKEN:
+    case SPET_LPARAM_IS_OBJECT:
+        reinterpret_cast<IUnknown *>(pe->lParam)->Release();
+        break;
+    case SPET_LPARAM_IS_POINTER:
+    case SPET_LPARAM_IS_STRING:
+        CoTaskMemFree(reinterpret_cast<void *>(pe->lParam));
+        break;
+    case SPET_LPARAM_IS_UNDEFINED:
+        break;
+    }
+}
+
 #endif // Q_CC_MINGW
 
 QTextToSpeechEngineSapi::QTextToSpeechEngineSapi(const QVariantMap &, QObject *)
@@ -86,14 +103,15 @@ void QTextToSpeechEngineSapi::say(const QString &text)
     if (text.isEmpty())
         return;
 
-    QString textString = text;
     if (m_state != QTextToSpeech::Ready)
         stop(QTextToSpeech::BoundaryHint::Default);
 
-    textString.prepend(QString::fromLatin1("<pitch absmiddle=\"%1\"/>").arg(m_pitch * 10));
+    currentText = text;
+    const QString prefix = u"<pitch absmiddle=\"%1\"/>"_qs.arg(m_pitch * 10);
+    textOffset = prefix.length();
+    currentText.prepend(prefix);
 
-    std::wstring wtext = textString.toStdWString();
-    HRESULT hr = m_voice->Speak(wtext.data(), SPF_ASYNC, NULL);
+    HRESULT hr = m_voice->Speak(currentText.toStdWString().data(), SPF_ASYNC, NULL);
     if (!SUCCEEDED(hr))
         setError(QTextToSpeech::ErrorReason::Input,
                  QCoreApplication::translate("QTextToSpeech", "Speech synthesizing failure."));
@@ -102,9 +120,10 @@ void QTextToSpeechEngineSapi::say(const QString &text)
 void QTextToSpeechEngineSapi::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
     Q_UNUSED(boundaryHint);
-    if (m_state == QTextToSpeech::Paused)
+    if (m_state == QTextToSpeech::Paused || m_pauseRequested)
         resume();
     m_voice->Speak(NULL, SPF_PURGEBEFORESPEAK, 0);
+    currentText.clear();
 }
 
 void QTextToSpeechEngineSapi::pause(QTextToSpeech::BoundaryHint boundaryHint)
@@ -113,24 +132,20 @@ void QTextToSpeechEngineSapi::pause(QTextToSpeech::BoundaryHint boundaryHint)
     if (!isSpeaking())
         return;
 
-    if (m_pauseCount == 0) {
-        ++m_pauseCount;
+    // SAPI voices count calls to Pause() and require an equal
+    // number of calls to Resume(); we don't want that, so don't
+    // call either more than once.
+    if (!m_pauseRequested && m_state != QTextToSpeech::Paused) {
+        m_pauseRequested = true;
         m_voice->Pause();
-        m_state = QTextToSpeech::Paused;
-        emit stateChanged(m_state);
     }
 }
 
 void QTextToSpeechEngineSapi::resume()
 {
-    if (m_pauseCount > 0) {
-        --m_pauseCount;
+    if (m_pauseRequested || m_state == QTextToSpeech::Paused) {
+        m_pauseRequested = false;
         m_voice->Resume();
-        if (isSpeaking())
-            m_state = QTextToSpeech::Speaking;
-        else
-            m_state = QTextToSpeech::Ready;
-        emit stateChanged(m_state);
     }
 }
 
@@ -400,18 +415,53 @@ QString QTextToSpeechEngineSapi::errorString() const
 
 HRESULT QTextToSpeechEngineSapi::NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/)
 {
-    QTextToSpeech::State newState = QTextToSpeech::Ready;
-    if (isPaused())
-        newState = QTextToSpeech::Paused;
-    else if (isSpeaking())
-        newState = QTextToSpeech::Speaking;
-    else
-        newState = QTextToSpeech::Ready;
+    const QTextToSpeech::State oldState = m_state;
 
-    if (m_state != newState) {
-        m_state = newState;
-        emit stateChanged(newState);
+    // we can't use CSpEvent here as it doesn't provide the time offset
+    if (ISpEventSource2 *eventSource; S_OK == m_voice->QueryInterface(&eventSource)) {
+        SPEVENTEX event;
+        ULONG got;
+        while (S_OK == eventSource->GetEventsEx(1, &event, &got)) {
+            switch (event.eEventId) {
+            case SPEI_START_INPUT_STREAM:
+                m_state = QTextToSpeech::Speaking;
+                break;
+            case SPEI_END_INPUT_STREAM:
+                m_state = QTextToSpeech::Ready;
+                break;
+            case SPEI_WORD_BOUNDARY:
+                emit sayingWord(event.lParam - textOffset, event.wParam);
+                break;
+            // these are the other TTS events which might be interesting for us at some point
+            case SPEI_SENTENCE_BOUNDARY:
+            case SPEI_PHONEME:
+            case SPEI_TTS_BOOKMARK:
+            case SPEI_VISEME:
+            case SPEI_VOICE_CHANGE:
+            case SPEI_TTS_AUDIO_LEVEL:
+                break;
+            // the rest is uninteresting (speech recognition or engine-internal events).
+            default:
+                break;
+            }
+            // There is no SpClearEventEx, and while a SPEVENTEX is not a subclass of SPEVENT, the
+            // two structs have identical memory layout, plus the extra ullAudioTimeOffset member.
+            SpClearEvent(reinterpret_cast<SPEVENT*>(&event));
+        }
+
+        eventSource->Release();
     }
+
+    // There are no explicit events for pause/resume, so we have to brute force this ourselves.
+    // This means that we transition into pause prematurely, as SAPI typically only pauses in
+    // a word- or sentence-break.
+    if (m_pauseRequested)
+        m_state = QTextToSpeech::Paused;
+    else if (m_state == QTextToSpeech::Paused && isSpeaking())
+        m_state = QTextToSpeech::Speaking;
+
+    if (m_state != oldState)
+        emit stateChanged(m_state);
 
     return S_OK;
 }

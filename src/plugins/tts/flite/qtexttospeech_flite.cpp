@@ -31,6 +31,8 @@ QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(const QVariantMap &parameters
             this, &QTextToSpeechEngineFlite::changeState);
     connect(m_processor.get(), &QTextToSpeechProcessorFlite::errorOccurred, this,
             &QTextToSpeechEngineFlite::setError);
+    connect(m_processor.get(), &QTextToSpeechProcessorFlite::sayingWord, this,
+            &QTextToSpeechEngine::sayingWord);
 
     // Read voices from processor before moving it to a separate thread
     const QList<QTextToSpeechProcessorFlite::VoiceInfo> voices = m_processor->voices();

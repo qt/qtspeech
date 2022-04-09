@@ -28,6 +28,7 @@ public class QtTextToSpeech
     native public void notifyError(long id, long reason);
     native public void notifyReady(long id);
     native public void notifySpeaking(long id);
+    native public void notifyRangeStart(long id, int start, int end, int frame);
 
     private TextToSpeech mTts;
     private final long mId;
@@ -85,6 +86,14 @@ public class QtTextToSpeech
             Log.d(utteranceTAG, "onStart");
             if (utteranceId.equals(UTTERANCE_ID)) {
                 notifySpeaking(mId);
+            }
+        }
+
+        @Override
+        public void onRangeStart(String utteranceId, int start, int end, int frame) {
+            Log.w("UtteranceProgressListener", "onRangeStart");
+            if (utteranceId.equals("UtteranceId")) {
+                notifyRangeStart(mId, start, end, frame);
             }
         }
     };

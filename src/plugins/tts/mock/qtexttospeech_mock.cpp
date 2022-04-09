@@ -4,8 +4,11 @@
 
 #include "qtexttospeech_mock.h"
 #include <QtCore/QTimerEvent>
+#include <QtCore/qregularexpression.h>
 
 QT_BEGIN_NAMESPACE
+
+using namespace Qt::StringLiterals;
 
 QTextToSpeechEngineMock::QTextToSpeechEngineMock(const QVariantMap &parameters, QObject *parent)
     : QTextToSpeechEngine(parent), m_parameters(parameters)
@@ -59,7 +62,8 @@ QList<QVoice> QTextToSpeechEngineMock::availableVoices() const
 
 void QTextToSpeechEngineMock::say(const QString &text)
 {
-    m_words = text.split(" ");
+    m_text = text;
+    m_currentIndex = 0;
     m_timer.start(wordTime(), Qt::PreciseTimer, this);
     m_state = QTextToSpeech::Speaking;
     emit stateChanged(m_state);
@@ -73,7 +77,8 @@ void QTextToSpeechEngineMock::stop(QTextToSpeech::BoundaryHint boundaryHint)
 
     Q_ASSERT(m_state == QTextToSpeech::Paused || m_timer.isActive());
     // finish immediately
-    m_words.clear();
+    m_text.clear();
+    m_currentIndex = -1;
     m_timer.stop();
 
     m_state = QTextToSpeech::Ready;
@@ -108,14 +113,22 @@ void QTextToSpeechEngineMock::timerEvent(QTimerEvent *e)
     }
 
     Q_ASSERT(m_state == QTextToSpeech::Speaking);
-    Q_ASSERT(m_words.size());
+    Q_ASSERT(m_text.length());
 
-    m_words.takeFirst(); // next word has been spoken
+    // Find start of next word, skipping punctuations. This is good enough for testing.
+    QRegularExpressionMatch match;
+    qsizetype nextSpace = m_text.indexOf(QRegularExpression(u"\\W+"_s), m_currentIndex, &match);
+    if (nextSpace == -1)
+        nextSpace = m_text.length();
+    const QString word = m_text.sliced(m_currentIndex, nextSpace - m_currentIndex);
+    sayingWord(m_currentIndex, nextSpace - m_currentIndex);
+    m_currentIndex = nextSpace + match.captured().length();
 
-    if (m_words.isEmpty()) {
+    if (m_currentIndex >= m_text.length()) {
         // done speaking all words
         m_timer.stop();
         m_state = QTextToSpeech::Ready;
+        m_currentIndex = -1;
         emit stateChanged(m_state);
     } else if (m_pauseRequested) {
         m_timer.stop();

@@ -53,6 +53,20 @@ static void notifySpeaking(JNIEnv *env, jobject thiz, jlong id)
 }
 Q_DECLARE_JNI_NATIVE_METHOD(notifySpeaking)
 
+static void notifyRangeStart(JNIEnv *env, jobject thiz, jlong id, jint start, jint end, jint frame)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thiz);
+
+    QTextToSpeechEngineAndroid *const tts = (*textToSpeechMap)[id];
+    if (!tts)
+        return;
+
+    QMetaObject::invokeMethod(tts, "processNotifyRangeStart", Qt::AutoConnection,
+        Q_ARG(int, start), Q_ARG(int, end), Q_ARG(int, frame));
+}
+Q_DECLARE_JNI_NATIVE_METHOD(notifyRangeStart)
+
 Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
 {
     static bool initialized = false;
@@ -79,7 +93,8 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
         if (!jniEnv.registerNativeMethods(clazz, {
             Q_JNI_NATIVE_METHOD(notifyError),
             Q_JNI_NATIVE_METHOD(notifyReady),
-            Q_JNI_NATIVE_METHOD(notifySpeaking)
+            Q_JNI_NATIVE_METHOD(notifySpeaking),
+            Q_JNI_NATIVE_METHOD(notifyRangeStart),
         })) {
             return JNI_ERR;
         }
@@ -201,6 +216,12 @@ void QTextToSpeechEngineAndroid::processNotifyError(int errorReason)
 void QTextToSpeechEngineAndroid::processNotifySpeaking()
 {
     setState(QTextToSpeech::Speaking);
+}
+
+void QTextToSpeechEngineAndroid::processNotifyRangeStart(int start, int end, int frame)
+{
+    Q_UNUSED(frame);
+    emit sayingWord(start, end - start);
 }
 
 void QTextToSpeechEngineAndroid::stop(QTextToSpeech::BoundaryHint boundaryHint)
