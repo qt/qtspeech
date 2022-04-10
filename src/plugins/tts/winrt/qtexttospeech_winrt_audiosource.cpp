@@ -39,6 +39,7 @@
 #include <QtCore/QDebug>
 
 #include <QtCore/private/qfunctions_winrt_p.h>
+#include <QtCore/private/qsystemerror_p.h>
 
 #include <robuffer.h>
 #include <winrt/base.h>
@@ -246,10 +247,33 @@ HRESULT AudioSource::QueryInterface(REFIID riid, VOID **ppvInterface)
 */
 HRESULT AudioSource::Invoke(IAsyncOperation<SpeechSynthesisStream*> *operation, AsyncStatus status)
 {
-    if (status != AsyncStatus::Completed)
-        return E_FAIL;
-
     Q_ASSERT(operation == synthOperation.Get());
+    ComPtr<IAsyncInfo> asyncInfo;
+    synthOperation.As(&asyncInfo);
+
+    if (status == AsyncStatus::Error) {
+        QString errorString;
+        if (asyncInfo) {
+            HRESULT errorCode;
+            asyncInfo->get_ErrorCode(&errorCode);
+            if (errorCode == 0x80131537) // Windows gives us only an Unknown error
+                errorString = QStringLiteral("Error when synthesizing: Input format error");
+            else
+                errorString = QSystemError(errorCode, QSystemError::NativeError).toString();
+        } else {
+            errorString = QStringLiteral("Error when synthesizing: no information available");
+        }
+        setErrorString(errorString);
+        emit errorInStream();
+    }
+    if (status != AsyncStatus::Completed) {
+        if (asyncInfo)
+            asyncInfo->Close();
+        synthOperation.Reset();
+
+        return E_FAIL;
+    }
+
 
     ComPtr<ISpeechSynthesisStream> speechStream;
     HRESULT hr = operation->GetResults(&speechStream);
@@ -269,8 +293,7 @@ HRESULT AudioSource::Invoke(IAsyncOperation<SpeechSynthesisStream*> *operation, 
     RETURN_HR_IF_FAILED("Could not access buffer.");
 
     // release our reference to the speech stream operation
-    ComPtr<IAsyncInfo> asyncInfo;
-    if (HRESULT hr = synthOperation.As(&asyncInfo); SUCCEEDED(hr))
+    if (asyncInfo)
         asyncInfo->Close();
     synthOperation.Reset();
 

@@ -398,6 +398,13 @@ void QTextToSpeechEngineWinRT::say(const QString &text)
     connect(d->audioSource.Get(), &AudioSource::streamReady, this, [d](const QAudioFormat &format){
         d->initializeAudioSink(format);
     });
+    connect(d->audioSource.Get(), &AudioSource::errorInStream, this, [this]{
+        Q_D(QTextToSpeechEngineWinRT);
+        QTextToSpeech::State oldState = d->state;
+        d->state = QTextToSpeech::BackendError;
+        if (oldState != d->state)
+            emit stateChanged(d->state);
+    });
     connect(d->audioSource.Get(), &QIODevice::aboutToClose, this, [d]{
         d->audioSink.reset();
     });

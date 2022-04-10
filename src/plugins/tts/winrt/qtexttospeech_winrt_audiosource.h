@@ -112,6 +112,7 @@ public:
 
 Q_SIGNALS:
     void streamReady(const QAudioFormat &format);
+    void errorInStream();
 
 private:
     // lifetime is controlled via IUnknown reference counting, make sure
