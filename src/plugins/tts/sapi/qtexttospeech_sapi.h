@@ -44,6 +44,7 @@
 #include <QtCore/qlocale.h>
 #include <QtCore/qobject.h>
 #include <QtCore/qstring.h>
+#include <QtCore/qhash.h>
 #include <QtTextToSpeech/qtexttospeechengine.h>
 #include <QtTextToSpeech/qvoice.h>
 
@@ -77,9 +78,8 @@ public:
     QTextToSpeech::State state() const override;
 
     HRESULT STDMETHODCALLTYPE NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/) override;
-private:
 
-    void init();
+private:
     bool isSpeaking() const;
     bool isPaused() const { return m_pauseCount; }
     QMap<QString, QString> voiceAttributes(ISpObjectToken *speechToken) const;
@@ -87,15 +87,16 @@ private:
     QLocale lcidToLocale(const QString &lcid) const;
     void updateVoices();
 
-    QTextToSpeech::State m_state;
-    QList<QLocale> m_locales;
+    QTextToSpeech::State m_state = QTextToSpeech::BackendError;
     QVoice m_currentVoice;
     // Voices mapped by their locale name.
-    QMultiMap<QString, QVoice> m_voices;
+    QMultiHash<QLocale, QVoice> m_voices;
 
-    ISpVoice *m_voice;
-    double m_pitch;
-    int m_pauseCount;
+    QString currentText;
+    qsizetype textOffset = 0;
+    ISpVoice *m_voice = nullptr;
+    double m_pitch = 0.0;
+    int m_pauseCount = 0;
 };
 QT_END_NAMESPACE
 

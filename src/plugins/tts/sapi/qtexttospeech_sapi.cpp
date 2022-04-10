@@ -72,18 +72,6 @@ static inline HRESULT SpCreateNewToken(const WCHAR *pszTokenId, ISpObjectToken *
 #endif // Q_CC_MINGW
 
 QTextToSpeechEngineSapi::QTextToSpeechEngineSapi(const QVariantMap &, QObject *)
-    : m_state(QTextToSpeech::BackendError), m_voice(nullptr), m_pitch(0.0), m_pauseCount(0)
-{
-    init();
-}
-
-QTextToSpeechEngineSapi::~QTextToSpeechEngineSapi()
-{
-    if (m_voice)
-        m_voice->Release();
-}
-
-void QTextToSpeechEngineSapi::init()
 {
     if (FAILED(::CoInitialize(NULL))) {
         qWarning() << "Init of COM failed";
@@ -100,6 +88,13 @@ void QTextToSpeechEngineSapi::init()
     m_voice->SetNotifyCallbackInterface(this, 0, 0);
     updateVoices();
     m_state = QTextToSpeech::Ready;
+}
+
+QTextToSpeechEngineSapi::~QTextToSpeechEngineSapi()
+{
+    if (m_voice)
+        m_voice->Release();
+    CoUninitialize();
 }
 
 bool QTextToSpeechEngineSapi::isSpeaking() const
@@ -290,21 +285,17 @@ void QTextToSpeechEngineSapi::updateVoices()
         const QMap<QString, QString> vAttr = voiceAttributes(cpVoiceToken);
 
         // Transform Windows LCID to QLocale
-        const QLocale vLocale = lcidToLocale(vAttr["Language"]);
-        if (!m_locales.contains(vLocale))
-            m_locales.append(vLocale);
+        const QLocale vLocale = lcidToLocale(vAttr[u"Language"_qs]);
 
         // Create voice
-
-        QString name = vAttr["Name"];
-        QVoice::Age age = vAttr["Age"] == "Adult" ?  QVoice::Adult : QVoice::Other;
-        QVoice::Gender gender = vAttr["Gender"] == "Male" ? QVoice::Male :
-                                vAttr["Gender"] == "Female" ? QVoice::Female :
-                                QVoice::Unknown;
+        const QString name = vAttr[u"Name"_qs];
+        const QVoice::Age age = vAttr[u"Age"_qs] == u"Adult"_qs ?  QVoice::Adult : QVoice::Other;
+        const QVoice::Gender gender = vAttr[u"Gender"_qs] == u"Male"_qs ? QVoice::Male :
+                                      vAttr[u"Gender"_qs] == u"Female"_qs ? QVoice::Female :
+                                      QVoice::Unknown;
         // Getting the ID of the voice to set the voice later
-        const QString vId = voiceId(cpVoiceToken);
-        const QVoice voice = createVoice(name, gender, age, vId);
-        m_voices.insert(vLocale.name(), voice);
+        const QVoice voice = createVoice(name, gender, age, voiceId(cpVoiceToken));
+        m_voices.insert(vLocale, voice);
     }
     if (cpVoiceToken)
         cpVoiceToken->Release();
@@ -313,12 +304,12 @@ void QTextToSpeechEngineSapi::updateVoices()
 
 QList<QLocale> QTextToSpeechEngineSapi::availableLocales() const
 {
-    return m_locales;
+    return m_voices.uniqueKeys();
 }
 
 bool QTextToSpeechEngineSapi::setLocale(const QLocale &locale)
 {
-    const QList<QVoice> voicesForLocale = m_voices.values(locale.name());
+    const QList<QVoice> voicesForLocale = m_voices.values(locale);
     if (voicesForLocale.isEmpty()) {
         qWarning() << "No voice found for given locale";
         return false;
@@ -340,12 +331,12 @@ QLocale QTextToSpeechEngineSapi::locale() const
     // read attributes
     const QMap<QString, QString> vAttr = voiceAttributes(cpVoiceToken);
     cpVoiceToken->Release();
-    return lcidToLocale(vAttr.value(QStringLiteral("Language")));
+    return lcidToLocale(vAttr.value(u"Language"_qs));
 }
 
 QList<QVoice> QTextToSpeechEngineSapi::availableVoices() const
 {
-    return m_voices.values(locale().name());
+    return m_voices.values(locale());
 }
 
 bool QTextToSpeechEngineSapi::setVoice(const QVoice &voice)
