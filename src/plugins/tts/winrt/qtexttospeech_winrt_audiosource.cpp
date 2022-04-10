@@ -157,15 +157,21 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
         // look for a series (e.g. 1/20th of a second) of samples with value 0.
         const int silenceDuration = audioFormat.sampleRate() / 20;
         const short *sample = reinterpret_cast<short*>(pbyte);
+        const qsizetype sampleCount = maxlen / sizeof(short);
         qint64 silenceCount = 0;
-        for (qint64 index = 0; index < maxlen; ++index) {
+        for (qint64 index = 0; index < sampleCount; ++index) {
             if (!sample[index]) {
                 ++silenceCount;
             } else if (silenceCount > silenceDuration) {
                 // long enough silence found, only provide the data until we are in the
-                // silence. The next attempt to pull data will return nothing, and the
-                // audio sink will move to idle state.
-                maxlen = index - silenceCount / 2;
+                // silence. If the silence is at the beginning of our buffer, start from
+                // there, otherwise play a bit of silence now.
+                if (index != silenceCount)
+                    silenceCount /= 2;
+
+                maxlen = (index - silenceCount) * 2;
+                // The next attempt to pull data will return nothing, and the audio sink
+                // will move to idle state.
                 m_pause = Paused;
                 break;
             } else {
@@ -175,13 +181,19 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
         break;
     }
     case Paused:
-        return 0;
+        // starve the sink so that it goes idle
+        maxlen = 0;
+        break;
     }
+
+    if (!maxlen)
+        return 0;
 
     memcpy(data, pbyte, maxlen);
 
     // If we emptied the buffer, fetch more. This should always happen, as the
-    // IBuffer has the same capacity as QIODevice's default read chunk size.
+    // IBuffer has the same capacity as QIODevice's default read chunk size, unless
+    // we entered pause mode.
     if (available <= maxlen)
         fetchMore();
     else
