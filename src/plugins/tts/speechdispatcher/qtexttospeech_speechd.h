@@ -79,17 +79,12 @@ public:
     void spdStateChanged(SPDNotificationType state);
 
 private:
-    struct VoiceData {
-        QLocale locale;
-        QByteArray module;
-    };
     QLocale localeForVoice(SPDVoice *voice) const;
     bool connectToSpeechDispatcher();
     void updateVoices();
 
     QTextToSpeech::State m_state;
     SPDConnection *speechDispatcher;
-    QLocale m_currentLocale;
     QVoice m_currentVoice;
     // Voices mapped by their locale name.
     QMultiHash<QLocale, QVoice> m_voices;

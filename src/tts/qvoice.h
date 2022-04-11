@@ -54,6 +54,7 @@ class Q_TEXTTOSPEECH_EXPORT QVoice
     Q_PROPERTY(QString name READ name CONSTANT)
     Q_PROPERTY(Gender gender READ gender CONSTANT)
     Q_PROPERTY(Age age READ age CONSTANT)
+    Q_PROPERTY(QLocale locale READ locale CONSTANT)
 
 public:
     enum Gender {
@@ -95,6 +96,7 @@ public:
 #endif
 
     QString name() const;
+    QLocale locale() const;
     Gender gender() const;
     Age age() const;
 
@@ -102,7 +104,7 @@ public:
     static QString ageName(QVoice::Age age);
 
 private:
-    QVoice(const QString &name, Gender gender, Age age, const QVariant &data);
+    QVoice(const QString &name, const QLocale &loc, Gender gender, Age age, const QVariant &data);
     bool isEqual(const QVoice &other) const noexcept;
 #ifndef QT_NO_DATASTREAM
     QDataStream &writeTo(QDataStream &) const;

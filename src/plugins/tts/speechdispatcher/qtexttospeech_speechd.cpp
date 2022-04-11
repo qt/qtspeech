@@ -64,13 +64,8 @@ QLocale QTextToSpeechEngineSpeechd::localeForVoice(SPDVoice *voice) const
 QTextToSpeechEngineSpeechd::QTextToSpeechEngineSpeechd(const QVariantMap &, QObject *)
     : speechDispatcher(nullptr)
 {
-    qRegisterMetaType<VoiceData>();
     backends->append(this);
     connectToSpeechDispatcher();
-
-    const auto voices = availableVoices();
-    if (voices.count())
-        setVoice(voices.first());
 }
 
 QTextToSpeechEngineSpeechd::~QTextToSpeechEngineSpeechd()
@@ -116,7 +111,7 @@ bool QTextToSpeechEngineSpeechd::connectToSpeechDispatcher()
         }
 
         updateVoices();
-        // Default to the default locale (which is usually the system locale), and fall back
+        // Set the default locale (which is usually the system locale), and fall back
         // to a locale that has the same language if that fails. That might then still fail,
         // in which case there won't be a valid voice.
         if (!setLocale(QLocale()))
@@ -260,16 +255,14 @@ bool QTextToSpeechEngineSpeechd::setLocale(const QLocale &locale)
 
     int result = spd_set_language(speechDispatcher, locale.uiLanguages().at(0).toUtf8().data());
     if (result == 0) {
-        QLocale previousLocale = m_currentLocale;
-        QVoice previousVoice = m_currentVoice;
-        m_currentLocale = locale;
+        const QVoice previousVoice = m_currentVoice;
 
-        QList<QVoice> voices = availableVoices();
-        if (voices.size() > 0 && setVoice(voices.at(0)))
+        const QList<QVoice> voices = m_voices.values(locale);
+        // QMultiHash returns the values in the reverse order
+        if (voices.size() > 0 && setVoice(voices.last()))
             return true;
 
         // try to go back to the previous locale/voice
-        m_currentLocale = previousLocale;
         setVoice(previousVoice);
     }
     return false;
@@ -277,7 +270,7 @@ bool QTextToSpeechEngineSpeechd::setLocale(const QLocale &locale)
 
 QLocale QTextToSpeechEngineSpeechd::locale() const
 {
-    return m_currentLocale;
+    return m_currentVoice.locale();
 }
 
 bool QTextToSpeechEngineSpeechd::setVoice(const QVoice &voice)
@@ -285,16 +278,13 @@ bool QTextToSpeechEngineSpeechd::setVoice(const QVoice &voice)
     if (!connectToSpeechDispatcher())
         return false;
 
-    const VoiceData data = voiceData(voice).value<VoiceData>();
-    const QLocale voiceLocale = data.locale;
-    const QByteArray moduleName = data.module;
+    const QByteArray moduleName = voiceData(voice).value<QByteArray>();
     const int result = spd_set_output_module(speechDispatcher, moduleName);
     if (result != 0)
         return false;
     const int result2 = spd_set_synthesis_voice(speechDispatcher, voice.name().toUtf8().data());
     if (result2 == 0) {
         m_currentVoice = voice;
-        m_currentLocale = voiceLocale;
         return true;
     }
     return false;
@@ -318,7 +308,6 @@ void QTextToSpeechEngineSpeechd::updateVoices()
 #else
     char *original_module = modules[0];
 #endif
-    QVoice originalVoice;
     char **module = modules;
     while (module != nullptr && module[0] != nullptr) {
         spd_set_output_module(speechDispatcher, module[0]);
@@ -327,16 +316,12 @@ void QTextToSpeechEngineSpeechd::updateVoices()
         int i = 0;
         while (voices != nullptr && voices[i] != nullptr) {
             const QLocale locale = localeForVoice(voices[i]);
-            const QVariant data = QVariant::fromValue<VoiceData>({locale, QByteArray(module[0])});
+            const QVariant data = QVariant::fromValue<QByteArray>(module[0]);
             // speechd declares enums and APIs for gender and age, but the SPDVoice struct
             // carries no relevant information.
-            const QVoice voice = createVoice(QString::fromUtf8(voices[i]->name), QVoice::Unknown,
-                                             QVoice::Other, data);
+            const QVoice voice = createVoice(QString::fromUtf8(voices[i]->name), locale,
+                                             QVoice::Unknown, QVoice::Other, data);
             m_voices.insert(locale, voice);
-            if (module[0] == original_module && i == 0) {
-                // in lack of better options, remember the first voice as default
-                originalVoice = voice;
-            }
             ++i;
         }
         // free voices.
@@ -352,7 +337,6 @@ void QTextToSpeechEngineSpeechd::updateVoices()
 #endif
     // Set the output module back to what it was.
     spd_set_output_module(speechDispatcher, original_module);
-    setVoice(originalVoice);
 #ifdef HAVE_SPD_090
     free(original_module);
 #endif
@@ -365,7 +349,7 @@ QList<QLocale> QTextToSpeechEngineSpeechd::availableLocales() const
 
 QList<QVoice> QTextToSpeechEngineSpeechd::availableVoices() const
 {
-    QList<QVoice> resultList = m_voices.values(m_currentLocale);
+    QList<QVoice> resultList = m_voices.values(m_currentVoice.locale());
     std::reverse(resultList.begin(), resultList.end());
     return resultList;
 }

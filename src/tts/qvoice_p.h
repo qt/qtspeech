@@ -53,7 +53,7 @@
 #include <qvoice.h>
 
 #include <QString>
-#include <QCoreApplication>
+#include <QLocale>
 #include <QVariant>
 #include <private/qglobal_p.h>
 
@@ -64,10 +64,12 @@ class QVoicePrivate : public QSharedData
 public:
     QVoicePrivate() = default;
     QVoicePrivate(const QVoicePrivate &other);
-    QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, const QVariant &d);
+    QVoicePrivate(const QString &n, const QLocale &l, QVoice::Gender g,
+                  QVoice::Age a, const QVariant &d);
     ~QVoicePrivate() = default;
 
     QString name;
+    QLocale locale;
     QVoice::Gender gender = QVoice::Unknown;
     QVoice::Age age = QVoice::Other;
     // Various data depending on the platform:
@@ -77,12 +79,14 @@ public:
 };
 
 QVoicePrivate::QVoicePrivate(const QVoicePrivate &other)
-    : QSharedData(other), name(other.name), gender(other.gender), age(other.age), data(other.data)
+    : QSharedData(other), name(other.name), locale(other.locale)
+    , gender(other.gender), age(other.age), data(other.data)
 {
 }
 
-QVoicePrivate::QVoicePrivate(const QString &n, QVoice::Gender g, QVoice::Age a, const QVariant &d)
-    :name(n), gender(g), age(a), data(d)
+QVoicePrivate::QVoicePrivate(const QString &n, const QLocale &l, QVoice::Gender g,
+                             QVoice::Age a, const QVariant &d)
+    :name(n), locale(l), gender(g), age(a), data(d)
 {
 }
 

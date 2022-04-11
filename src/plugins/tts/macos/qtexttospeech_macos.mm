@@ -187,7 +187,7 @@ bool QTextToSpeechEngineMacOS::setVolume(double volume)
     return true;
 }
 
-QLocale localeForVoice(NSString *voice)
+static QLocale localeForVoice(NSString *voice)
 {
     NSDictionary *attrs = [NSSpeechSynthesizer attributesForVoice:voice];
     return QLocale(QString::fromNSString(attrs[NSVoiceLocaleIdentifier]));
@@ -210,8 +210,7 @@ QVoice QTextToSpeechEngineMacOS::voiceForNSVoice(NSString *voiceString) const
                        ageInt < 45 ? QVoice::Adult :
                        ageInt < 90 ? QVoice::Senior : QVoice::Other);
     QVariant data = QString::fromNSString(attrs[NSVoiceIdentifier]);
-    QVoice voice = createVoice(voiceName, gender, age, data);
-    return voice;
+    return createVoice(voiceName, localeForVoice(voiceString), gender, age, data);
 }
 
 QList<QLocale> QTextToSpeechEngineMacOS::availableLocales() const
@@ -248,9 +247,8 @@ void QTextToSpeechEngineMacOS::updateVoices()
 {
     NSArray *voices = NSSpeechSynthesizer.availableVoices;
     for (NSString *voice in voices) {
-        const QLocale locale = localeForVoice(voice);
-        QVoice data = voiceForNSVoice(voice);
-        m_voices.insert(locale, data);
+        const QVoice data = voiceForNSVoice(voice);
+        m_voices.insert(data.locale(), data);
     }
 }
 

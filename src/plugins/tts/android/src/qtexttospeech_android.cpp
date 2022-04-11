@@ -321,18 +321,30 @@ QVoice QTextToSpeechEngineAndroid::javaVoiceObjectToQVoice(QJniObject &obj) cons
     } else {
         gender = QVoice::Unknown;
     }
-    return createVoice(voiceName, gender, QVoice::Other, voiceName);
+    QJniObject locale = obj.callObjectMethod("getLocale", "()Ljava/util/Locale;");
+    QLocale qlocale;
+    if (locale.isValid()) {
+        auto localeLanguage = locale.callObjectMethod<jstring>("getLanguage").toString();
+        auto localeCountry = locale.callObjectMethod<jstring>("getCountry").toString();
+        if (!localeCountry.isEmpty())
+            localeLanguage += QString("_%1").arg(localeCountry).toUpper();
+        qlocale = QLocale(localeLanguage);
+    }
+    return createVoice(voiceName, qlocale, gender, QVoice::Other, voiceName);
 }
 
 QList<QVoice> QTextToSpeechEngineAndroid::availableVoices() const
 {
     auto voices = m_speech.callObjectMethod("getAvailableVoices", "()Ljava/util/List;");
     int count = voices.callMethod<jint>("size");
+    const QLocale ttsLocale = locale();
     QList<QVoice> result;
     result.reserve(count);
     for (int i = 0; i < count; ++i) {
-        auto voice = voices.callObjectMethod("get", "(I)Ljava/lang/Object;", i);
-        result << javaVoiceObjectToQVoice(voice);
+        auto jvoice = voices.callObjectMethod("get", "(I)Ljava/lang/Object;", i);
+        const QVoice voice = javaVoiceObjectToQVoice(jvoice);
+        if (voice.locale() == ttsLocale)
+            result << voice;
     }
     return result;
 }

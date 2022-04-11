@@ -294,7 +294,7 @@ void QTextToSpeechEngineSapi::updateVoices()
                                       vAttr[u"Gender"_qs] == u"Female"_qs ? QVoice::Female :
                                       QVoice::Unknown;
         // Getting the ID of the voice to set the voice later
-        const QVoice voice = createVoice(name, gender, age, voiceId(cpVoiceToken));
+        const QVoice voice = createVoice(name, vLocale, gender, age, voiceId(cpVoiceToken));
         m_voices.insert(vLocale, voice);
     }
     if (cpVoiceToken)

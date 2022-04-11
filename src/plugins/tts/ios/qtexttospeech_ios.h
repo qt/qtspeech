@@ -80,7 +80,6 @@ private:
     QVoice toQVoice(AVSpeechSynthesisVoice *avVoice) const;
 
     AVSpeechSynthesizer *m_speechSynthesizer;
-    QLocale m_locale;
     QVoice m_voice;
     QTextToSpeech::State m_state = QTextToSpeech::Ready;
 

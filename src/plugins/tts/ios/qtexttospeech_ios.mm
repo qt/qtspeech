@@ -236,14 +236,13 @@ bool QTextToSpeechEngineIos::setLocale(const QLocale &locale)
     if (!defaultAvVoice)
         return false;
 
-    m_locale = locale;
     m_voice = toQVoice(defaultAvVoice);
     return true;
 }
 
 QLocale QTextToSpeechEngineIos::locale() const
 {
-    return m_locale;
+    return m_voice.locale();
 }
 
 QList<QVoice> QTextToSpeechEngineIos::availableVoices() const
@@ -252,7 +251,7 @@ QList<QVoice> QTextToSpeechEngineIos::availableVoices() const
 
     for (AVSpeechSynthesisVoice *avVoice in [AVSpeechSynthesisVoice speechVoices]) {
         const QLocale voiceLocale(QString::fromNSString(avVoice.language));
-        if (m_locale == voiceLocale)
+        if (m_voice.locale() == voiceLocale)
             voices << toQVoice(avVoice);
     }
 
@@ -266,7 +265,6 @@ bool QTextToSpeechEngineIos::setVoice(const QVoice &voice)
         return false;
 
     m_voice = voice;
-    m_locale = QLocale(QString::fromNSString(avVoice.language));
     return true;
 }
 
@@ -299,7 +297,9 @@ QVoice QTextToSpeechEngineIos::toQVoice(AVSpeechSynthesisVoice *avVoice) const
         return QVoice::Unknown;
     }();
 
-    return createVoice(QString::fromNSString(avVoice.name), gender, QVoice::Other, QString::fromNSString(avVoice.identifier));
+    return createVoice(QString::fromNSString(avVoice.name),
+                       QLocale(QString::fromNSString(avVoice.language)),
+                       gender, QVoice::Other, QString::fromNSString(avVoice.identifier));
 }
 
 void QTextToSpeechEngineIos::setState(QTextToSpeech::State state)

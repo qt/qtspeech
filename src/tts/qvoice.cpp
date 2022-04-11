@@ -116,8 +116,9 @@ QVoice &QVoice::operator=(const QVoice &other) noexcept
 /*!
     \internal
 */
-QVoice::QVoice(const QString &name, Gender gender, Age age, const QVariant &data)
-    :d(new QVoicePrivate(name, gender, age, data))
+QVoice::QVoice(const QString &name, const QLocale &locale, Gender gender,
+               Age age, const QVariant &data)
+    :d(new QVoicePrivate(name, locale, gender, age, data))
 {
 }
 
@@ -135,6 +136,7 @@ bool QVoice::isEqual(const QVoice &other) const noexcept
         return false;
 
     return d->name == other.d->name
+        && d->locale == other.d->locale
         && d->gender == other.d->gender
         && d->age == other.d->age
         && d->data == other.d->data;
@@ -144,7 +146,8 @@ bool QVoice::isEqual(const QVoice &other) const noexcept
     \fn bool QVoice::operator==(const QVoice &lhs, const QVoice &rhs)
     \return whether the \a lhs voice and the \a rhs voice are identical.
 
-    Two voices are identical if \l name, \l gender, and \l age are identical.
+    Two voices are identical if \l name, \l locale, \l gender, and \l age
+    are identical, and if they belong to the same text-to-speech engine.
 */
 
 /*!
@@ -159,6 +162,19 @@ bool QVoice::isEqual(const QVoice &other) const noexcept
 QString QVoice::name() const
 {
     return d ? d->name : QString();
+}
+
+/*!
+    \property QVoice::locale
+    \brief the locale of the voice
+    \since 6.4
+
+    The locale includes the language and the territory (i.e. accent or dialect)
+    of the voice.
+*/
+QLocale QVoice::locale() const
+{
+    return d ? d->locale : QLocale();
 }
 
 /*!
@@ -236,7 +252,7 @@ QString QVoice::ageName(QVoice::Age age)
 #ifndef QT_NO_DATASTREAM
 QDataStream &QVoice::writeTo(QDataStream &stream) const
 {
-    stream << name() << gender() << age() << data();
+    stream << name() << locale() << gender() << age() << data();
     return stream;
 }
 
@@ -245,7 +261,7 @@ QDataStream &QVoice::readFrom(QDataStream &stream)
     if (!d)
         d.reset(new QVoicePrivate);
 
-    stream >> d->name >> d->gender >> d->age >> d->data;
+    stream >> d->name >> d->locale >> d->gender >> d->age >> d->data;
     return stream;
 }
 #endif
@@ -255,7 +271,8 @@ QDebug operator<<(QDebug dbg, const QVoice &voice)
 {
     QDebugStateSaver state(dbg);
     dbg.noquote().nospace();
-    dbg << voice.name() << ", " << QVoice::genderName(voice.gender())
+    dbg << voice.name() << ", " << voice.locale().language()
+                        << ", " << QVoice::genderName(voice.gender())
                         << ", " << QVoice::ageName(voice.age())
                         << "; data: " << voice.data();
     return dbg;

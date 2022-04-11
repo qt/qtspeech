@@ -156,10 +156,16 @@ QVoice QTextToSpeechEngineWinRTPrivate::createVoiceForInformation(const ComPtr<I
     hr = info->get_Gender(&gender);
     Q_ASSERT_SUCCEEDED(hr);
 
+    HString voiceLanguage;
+    hr = info->get_Language(voiceLanguage.GetAddressOf());
+    Q_ASSERT_SUCCEEDED(hr);
+
     HString voiceId;
     hr = info->get_Id(voiceId.GetAddressOf());
+    Q_ASSERT_SUCCEEDED(hr);
 
     return q->createVoice(QString::fromWCharArray(nativeName.GetRawBuffer(0)),
+                          QLocale(QString::fromWCharArray(voiceLanguage.GetRawBuffer(0))),
                           gender == VoiceGender_Male ? QVoice::Male : QVoice::Female,
                           QVoice::Other,
                           QString::fromWCharArray(voiceId.GetRawBuffer(0)));
@@ -225,12 +231,9 @@ QList<QVoice> QTextToSpeechEngineWinRT::availableVoices() const
     QList<QVoice> voices;
     const QLocale currentLocale = locale();
     d->forEachVoice([&](const ComPtr<IVoiceInformation> &voiceInfo) {
-        HString voiceLanguage;
-        HRESULT hr = voiceInfo->get_Language(voiceLanguage.GetAddressOf());
-        Q_ASSERT_SUCCEEDED(hr);
-
-        if (currentLocale == QLocale(QString::fromWCharArray(voiceLanguage.GetRawBuffer(0))))
-            voices.append(d->createVoiceForInformation(voiceInfo));
+        const QVoice voice = d->createVoiceForInformation(voiceInfo);
+        if (currentLocale == voice.locale())
+            voices.append(voice);
         return false;
     });
     return voices;

@@ -90,6 +90,7 @@ void tst_QVoice::basic()
     QVoice emptyVoice;
     for (const auto &voice : voices) {
         QCOMPARE(voice, voice);
+        QCOMPARE(voice.locale(), tts.locale());
         QVERIFY(voice != emptyVoice);
 
         QVoice voiceCopy = voice;

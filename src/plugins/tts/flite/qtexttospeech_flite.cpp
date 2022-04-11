@@ -57,7 +57,7 @@ QList<QLocale> QTextToSpeechEngineFlite::availableLocales() const
 
 QList<QVoice> QTextToSpeechEngineFlite::availableVoices() const
 {
-    return m_voices.values(m_currentLocale);
+    return m_voices.values(m_currentVoice.locale());
 }
 
 void QTextToSpeechEngineFlite::say(const QString &text)
@@ -115,7 +115,7 @@ bool QTextToSpeechEngineFlite::setPitch(double pitch)
 
 QLocale QTextToSpeechEngineFlite::locale() const
 {
-    return m_currentLocale;
+    return m_currentVoice.locale();
 }
 
 bool QTextToSpeechEngineFlite::setLocale(const QLocale &locale)
@@ -123,8 +123,8 @@ bool QTextToSpeechEngineFlite::setLocale(const QLocale &locale)
     const auto &voices = m_voices.values(locale);
     if (voices.isEmpty())
         return false;
-    m_currentLocale = locale;
-    setVoice(voices.first());
+    // The list returned by QMultiHash::values is reversed
+    setVoice(voices.last());
     return true;
 }
 
@@ -152,7 +152,6 @@ bool QTextToSpeechEngineFlite::setVoice(const QVoice &voice)
     }
 
     m_currentVoice = voice;
-    m_currentLocale = locale;
     return true;
 }
 
@@ -166,16 +165,14 @@ bool QTextToSpeechEngineFlite::init(QString *errorString)
     int i = 0;
     const QList<QTextToSpeechProcessor::VoiceInfo> &voices = m_processor->voices();
     for (const QTextToSpeechProcessor::VoiceInfo &voiceInfo : voices) {
-        const QString name = voiceInfo.name;
         const QLocale locale(voiceInfo.locale);
-        const QVoice voice = QTextToSpeechEngine::createVoice(name, voiceInfo.gender, voiceInfo.age,
+        const QVoice voice = QTextToSpeechEngine::createVoice(voiceInfo.name, locale,
+                                                              voiceInfo.gender, voiceInfo.age,
                                                               QVariant(voiceInfo.id));
         m_voices.insert(locale, voice);
         // Use the first available locale/voice as a fallback
-        if (i == 0) {
+        if (i == 0)
             m_currentVoice = voice;
-            m_currentLocale = locale;
-        }
         i++;
     }
     // Attempt to switch to the system locale

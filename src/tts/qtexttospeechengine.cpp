@@ -187,11 +187,14 @@ QTextToSpeechEngine::~QTextToSpeechEngine()
 /*!
     Creates a voice for a text-to-speech engine.
 
-    Parameters \a name, \a gender, \a age and \a data are directly stored in the QVoice instance.
+    Parameters \a name, \a locale, \a gender, \a age and \a data are directly
+    stored in the QVoice instance.
 */
-QVoice QTextToSpeechEngine::createVoice(const QString &name, QVoice::Gender gender, QVoice::Age age, const QVariant &data)
+QVoice QTextToSpeechEngine::createVoice(const QString &name, const QLocale &locale,
+                                        QVoice::Gender gender, QVoice::Age age,
+                                        const QVariant &data)
 {
-    return QVoice(name, gender, age, data);
+    return QVoice(name, locale, gender, age, data);
 }
 
 /*!

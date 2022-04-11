@@ -85,7 +85,6 @@ public slots:
 private:
     QTextToSpeech::State m_state;
     QSharedPointer<QTextToSpeechProcessorFlite> m_processor;
-    QLocale m_currentLocale;
     QVoice m_currentVoice;
     // Voices mapped by their locale name.
     QMultiHash<QLocale, QVoice> m_voices;
