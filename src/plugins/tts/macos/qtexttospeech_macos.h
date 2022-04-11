@@ -37,6 +37,7 @@
 #ifndef QTEXTTOSPEECHENGINE_MACOS_H
 #define QTEXTTOSPEECHENGINE_MACOS_H
 
+#include <QtCore/qhash.h>
 #include <QtCore/qlist.h>
 #include <QtCore/qlocale.h>
 #include <QtCore/qobject.h>
@@ -89,8 +90,7 @@ private:
     QVoice voiceForNSVoice(NSString *voiceString) const;
     NSSpeechSynthesizer *speechSynthesizer;
     QT_MANGLE_NAMESPACE(StateDelegate) *stateDelegate;
-    QList<QLocale> m_locales;
-    QMultiMap<QString, QVoice> m_voices;
+    QMultiHash<QLocale, QVoice> m_voices;
 };
 
 QT_END_NAMESPACE

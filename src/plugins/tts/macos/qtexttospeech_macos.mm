@@ -216,7 +216,7 @@ QVoice QTextToSpeechEngineMacOS::voiceForNSVoice(NSString *voiceString) const
 
 QList<QLocale> QTextToSpeechEngineMacOS::availableLocales() const
 {
-    return m_locales;
+    return m_voices.uniqueKeys();
 }
 
 bool QTextToSpeechEngineMacOS::setLocale(const QLocale &locale)
@@ -248,17 +248,15 @@ void QTextToSpeechEngineMacOS::updateVoices()
 {
     NSArray *voices = NSSpeechSynthesizer.availableVoices;
     for (NSString *voice in voices) {
-        QLocale locale = localeForVoice(voice);
+        const QLocale locale = localeForVoice(voice);
         QVoice data = voiceForNSVoice(voice);
-        if (!m_locales.contains(locale))
-            m_locales.append(locale);
-        m_voices.insert(locale.name(), data);
+        m_voices.insert(locale, data);
     }
 }
 
 QList<QVoice> QTextToSpeechEngineMacOS::availableVoices() const
 {
-    return m_voices.values(locale().name()).toList();
+    return m_voices.values(locale());
 }
 
 bool QTextToSpeechEngineMacOS::setVoice(const QVoice &voice)
