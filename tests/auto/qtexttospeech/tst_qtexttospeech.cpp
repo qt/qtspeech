@@ -99,6 +99,7 @@ void tst_QTextToSpeech::init()
     QFETCH_GLOBAL(QString, engine);
     if (engine == "speechd") {
         QTextToSpeech tts(engine);
+        QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
         if (tts.state() == QTextToSpeech::BackendError) {
             QSKIP("speechd engine reported a backend error, "
                   "make sure the speech-dispatcher service is running!");
@@ -110,6 +111,7 @@ void tst_QTextToSpeech::availableVoices()
 {
     QFETCH_GLOBAL(QString, engine);
     QTextToSpeech tts(engine);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
     qInfo("Available voices:");
     const auto availableVoices = tts.availableVoices();
     QVERIFY(availableVoices.count() > 0);
@@ -121,6 +123,7 @@ void tst_QTextToSpeech::availableLocales()
 {
     QFETCH_GLOBAL(QString, engine);
     QTextToSpeech tts(engine);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
     const auto availableLocales = tts.availableLocales();
     QVERIFY(availableLocales.count() > 0);
     qInfo("Available locales:");
@@ -247,9 +250,8 @@ void tst_QTextToSpeech::voice()
 void tst_QTextToSpeech::rate()
 {
     QFETCH_GLOBAL(QString, engine);
-    const QString text = QStringLiteral("example text at different rates");
     QTextToSpeech tts(engine);
-    QCOMPARE(tts.state(), QTextToSpeech::Ready);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
 
     tts.setRate(0.5);
 #ifndef HAVE_SPEECHD_BEFORE_090
@@ -268,6 +270,7 @@ void tst_QTextToSpeech::pitch()
 {
     QFETCH_GLOBAL(QString, engine);
     QTextToSpeech tts(engine);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
     tts.setPitch(0.0);
     QCOMPARE(tts.pitch(), 0.0);
 
@@ -275,8 +278,10 @@ void tst_QTextToSpeech::pitch()
     int signalCount = 0;
     for (int i = -10; i <= 10; ++i) {
         tts.setPitch(i / 10.0);
+        QString actual = QString("%1").arg(tts.pitch(), 0, 'g', 2);
+        QString expected = QString("%1").arg(i / 10.0, 0, 'g', 2);
 #ifndef HAVE_SPEECHD_BEFORE_090
-        QCOMPARE(tts.pitch(), i / 10.0);
+        QCOMPARE(actual, expected);
 #endif
         QCOMPARE(spy.count(), ++signalCount);
         tts.setPitch(tts.pitch());
@@ -288,6 +293,7 @@ void tst_QTextToSpeech::volume()
 {
     QFETCH_GLOBAL(QString, engine);
     QTextToSpeech tts(engine);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
     tts.setVolume(0.0);
 
     QSignalSpy spy(&tts, &QTextToSpeech::volumeChanged);
@@ -311,7 +317,7 @@ void tst_QTextToSpeech::sayHello()
     QFETCH_GLOBAL(QString, engine);
     const QString text = QStringLiteral("saying hello with %1");
     QTextToSpeech tts(engine);
-    QCOMPARE(tts.state(), QTextToSpeech::Ready);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
 
     QElapsedTimer timer;
     timer.start();
@@ -328,7 +334,7 @@ void tst_QTextToSpeech::pauseResume()
     QFETCH_GLOBAL(QString, engine);
     const QString text = QStringLiteral("Hello. World.");
     QTextToSpeech tts(engine);
-    QCOMPARE(tts.state(), QTextToSpeech::Ready);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
 
     tts.say(text);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
@@ -346,7 +352,7 @@ void tst_QTextToSpeech::sayWithVoices()
     QFETCH_GLOBAL(QString, engine);
     const QString text = QStringLiteral("engine %1 with voice of %2");
     QTextToSpeech tts(engine);
-    QCOMPARE(tts.state(), QTextToSpeech::Ready);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
 
     const QList<QVoice> voices = tts.availableVoices();
     for (const auto &voice : voices) {
@@ -373,7 +379,13 @@ void tst_QTextToSpeech::sayWithRates()
     QFETCH_GLOBAL(QString, engine);
     const QString text = QStringLiteral("test at different rates");
     QTextToSpeech tts(engine);
-    QCOMPARE(tts.state(), QTextToSpeech::Ready);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+
+    // warmup at normal rate so that the result doesn't get skewed on engines
+    // that initialize lazily on first utterance (like Android).
+    tts.say(text);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
 
     qint64 lastTime = 0;
     // check that speaking at slower rate takes more time (for 0.5, 0.0, -0.5)

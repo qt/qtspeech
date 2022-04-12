@@ -210,28 +210,45 @@ void QTextToSpeechEngineAndroid::resume()
     say(m_text);
 }
 
+// Android API's pitch is from (0.0, 2.0[ with 1.0 being normal. 0.0 is
+// not included, so we have to scale negative Qt pitches from 0.1 to 1.0
 double QTextToSpeechEngineAndroid::pitch() const
 {
     jfloat pitch = m_speech.callMethod<jfloat>("pitch");
-    return double(pitch - 1.0f);
+    if (pitch < 1.0f)
+        pitch = (pitch - 1.0f) / 0.9f;
+    else
+        pitch -= 1.0f;
+    return double(pitch);
 }
 
 bool QTextToSpeechEngineAndroid::setPitch(double pitch)
 {
-    // 0 == SUCCESS and 1.0 == Android API's normal pitch.
-    return m_speech.callMethod<int>("setPitch", "(F)I", pitch + 1.0f) == 0;
+    if (pitch < 0)
+        pitch = (pitch * 0.9f) + 1.0f;
+    else
+        pitch += 1.0f;
+
+    // 0 == SUCCESS
+    return m_speech.callMethod<int>("setPitch", "(F)I", pitch) == 0;
 }
 
+// Android API's rate is from [0.5, 2.0[, with 1.0 being normal.
 double QTextToSpeechEngineAndroid::rate() const
 {
     jfloat rate = m_speech.callMethod<jfloat>("rate");
-    return double(rate - 1.0f);
+    if (rate < 1.0f)
+        rate = (rate - 1.0f) * 2.0f;
+    else
+        rate -= 1.0f;
+    return double(rate);
 }
 
 bool QTextToSpeechEngineAndroid::setRate(double rate)
 {
-    // 0 == SUCCESS and 1.0 == Android API's normal rate.
-    return (m_speech.callMethod<int>("setRate", "(F)I", rate + 1.0f) == 0);
+    rate = 1.0 + (rate >= 0 ? rate : (rate * 0.5));
+    // 0 == SUCCESS
+    return m_speech.callMethod<int>("setRate", "(F)I", rate) == 0;
 }
 
 double QTextToSpeechEngineAndroid::volume() const
