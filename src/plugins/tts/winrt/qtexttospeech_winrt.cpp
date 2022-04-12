@@ -322,6 +322,11 @@ QTextToSpeech::State QTextToSpeechEngineWinRT::state() const
 void QTextToSpeechEngineWinRTPrivate::initializeAudioSink(const QAudioFormat &format)
 {
     Q_Q(const QTextToSpeechEngineWinRT);
+
+    // cancelled or another call to say() while waiting for the synthesizer
+    if (!audioSource)
+        return;
+
     audioSink.reset(new QAudioSink(format));
     audioSink->start(audioSource.Get());
     QObject::connect(audioSink.get(), &QAudioSink::stateChanged,
@@ -369,12 +374,8 @@ void QTextToSpeechEngineWinRT::say(const QString &text)
 {
     Q_D(QTextToSpeechEngineWinRT);
 
-    // always stop the audio sink first
-
-    if (d->audioSource) {
-        d->audioSource->close();
-        d->audioSource.Reset();
-    }
+    // stop ongoing speech
+    stop();
 
     HRESULT hr = S_OK;
 
@@ -389,10 +390,8 @@ void QTextToSpeechEngineWinRT::say(const QString &text)
         return;
     }
 
-    // The source will start to consume the data resulting out of the synthOperation,
-    // and send the data to a QAudioSink. The sink starts playing as soon as the data
-    // is available, and from that point on the state of the sync and the state of
-    // the QTextToSpeech object are aligned.
+    // The source will wait for the the data resulting out of the synthOperation, and emits
+    // streamReady when data is available. This starts a QAudioSink, which pulls the data.
     d->audioSource.Attach(new AudioSource(synthOperation));
 
     connect(d->audioSource.Get(), &AudioSource::streamReady, this, [d](const QAudioFormat &format){

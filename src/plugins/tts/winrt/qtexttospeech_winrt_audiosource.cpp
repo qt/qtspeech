@@ -105,7 +105,6 @@ void AudioSource::close()
             asyncInfo->get_Status(&status);
             if (status != AsyncStatus::Completed)
                 asyncInfo->Cancel();
-            asyncInfo->Close();
         }
     }
     if (readOperation) {
@@ -113,7 +112,6 @@ void AudioSource::close()
             asyncInfo->get_Status(&status);
             if (status != AsyncStatus::Completed)
                 asyncInfo->Cancel();
-            asyncInfo->Close();
         }
     }
     QIODevice::close();
