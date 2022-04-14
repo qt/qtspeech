@@ -121,18 +121,16 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
 
 QTextToSpeechEngineAndroid::QTextToSpeechEngineAndroid(const QVariantMap &parameters, QObject *parent)
     : QTextToSpeechEngine(parent)
-    , m_speech()
-    , m_state(QTextToSpeech::BackendError)
-    , m_text()
 {
-    Q_UNUSED(parameters);
     Q_ASSERT(g_qtSpeechClass);
+
+    const QString engine = parameters.value("androidEngine").toString();
 
     const jlong id = reinterpret_cast<jlong>(this);
     m_speech = QJniObject::callStaticObjectMethod(
                     g_qtSpeechClass, "open",
-                    "(Landroid/content/Context;J)Lorg/qtproject/qt/android/speech/QtTextToSpeech;",
-                    QNativeInterface::QAndroidApplication::context(), id);
+                    "(Landroid/content/Context;JLjava/lang/String;)Lorg/qtproject/qt/android/speech/QtTextToSpeech;",
+                    QNativeInterface::QAndroidApplication::context(), id, QJniObject::fromString(engine).object());
     (*textToSpeechMap)[id] = this;
 }
 

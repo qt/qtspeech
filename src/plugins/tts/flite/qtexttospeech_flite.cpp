@@ -38,19 +38,28 @@
 
 QT_BEGIN_NAMESPACE
 
+using namespace Qt::StringLiterals;
+
 QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(QString *errorString, const QVariantMap &parameters, QObject *parent)
     : QTextToSpeechEngine(parent)
 {
     Q_UNUSED(parameters);
 
+    QAudioDevice audioDevice;
+    if (const auto it = parameters.find("audioDevice"_L1); it != parameters.end())
+        audioDevice = (*it).value<QAudioDevice>();
+    else
+        audioDevice = QMediaDevices::defaultAudioOutput();
+    m_processor.reset(new QTextToSpeechProcessorFlite(audioDevice));
+
     *errorString = QString();
 
     // Connect processor to engine for state changes and error
-    connect(&m_processor, &QTextToSpeechProcessorFlite::stateChanged, this,
-            &QTextToSpeechEngineFlite::changeState);
+    connect(m_processor.get(), &QTextToSpeechProcessorFlite::stateChanged,
+            this, &QTextToSpeechEngineFlite::changeState);
 
     // Read voices from processor before moving it to a separate thread
-    const QList<QTextToSpeechProcessorFlite::VoiceInfo> voices = m_processor.voices();
+    const QList<QTextToSpeechProcessorFlite::VoiceInfo> voices = m_processor->voices();
 
     int i = 0;
     for (const QTextToSpeechProcessorFlite::VoiceInfo &voiceInfo : voices) {
@@ -68,7 +77,7 @@ QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(QString *errorString, const Q
     if (i)
         m_state = QTextToSpeech::Ready;
 
-    m_processor.moveToThread(&m_thread);
+    m_processor->moveToThread(&m_thread);
     m_thread.start();
 }
 
@@ -90,24 +99,24 @@ QList<QVoice> QTextToSpeechEngineFlite::availableVoices() const
 
 void QTextToSpeechEngineFlite::say(const QString &text)
 {
-    QMetaObject::invokeMethod(&m_processor, "say", Qt::QueuedConnection, Q_ARG(QString, text),
+    QMetaObject::invokeMethod(m_processor.get(), "say", Qt::QueuedConnection, Q_ARG(QString, text),
                               Q_ARG(int, voiceData(voice()).toInt()), Q_ARG(double, pitch()),
                               Q_ARG(double, rate()), Q_ARG(double, volume()));
 }
 
 void QTextToSpeechEngineFlite::stop()
 {
-    QMetaObject::invokeMethod(&m_processor, &QTextToSpeechProcessorFlite::stop, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(m_processor.get(), &QTextToSpeechProcessorFlite::stop, Qt::QueuedConnection);
 }
 
 void QTextToSpeechEngineFlite::pause()
 {
-    QMetaObject::invokeMethod(&m_processor, &QTextToSpeechProcessorFlite::pause, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(m_processor.get(), &QTextToSpeechProcessorFlite::pause, Qt::QueuedConnection);
 }
 
 void QTextToSpeechEngineFlite::resume()
 {
-    QMetaObject::invokeMethod(&m_processor, &QTextToSpeechProcessorFlite::resume, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(m_processor.get(), &QTextToSpeechProcessorFlite::resume, Qt::QueuedConnection);
 }
 
 double QTextToSpeechEngineFlite::rate() const

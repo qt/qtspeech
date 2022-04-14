@@ -73,9 +73,11 @@ public:
 
     explicit QTextToSpeech(QObject *parent = nullptr);
     explicit QTextToSpeech(const QString &engine, QObject *parent = nullptr);
+    explicit QTextToSpeech(const QString &engine, const QVariantMap &params,
+                           QObject *parent = nullptr);
     ~QTextToSpeech() override;
 
-    bool setEngine(const QString &engine);
+    Q_INVOKABLE bool setEngine(const QString &engine, const QVariantMap &params = QVariantMap());
     QString engine() const;
 
     State state() const;

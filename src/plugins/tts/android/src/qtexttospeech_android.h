@@ -84,8 +84,8 @@ private:
     QVoice javaVoiceObjectToQVoice(QJniObject &obj) const;
 
     QJniObject m_speech;
-    QTextToSpeech::State m_state;
     QString m_text;
+    QTextToSpeech::State m_state = QTextToSpeech::BackendError;
 };
 
 QT_END_NAMESPACE

@@ -47,6 +47,7 @@
 
 QT_BEGIN_NAMESPACE
 
+class QAudioDevice;
 class QTextToSpeechEngineWinRTPrivate;
 
 class QTextToSpeechEngineWinRT : public QTextToSpeechEngine

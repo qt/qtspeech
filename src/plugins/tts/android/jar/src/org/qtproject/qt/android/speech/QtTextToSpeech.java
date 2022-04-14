@@ -113,14 +113,18 @@ public class QtTextToSpeech
          }
      };
 
-    public static QtTextToSpeech open(final Context context, final long id)
+    public static QtTextToSpeech open(final Context context, final long id, String engine)
     {
-        return new QtTextToSpeech(context, id);
+        return new QtTextToSpeech(context, id, engine);
     }
 
-    QtTextToSpeech(final Context context, final long id) {
+    QtTextToSpeech(final Context context, final long id, String engine) {
         mId = id;
-        mTts = new TextToSpeech(context, mTtsChangeListener);
+        if (engine.isEmpty()) {
+            mTts = new TextToSpeech(context, mTtsChangeListener);
+        } else {
+            mTts = new TextToSpeech(context, mTtsChangeListener, engine);
+        }
         mTts.setOnUtteranceProgressListener(mTtsUtteranceProgressListener);
 
         // Read pitch from settings

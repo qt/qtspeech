@@ -62,7 +62,7 @@ QTextToSpeechPrivate::~QTextToSpeechPrivate()
     delete m_engine;
 }
 
-void QTextToSpeechPrivate::setEngineProvider(const QString &engine)
+void QTextToSpeechPrivate::setEngineProvider(const QString &engine, const QVariantMap &params)
 {
     Q_Q(QTextToSpeech);
 
@@ -92,12 +92,11 @@ void QTextToSpeechPrivate::setEngineProvider(const QString &engine)
     loadPlugin();
     if (m_plugin) {
         QString errorString;
-        m_engine = m_plugin->createTextToSpeechEngine(QVariantMap(), 0, &errorString);
+        m_engine = m_plugin->createTextToSpeechEngine(params, nullptr, &errorString);
         if (!m_engine) {
             qCritical() << "Error creating text-to-speech engine" << m_providerName
                         << (errorString.isEmpty() ? QStringLiteral("") : (QStringLiteral(": ") + errorString));
         }
-        m_engine->setProperty("providerName", m_providerName);
     } else {
         qCritical() << "Error loading text-to-speech plug-in" << m_providerName;
     }
@@ -220,10 +219,8 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
     \sa availableEngines()
 */
 QTextToSpeech::QTextToSpeech(QObject *parent)
-    : QObject(*new QTextToSpeechPrivate(this), parent)
+    : QTextToSpeech(QString(), QVariantMap(), parent)
 {
-    Q_D(QTextToSpeech);
-    d->setEngineProvider(QString());
 }
 
 /*!
@@ -240,10 +237,32 @@ QTextToSpeech::QTextToSpeech(QObject *parent)
     \sa availableEngines()
 */
 QTextToSpeech::QTextToSpeech(const QString &engine, QObject *parent)
+    : QTextToSpeech(engine, QVariantMap(), parent)
+{
+}
+
+/*!
+    \since 6.4
+
+    Loads a text-to-speech engine from a plug-in that matches parameter \a engine and
+    constructs a QTextToSpeech object as the child of \a parent, passing \a params
+    through to the engine.
+
+    If \a engine is empty, the default engine plug-in is used. The default
+    engine is platform-specific. Which key/value pairs in \a params are supported
+    depends on the engine. Unsupported entries will be ignored.
+
+    If the engine initializes correctly, the \l state of the engine will be set
+    to QTextToSpeech::Ready. If the plugin fails to load, or if the engine fails to
+    initialize, the engine's \l state will be set to QTextToSpeech::BackendError.
+
+    \sa availableEngines()
+*/
+QTextToSpeech::QTextToSpeech(const QString &engine, const QVariantMap &params, QObject *parent)
     : QObject(*new QTextToSpeechPrivate(this), parent)
 {
     Q_D(QTextToSpeech);
-    d->setEngineProvider(engine);
+    d->setEngineProvider(engine, params);
 }
 
 /*!
@@ -257,6 +276,7 @@ QTextToSpeech::~QTextToSpeech()
 /*!
     \property QTextToSpeech::engine
     \brief the engine used to synthesize text to speech.
+    \since 6.4
 
     Changing the engine stops any ongoing speech.
 
@@ -265,16 +285,22 @@ QTextToSpeech::~QTextToSpeech()
 */
 
 /*!
-    Sets the engine used by this QTextToSpeech object to \a engine.
+    \since 6.4
+    Sets the engine used by this QTextToSpeech object to \a engine, passing
+    \a params through to the engine constructor.
+
     \return whether \a engine could be set successfully.
+
+    Which key/value pairs in \a params are supported depends on the engine.
+    Unsupported entries will be ignored.
 */
-bool QTextToSpeech::setEngine(const QString &engine)
+bool QTextToSpeech::setEngine(const QString &engine, const QVariantMap &params)
 {
     Q_D(QTextToSpeech);
     if (d->m_providerName == engine)
         return true;
 
-    d->setEngineProvider(engine);
+    d->setEngineProvider(engine, params);
 
     emit engineChanged(d->m_providerName);
     return d->m_engine;

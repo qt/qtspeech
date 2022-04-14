@@ -63,7 +63,7 @@ class QTextToSpeechProcessorFlite : public QObject
     Q_OBJECT
 
 public:
-    QTextToSpeechProcessorFlite();
+    QTextToSpeechProcessorFlite(const QAudioDevice &audioDevice);
     ~QTextToSpeechProcessorFlite();
 
     struct VoiceInfo
@@ -102,7 +102,7 @@ private:
     bool init();
     bool initAudio(double rate, int channelCount);
     void deinitAudio();
-    bool checkFormat(const QAudioFormat &format, const QAudioDevice &device);
+    bool checkFormat(const QAudioFormat &format);
     bool checkVoice(int voiceId);
     void deleteSink();
     void createSink();
@@ -136,6 +136,7 @@ private:
     int m_sinkTimerPausedAt = 0;
     QAudio::Error m_error = QAudio::NoError;
 
+    QAudioDevice m_audioDevice;
     QAudioFormat m_format;
     double m_volume = 1;
 

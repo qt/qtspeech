@@ -47,8 +47,8 @@ QT_BEGIN_NAMESPACE
 
 using namespace Qt::StringLiterals;
 
-QTextToSpeechProcessorFlite::QTextToSpeechProcessorFlite()
-    : m_state(QAudio::IdleState), m_error(QAudio::NoError)
+QTextToSpeechProcessorFlite::QTextToSpeechProcessorFlite(const QAudioDevice &audioDevice)
+    : m_audioDevice(audioDevice)
 {
     init();
 }
@@ -246,7 +246,7 @@ bool QTextToSpeechProcessorFlite::initAudio(double rate, int channelCount)
 {
     m_format.setSampleRate(rate);
     m_format.setChannelCount(channelCount);
-    if (!checkFormat(m_format, QMediaDevices::defaultAudioOutput()))
+    if (!checkFormat(m_format))
        return false;
 
     createSink();
@@ -280,7 +280,7 @@ void QTextToSpeechProcessorFlite::createSink()
         auto resetSignals = qScopeGuard([this, sigs](){ blockSignals(sigs); });
         blockSignals(true);
         deleteSink();
-        m_audioSink = new QAudioSink(QMediaDevices::defaultAudioOutput(), m_format, this);
+        m_audioSink = new QAudioSink(m_audioDevice, m_format, this);
         connect(m_audioSink, &QAudioSink::stateChanged, this, &QTextToSpeechProcessorFlite::changeState);
         connect(QThread::currentThread(), &QThread::finished, m_audioSink, &QObject::deleteLater);
     }
@@ -348,7 +348,7 @@ void QTextToSpeechProcessorFlite::deinitAudio()
 }
 
 // Check format/device and set corresponding error messages
-bool QTextToSpeechProcessorFlite::checkFormat(const QAudioFormat &format, const QAudioDevice &device)
+bool QTextToSpeechProcessorFlite::checkFormat(const QAudioFormat &format)
 {
     QString formatString;
     QDebug(&formatString) << format;
@@ -361,13 +361,13 @@ bool QTextToSpeechProcessorFlite::checkFormat(const QAudioFormat &format, const 
     }
 
     // Device must exist
-    if (device.isNull()) {
+    if (m_audioDevice.isNull()) {
         formatOK = false;
         setError (QAudio::FatalError, "No audio device specified"_L1);
     }
 
     // Device must support requested format
-    if (!device.isFormatSupported(format)) {
+    if (!m_audioDevice.isFormatSupported(format)) {
         formatOK = false;
         setError(QAudio::FatalError, "Audio device does not support format: "_L1 + formatString);
     }

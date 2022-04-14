@@ -94,7 +94,7 @@ private:
 
     // Thread for blocking operations
     QThread m_thread;
-    QTextToSpeechProcessorFlite m_processor;
+    std::unique_ptr<QTextToSpeechProcessorFlite> m_processor;
 };
 
 QT_END_NAMESPACE

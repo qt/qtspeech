@@ -67,7 +67,7 @@ public:
     QTextToSpeechPrivate(QTextToSpeech *speech);
     ~QTextToSpeechPrivate();
 
-    void setEngineProvider(const QString &engine);
+    void setEngineProvider(const QString &engine, const QVariantMap &params);
     static QMultiHash<QString, QCborMap> plugins(bool reload = false);
 
 private:

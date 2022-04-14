@@ -38,6 +38,8 @@
 #include "qtexttospeech_winrt_audiosource.h"
 
 #include <QtMultimedia/QAudioSink>
+#include <QtMultimedia/QMediaDevices>
+#include <QtMultimedia/QAudioDevice>
 
 #include <QtCore/private/qfunctions_winrt_p.h>
 
@@ -49,6 +51,7 @@
 
 #include <wrl.h>
 
+using namespace Qt::StringLiterals;
 
 using namespace ABI::Windows::Foundation;
 using namespace ABI::Windows::Foundation::Collections;
@@ -85,13 +88,15 @@ public:
     void sinkStateChanged(QAudio::State sinkState);
 
 private:
+    QAudioDevice audioDevice;
     QTextToSpeechEngineWinRT *q_ptr;
 };
 
 
 QTextToSpeechEngineWinRTPrivate::QTextToSpeechEngineWinRTPrivate(QTextToSpeechEngineWinRT *q)
     : q_ptr(q)
-{}
+{
+}
 
 QTextToSpeechEngineWinRTPrivate::~QTextToSpeechEngineWinRTPrivate()
 {
@@ -103,11 +108,17 @@ QTextToSpeechEngineWinRTPrivate::~QTextToSpeechEngineWinRTPrivate()
     }
 }
 
-QTextToSpeechEngineWinRT::QTextToSpeechEngineWinRT(const QVariantMap &, QObject *parent)
+QTextToSpeechEngineWinRT::QTextToSpeechEngineWinRT(const QVariantMap &params, QObject *parent)
     : QTextToSpeechEngine(parent)
     , d_ptr(new QTextToSpeechEngineWinRTPrivate(this))
 {
     Q_D(QTextToSpeechEngineWinRT);
+
+    if (const auto it = params.find("audioDevice"_L1); it != params.end())
+        d->audioDevice = (*it).value<QAudioDevice>();
+    else
+        d->audioDevice = QMediaDevices::defaultAudioOutput();
+
     HRESULT hr = CoInitialize(nullptr);
     Q_ASSERT_SUCCEEDED(hr);
 
@@ -330,8 +341,7 @@ void QTextToSpeechEngineWinRTPrivate::initializeAudioSink(const QAudioFormat &fo
     if (!audioSource)
         return;
 
-    audioSink.reset(new QAudioSink(format));
-    audioSink->start(audioSource.Get());
+    audioSink.reset(new QAudioSink(audioDevice, format));
     QObject::connect(audioSink.get(), &QAudioSink::stateChanged,
                      q, [this](QAudio::State sinkState) {
         sinkStateChanged(sinkState);
@@ -340,6 +350,7 @@ void QTextToSpeechEngineWinRTPrivate::initializeAudioSink(const QAudioFormat &fo
     // an idle sink.
     QObject::connect(audioSource.Get(), &QIODevice::readyRead,
                      audioSink.get(), &QAudioSink::resume);
+    audioSink->start(audioSource.Get());
 }
 
 void QTextToSpeechEngineWinRTPrivate::sinkStateChanged(QAudio::State sinkState)
