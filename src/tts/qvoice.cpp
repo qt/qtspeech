@@ -252,7 +252,7 @@ QString QVoice::ageName(QVoice::Age age)
 #ifndef QT_NO_DATASTREAM
 QDataStream &QVoice::writeTo(QDataStream &stream) const
 {
-    stream << name() << locale() << gender() << age() << data();
+    stream << name() << locale() << int(gender()) << int(age()) << data();
     return stream;
 }
 
@@ -261,7 +261,10 @@ QDataStream &QVoice::readFrom(QDataStream &stream)
     if (!d)
         d.reset(new QVoicePrivate);
 
-    stream >> d->name >> d->locale >> d->gender >> d->age >> d->data;
+    int g, a;
+    stream >> d->name >> d->locale >> g >> a >> d->data;
+    d->gender = Gender(g);
+    d->age = Age(a);
     return stream;
 }
 #endif
