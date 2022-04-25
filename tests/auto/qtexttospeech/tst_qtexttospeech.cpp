@@ -38,6 +38,8 @@
 #include <QTest>
 #include <QTextToSpeech>
 #include <QSignalSpy>
+#include <QMediaDevices>
+#include <QAudioDevice>
 #include <qttexttospeech-config.h>
 
 #if QT_CONFIG(speechd)
@@ -71,6 +73,12 @@ private slots:
     void pauseResume();
     void sayWithVoices();
     void sayWithRates();
+
+private:
+    static bool hasDefaultAudioOutput()
+    {
+        return !QMediaDevices::defaultAudioOutput().isNull();
+    }
 };
 
 void tst_QTextToSpeech::initTestCase_data()
@@ -315,6 +323,9 @@ void tst_QTextToSpeech::volume()
 void tst_QTextToSpeech::sayHello()
 {
     QFETCH_GLOBAL(QString, engine);
+    if (!hasDefaultAudioOutput() && engine != "mock")
+        QSKIP("No audio device present");
+
     const QString text = QStringLiteral("saying hello with %1");
     QTextToSpeech tts(engine);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
@@ -332,6 +343,9 @@ void tst_QTextToSpeech::sayHello()
 void tst_QTextToSpeech::pauseResume()
 {
     QFETCH_GLOBAL(QString, engine);
+    if (!hasDefaultAudioOutput() && engine != "mock")
+        QSKIP("No audio device present");
+
     const QString text = QStringLiteral("Hello. World.");
     QTextToSpeech tts(engine);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
@@ -350,6 +364,9 @@ void tst_QTextToSpeech::pauseResume()
 void tst_QTextToSpeech::sayWithVoices()
 {
     QFETCH_GLOBAL(QString, engine);
+    if (!hasDefaultAudioOutput() && engine != "mock")
+        QSKIP("No audio device present");
+
     const QString text = QStringLiteral("engine %1 with voice of %2");
     QTextToSpeech tts(engine);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
@@ -377,6 +394,9 @@ void tst_QTextToSpeech::sayWithVoices()
 void tst_QTextToSpeech::sayWithRates()
 {
     QFETCH_GLOBAL(QString, engine);
+    if (!hasDefaultAudioOutput() && engine != "mock")
+        QSKIP("No audio device present");
+
     const QString text = QStringLiteral("test at different rates");
     QTextToSpeech tts(engine);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
