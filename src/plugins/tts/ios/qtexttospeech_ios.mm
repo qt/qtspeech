@@ -237,6 +237,13 @@ bool QTextToSpeechEngineIos::setLocale(const QLocale &locale)
         return false;
 
     m_voice = toQVoice(defaultAvVoice);
+    // workaround for AVFoundation bug: the default voice doesn't have the gender flag set, but
+    // the same voice we get via identifier (or from the availableVoices list) does.
+    if (m_voice.gender() == QVoice::Unknown) {
+        const QString identifier = voiceData(m_voice).toString();
+        AVSpeechSynthesisVoice *defaultAvVoice = [AVSpeechSynthesisVoice voiceWithIdentifier:identifier.toNSString()];
+        m_voice = toQVoice(defaultAvVoice);
+    }
     return true;
 }
 
