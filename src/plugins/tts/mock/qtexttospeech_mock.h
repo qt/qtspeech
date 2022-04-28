@@ -75,7 +75,7 @@ protected:
 
 private:
     // mock engine uses 100ms per word, +/- 50ms depending on rate
-    constexpr int wordTime() { return 100 - int(50.0 * m_rate); }
+    int wordTime() const { return 100 - int(50.0 * m_rate); }
 
     const QVariantMap m_parameters;
     QStringList m_words;

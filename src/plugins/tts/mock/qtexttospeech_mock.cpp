@@ -91,7 +91,7 @@ QList<QVoice> QTextToSpeechEngineMock::availableVoices() const
 void QTextToSpeechEngineMock::say(const QString &text)
 {
     m_words = text.split(" ");
-    m_timer.start(wordTime(), this);
+    m_timer.start(wordTime(), Qt::PreciseTimer, this);
     m_state = QTextToSpeech::Speaking;
     stateChanged(m_state);
 }
@@ -124,7 +124,7 @@ void QTextToSpeechEngineMock::resume()
     if (m_state != QTextToSpeech::Paused)
         return;
 
-    m_timer.start(wordTime(), this);
+    m_timer.start(wordTime(), Qt::PreciseTimer, this);
     m_state = QTextToSpeech::Speaking;
     stateChanged(m_state);
 }
@@ -164,7 +164,7 @@ bool QTextToSpeechEngineMock::setRate(double rate)
     m_rate = rate;
     if (m_timer.isActive()) {
         m_timer.stop();
-        m_timer.start(wordTime(), this);
+        m_timer.start(wordTime(), Qt::PreciseTimer, this);
     }
     return true;
 }
