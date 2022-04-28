@@ -91,16 +91,24 @@ void tst_QTextToSpeech::initTestCase_data()
     if (!engines.count())
         QSKIP("No speech engines available, skipping test case");
     for (const auto &engine : engines) {
-        QTest::addRow("%s", engine.toUtf8().constData()) << engine;
 
         QString engineName = engine;
 #if QT_CONFIG(speechd) && defined(LIBSPEECHD_MAJOR_VERSION) && defined(LIBSPEECHD_MINOR_VERSION)
-        if (engineName == "speechd") {
+        if (engine == "speechd") {
             engineName += QString(" (using libspeechd %1.%2)").arg(LIBSPEECHD_MAJOR_VERSION)
                                                               .arg(LIBSPEECHD_MINOR_VERSION);
         }
+#ifdef HAVE_SPEECHD_BEFORE_090
+        engineName += " - libspeechd too old, skipping";
+#endif
 #endif
         qInfo().noquote() << "- " << engineName;
+
+#ifdef HAVE_SPEECHD_BEFORE_090
+        if (engine == "speechd")
+            continue;
+#endif
+        QTest::addRow("%s", engine.toUtf8().constData()) << engine;
     }
 }
 
@@ -264,9 +272,7 @@ void tst_QTextToSpeech::rate()
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
 
     tts.setRate(0.5);
-#ifndef HAVE_SPEECHD_BEFORE_090
     QCOMPARE(tts.rate(), 0.5);
-#endif
     QSignalSpy spy(&tts, &QTextToSpeech::rateChanged);
     tts.setRate(0.0);
     QCOMPARE(spy.count(), 1);
@@ -290,9 +296,7 @@ void tst_QTextToSpeech::pitch()
         tts.setPitch(i / 10.0);
         QString actual = QString("%1").arg(tts.pitch(), 0, 'g', 2);
         QString expected = QString("%1").arg(i / 10.0, 0, 'g', 2);
-#ifndef HAVE_SPEECHD_BEFORE_090
         QCOMPARE(actual, expected);
-#endif
         QCOMPARE(spy.count(), ++signalCount);
         tts.setPitch(tts.pitch());
         QCOMPARE(spy.count(), signalCount);
@@ -311,11 +315,8 @@ void tst_QTextToSpeech::volume()
     QTRY_COMPARE(spy.count(), 1);
     QVERIFY(spy.value(0).first().toDouble() > 0.6);
 
-#ifndef HAVE_SPEECHD_BEFORE_090  // older speechd doesn't signal any volume changes
-    // engines use different systems (integers etc), even fuzzy compare is off
     QVERIFY2(tts.volume() > 0.65, QByteArray::number(tts.volume()));
     QVERIFY2(tts.volume() < 0.75, QByteArray::number(tts.volume()));
-#endif
 
     tts.setVolume(tts.volume());
     QCOMPARE(spy.count(), 1);
