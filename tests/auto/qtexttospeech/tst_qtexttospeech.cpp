@@ -49,6 +49,8 @@
     #endif
 #endif
 
+using namespace Qt::StringLiterals;
+
 enum : int { SpeechDuration = 20000 };
 
 class tst_QTextToSpeech : public QObject
@@ -419,7 +421,8 @@ void tst_QTextToSpeech::sayWithRates()
         QVERIFY(spy.wait(SpeechDuration));
         QCOMPARE(tts.state(), QTextToSpeech::Ready);
         qint64 time = timer.elapsed();
-        QVERIFY(time > lastTime);
+        QVERIFY2(time > lastTime, qPrintable(QString("%1 took %2, last was %3"_L1)
+                                             .arg(i).arg(time).arg(lastTime)));
         lastTime = time;
     }
 }
