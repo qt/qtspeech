@@ -1,12 +1,20 @@
 [sayHello:flite]
 *
+[sayHello:speechd]
+ci
 [sayWithVoices:flite]
 *
 [sayWithVoices:speechd]
-*
+* # some installed voices are broken
 [sayWithRates:flite]
 *
+[sayWithRates:speechd]
+ci
 [pauseResume:speechd]
 *
+[rate:speechd]
+opensuse ci # old libspeechd on opensuse in CI
+[pitch:speechd]
+opensuse ci # old libspeechd on opensuse in CI
 [pauseResume:macos]
 *
