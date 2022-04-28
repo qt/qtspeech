@@ -119,7 +119,7 @@ private:
     void clearError() { setError(QAudio::NoError, QString()); };
 
     // Read available flite voices
-    QStringList fliteAvailableVoices(const QString &langCode) const;
+    QStringList fliteAvailableVoices(const QString &libPrefix, const QString &langCode) const;
 
 private slots:
     void changeState(QAudio::State newState);

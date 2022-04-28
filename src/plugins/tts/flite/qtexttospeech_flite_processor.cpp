@@ -45,6 +45,8 @@
 
 QT_BEGIN_NAMESPACE
 
+using namespace Qt::StringLiterals;
+
 QTextToSpeechProcessorFlite::QTextToSpeechProcessorFlite()
     : m_state(QAudio::IdleState), m_error(QAudio::NoError)
 {
@@ -99,7 +101,7 @@ bool QTextToSpeechProcessorFlite::audioOutput(const char *data, qint64 dataSize,
 {
     // Send data
     if (!m_audioBuffer->write(data, dataSize)) {
-        errorString = "audio streaming error";
+        errorString = "audio streaming error"_L1;
         return false;
     }
 
@@ -167,14 +169,17 @@ bool QTextToSpeechProcessorFlite::init()
     // ### FIXME: hardcode for now, the only voice files we know about are for en_US
     // We could source the language and perhaps the list of voices we want to load
     // (hardcoded below) from an environment variable.
-    const QLatin1String langCode("us");
-    const QLatin1String libPrefix("flite_cmu_%1_%2");
-    const QLatin1String registerPrefix("register_cmu_%1_%2");
-    const QLatin1String unregisterPrefix("unregister_cmu_%1_%2");
+    const QLatin1StringView langCode("us");
+    const QLatin1StringView libPrefix("flite_cmu_%1_%2");
+    const QLatin1StringView registerPrefix("register_cmu_%1_%2");
+    const QLatin1StringView unregisterPrefix("unregister_cmu_%1_%2");
 
-    for (const auto &voice : fliteAvailableVoices(langCode)) {
+    for (const auto &voice : fliteAvailableVoices(libPrefix, langCode)) {
         QLibrary library(libPrefix.arg(langCode, voice));
-        Q_ASSERT_X(library.load(), "library not found: ", qPrintable(library.fileName()));
+        if (!library.load()) {
+            qWarning("Voice library could not be loaded: %s", qPrintable(library.fileName()));
+            continue;
+        }
         auto registerFn = reinterpret_cast<registerFnType>(library.resolve(
             registerPrefix.arg(langCode, voice).toLatin1().constData()));
         auto unregisterFn = reinterpret_cast<unregisterFnType>(library.resolve(
@@ -198,7 +203,8 @@ bool QTextToSpeechProcessorFlite::init()
     return !m_voices.isEmpty();
 }
 
-QStringList QTextToSpeechProcessorFlite::fliteAvailableVoices(const QString &langCode) const
+QStringList QTextToSpeechProcessorFlite::fliteAvailableVoices(const QString &libPrefix,
+                                                              const QString &langCode) const
 {
     // Read statically linked voices
     QStringList voices;
@@ -209,19 +215,25 @@ QStringList QTextToSpeechProcessorFlite::fliteAvailableVoices(const QString &lan
 
     // Read available libraries
     // TODO: make default library paths OS dependent
-    QProcessEnvironment pe;
-    QStringList ldPaths = pe.value("LD_LIBRARY_PATH", "/usr/lib64:/usr/local/lib64:/lib64").split(":", Qt::SkipEmptyParts);
-    ldPaths.removeDuplicates();
+    const QProcessEnvironment pe;
+    QStringList ldPaths = pe.value("LD_LIBRARY_PATH"_L1).split(":", Qt::SkipEmptyParts);
+    if (ldPaths.isEmpty()) {
+        ldPaths = QStringList{"/usr/lib64"_L1, "/usr/local/lib64"_L1, "/lib64"_L1,
+                              "/usr/lib/x86_64-linux-gnu"_L1};
+    } else {
+        ldPaths.removeDuplicates();
+    }
 
+    const QString libPattern = ("lib"_L1 + libPrefix).arg(langCode).arg("*.so"_L1);
     for (const auto &path : ldPaths) {
         QDir dir(path);
         if (!dir.isReadable() || dir.isEmpty())
             continue;
-        dir.setNameFilters({QString("libflite_cmu_%1*.so").arg(langCode)});
+        dir.setNameFilters({libPattern});
         dir.setFilter(QDir::Files);
-        QFileInfoList fileList = dir.entryInfoList();
+        const QFileInfoList fileList = dir.entryInfoList();
         for (const auto &file : fileList) {
-            const QString vox = file.fileName().mid(16, file.fileName().lastIndexOf(".") - 16);
+            const QString vox = file.fileName().mid(16, file.fileName().lastIndexOf(u'.') - 16);
             voices.append(vox);
         }
     }
@@ -240,7 +252,7 @@ bool QTextToSpeechProcessorFlite::initAudio(double rate, int channelCount)
     createSink();
 
     if (!m_audioBuffer) {
-        setError(QAudio::OpenError, QLatin1String("Open error: No I/O device assigned."));
+        setError(QAudio::OpenError, "Open error: No I/O device assigned."_L1);
         return false;
     }
 
@@ -343,21 +355,19 @@ bool QTextToSpeechProcessorFlite::checkFormat(const QAudioFormat &format, const 
     // Format must be valid
     if (!format.isValid()) {
         formatOK = false;
-        setError(QAudio::FatalError, QLatin1String("Invalid audio format: ")
-                        + formatString);
+        setError(QAudio::FatalError, "Invalid audio format: "_L1 + formatString);
     }
 
     // Device must exist
     if (device.isNull()) {
         formatOK = false;
-        setError (QAudio::FatalError, QLatin1String("No audio device specified"));
+        setError (QAudio::FatalError, "No audio device specified"_L1);
     }
 
     // Device must support requested format
     if (!device.isFormatSupported(format)) {
         formatOK = false;
-        setError(QAudio::FatalError, QLatin1String("Audio device does not support format: ")
-                        + formatString);
+        setError(QAudio::FatalError, "Audio device does not support format: "_L1 + formatString);
     }
 
     if (!formatOK)
@@ -373,7 +383,7 @@ bool QTextToSpeechProcessorFlite::checkVoice(int voiceId)
         return true;
 
     qCDebug(lcSpeechTtsFlite) << "Invalid voiceId" << voiceId;
-    setError(QAudio::FatalError, QString("Illegal voiceId %1").arg(voiceId));
+    setError(QAudio::FatalError, QString("Illegal voiceId %1"_L1).arg(voiceId));
     return false;;
 }
 
