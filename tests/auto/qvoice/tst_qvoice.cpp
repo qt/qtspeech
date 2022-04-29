@@ -37,6 +37,7 @@
 
 #include <QTest>
 #include <QTextToSpeech>
+#include <QOperatingSystemVersion>
 
 class tst_QVoice : public QObject
 {
@@ -73,6 +74,11 @@ void tst_QVoice::init()
             QSKIP("speechd engine reported a backend error, "
                   "make sure the speech-dispatcher service is running!");
         }
+    } else if (engine == "ios"
+        && QOperatingSystemVersion::current() <= QOperatingSystemVersion::MacOSMojave) {
+        QTextToSpeech tts(engine);
+        if (!tts.availableLocales().count())
+            QSKIP("iOS engine is not functional on macOS <= 10.14");
     }
 }
 

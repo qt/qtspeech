@@ -40,6 +40,7 @@
 #include <QSignalSpy>
 #include <QMediaDevices>
 #include <QAudioDevice>
+#include <QOperatingSystemVersion>
 #include <qttexttospeech-config.h>
 
 #if QT_CONFIG(speechd)
@@ -122,6 +123,11 @@ void tst_QTextToSpeech::init()
             QSKIP("speechd engine reported a backend error, "
                   "make sure the speech-dispatcher service is running!");
         }
+    } else if (engine == "ios"
+        && QOperatingSystemVersion::current() <= QOperatingSystemVersion::MacOSMojave) {
+        QTextToSpeech tts(engine);
+        if (!tts.availableLocales().count())
+            QSKIP("iOS engine is not functional on macOS <= 10.14");
     }
 }
 
