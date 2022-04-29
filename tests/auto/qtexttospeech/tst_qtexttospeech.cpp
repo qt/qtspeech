@@ -334,7 +334,7 @@ void tst_QTextToSpeech::volume()
 void tst_QTextToSpeech::sayHello()
 {
     QFETCH_GLOBAL(QString, engine);
-    if (!hasDefaultAudioOutput() && engine != "mock")
+    if (engine != "mock" && !hasDefaultAudioOutput())
         QSKIP("No audio device present");
 
     const QString text = QStringLiteral("saying hello with %1");
@@ -354,7 +354,7 @@ void tst_QTextToSpeech::sayHello()
 void tst_QTextToSpeech::pauseResume()
 {
     QFETCH_GLOBAL(QString, engine);
-    if (!hasDefaultAudioOutput() && engine != "mock")
+    if (engine != "mock" && !hasDefaultAudioOutput())
         QSKIP("No audio device present");
 
     const QString text = QStringLiteral("Hello. World.");
@@ -375,7 +375,7 @@ void tst_QTextToSpeech::pauseResume()
 void tst_QTextToSpeech::sayWithVoices()
 {
     QFETCH_GLOBAL(QString, engine);
-    if (!hasDefaultAudioOutput() && engine != "mock")
+    if (engine != "mock" && !hasDefaultAudioOutput())
         QSKIP("No audio device present");
 
     const QString text = QStringLiteral("engine %1 with voice of %2");
@@ -405,7 +405,7 @@ void tst_QTextToSpeech::sayWithVoices()
 void tst_QTextToSpeech::sayWithRates()
 {
     QFETCH_GLOBAL(QString, engine);
-    if (!hasDefaultAudioOutput() && engine != "mock")
+    if (engine != "mock" && !hasDefaultAudioOutput())
         QSKIP("No audio device present");
 
     const QString text = QStringLiteral("test at different rates");
