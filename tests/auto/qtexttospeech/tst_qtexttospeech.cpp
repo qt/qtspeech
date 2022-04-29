@@ -254,8 +254,10 @@ void tst_QTextToSpeech::voice()
 
     // two voices from the same locale
     if (availableVoices.count() > 1) {
+        if (tts.voice() != availableVoices[0])
+            ++expectedVoiceChanged;
         tts.setVoice(availableVoices[0]);
-        QCOMPARE(voiceSpy.count(), ++expectedVoiceChanged);
+        QCOMPARE(voiceSpy.count(), expectedVoiceChanged);
         if (voicesLocale != otherLocale)
             ++expectedLocaleChanged;
         QCOMPARE(localeSpy.count(), expectedLocaleChanged);
