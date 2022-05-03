@@ -49,6 +49,22 @@ private:
     {
         return !QMediaDevices::defaultAudioOutput().isNull();
     }
+    static void selectWorkingVoice(QTextToSpeech *tts)
+    {
+        if (tts->engine() == "speechd") {
+            // The voices from the "mary-generic" modules are broken in
+            // normal installations. Default to one that works.
+            if (tts->voice().name().startsWith("dfki-")) {
+                for (const auto &voice : tts->availableVoices()) {
+                    if (!voice.name().startsWith("dfki-")) {
+                        qWarning() << "Replacing default voice" << tts->voice() << "with" << voice;
+                        tts->setVoice(voice);
+                        break;
+                    }
+                }
+            }
+        }
+    }
 };
 
 void tst_QTextToSpeech::initTestCase_data()
@@ -307,6 +323,10 @@ void tst_QTextToSpeech::sayHello()
     const QString text = QStringLiteral("saying hello with %1");
     QTextToSpeech tts(engine);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    selectWorkingVoice(&tts);
+    auto logger = qScopeGuard([&tts]{
+        qWarning() << "Failure with voice" << tts.voice();
+    });
 
     QElapsedTimer timer;
     timer.start();
@@ -316,6 +336,7 @@ void tst_QTextToSpeech::sayHello()
     QVERIFY(spy.wait(SpeechDuration));
     QCOMPARE(tts.state(), QTextToSpeech::Ready);
     QVERIFY(timer.elapsed() > 100);
+    logger.dismiss();
 }
 
 void tst_QTextToSpeech::pauseResume()
@@ -323,10 +344,13 @@ void tst_QTextToSpeech::pauseResume()
     QFETCH_GLOBAL(QString, engine);
     if (engine != "mock" && !hasDefaultAudioOutput())
         QSKIP("No audio device present");
+    if (engine == "macos" || engine == "speechd")
+        QSKIP("", "Native speech engine is faulty", Continue);
 
     const QString text = QStringLiteral("Hello. World.");
     QTextToSpeech tts(engine);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    selectWorkingVoice(&tts);
 
     tts.say(text);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
@@ -348,9 +372,14 @@ void tst_QTextToSpeech::sayWithVoices()
     const QString text = QStringLiteral("engine %1 with voice of %2");
     QTextToSpeech tts(engine);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    selectWorkingVoice(&tts);
 
     const QList<QVoice> voices = tts.availableVoices();
     for (const auto &voice : voices) {
+        if (engine == "speechd" && voice.name().startsWith("dfki-")) {
+            qWarning() << "Voice dysfunctional:" << voice;
+            continue;
+        }
         tts.setVoice(voice);
         auto logger = qScopeGuard([&voice]{
             qWarning() << "Failure with voice" << voice;
@@ -378,6 +407,10 @@ void tst_QTextToSpeech::sayWithRates()
     const QString text = QStringLiteral("test at different rates");
     QTextToSpeech tts(engine);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    selectWorkingVoice(&tts);
+    auto logger = qScopeGuard([&tts]{
+        qWarning() << "Failure with voice" << tts.voice();
+    });
 
     // warmup at normal rate so that the result doesn't get skewed on engines
     // that initialize lazily on first utterance (like Android).
@@ -404,6 +437,7 @@ void tst_QTextToSpeech::sayWithRates()
                                                  .arg(i).arg(time).arg(lastTime)));
         lastTime = time;
     }
+    logger.dismiss();
 }
 
 QTEST_MAIN(tst_QTextToSpeech)
