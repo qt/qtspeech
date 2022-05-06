@@ -48,7 +48,7 @@ class QTextToSpeechIosPlugin : public QObject, public QTextToSpeechPlugin
 {
     Q_OBJECT
     Q_INTERFACES(QTextToSpeechPlugin)
-    Q_PLUGIN_METADATA(IID "org.qt-project.qt.speech.tts.plugin/5.0"
+    Q_PLUGIN_METADATA(IID "org.qt-project.qt.speech.tts.plugin/6.0"
                       FILE "ios_plugin.json")
 
 public:

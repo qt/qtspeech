@@ -57,7 +57,7 @@ public:
 };
 
 Q_DECLARE_INTERFACE(QTextToSpeechPlugin,
-                    "org.qt-project.qt.speech.tts.plugin/5.0")
+                    "org.qt-project.qt.speech.tts.plugin/6.0")
 
 QT_END_NAMESPACE
 

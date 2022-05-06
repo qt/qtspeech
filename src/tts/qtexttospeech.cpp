@@ -46,7 +46,7 @@
 QT_BEGIN_NAMESPACE
 
 Q_GLOBAL_STATIC_WITH_ARGS(QFactoryLoader, loader,
-        ("org.qt-project.qt.speech.tts.plugin/5.0",
+        ("org.qt-project.qt.speech.tts.plugin/6.0",
          QLatin1String("/texttospeech")))
 
 QMutex QTextToSpeechPrivate::m_mutex;
