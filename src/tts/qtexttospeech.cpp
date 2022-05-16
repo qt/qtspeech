@@ -175,7 +175,7 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
 /*!
     \class QTextToSpeech
     \brief The QTextToSpeech class provides a convenient access to text-to-speech engines.
-    \inmodule QtSpeech
+    \inmodule QtTextToSpeech
 
     Use \l say() to start synthesizing text, and \l stop(), \l pause(), and \l resume()
     to control the reading of the text.
@@ -186,6 +186,13 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
 
     The languages and voices depend on the available synthesizers on each platform.
     On Linux, \c speech-dispatcher is used by default.
+*/
+
+/*!
+    \qmltype TextToSpeech
+    \inqmlmodule QtTextToSpeech
+    \ingroup texttospeech_qml
+    \brief The TextToSpeech type provides access to text-to-speech engines.
 */
 
 /*!

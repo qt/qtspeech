@@ -57,7 +57,7 @@
 
 #include "ui_mainwindow.h"
 
-#include <QTextToSpeech>
+#include <QtTextToSpeech>
 
 class MainWindow : public QMainWindow
 {

@@ -26,16 +26,19 @@
 ****************************************************************************/
 
 /*!
-    \example speech/hello_speak
-    \title Hello Speak Example
-    \ingroup texttospeech_examples
+   \module QtTextToSpeech
+   \title Qt TextToSpeech C++ Classes
+   \ingroup modules
+   \qtcmakepackage TextToSpeech
+   \qtvariable texttospeech
 
-    \brief The Hello Speak example reads out a small piece of text.
-
-    \e{Hello Speak} example demonstrates how QTextToSpeech can be used to read
-    out text, as well as control the pitch, volume, and rate of the speech.
-    It also lets you select a language and voice, if additional languages
-    and voices are found.
-
-    \image hellospeak-example.png
+   \brief provides C++ API to access text-to-speech engines.
 */
+
+/*!
+    \qmlmodule QtTextToSpeech
+    \title Qt TextToSpeech QML Types
+    \ingroup qmlmodules
+
+    \brief provides QML types to access text-to-speech functionality.
+ */

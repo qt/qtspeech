@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2017 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the documentation of the Qt Toolkit.
@@ -26,16 +26,17 @@
 ****************************************************************************/
 
 /*!
-    \example speech/hello_speak
-    \title Hello Speak Example
+    \example speech/quickspeech
+    \title Quick Speech Example
     \ingroup texttospeech_examples
+    \brief Using text-to-speech in a Qt Quick application.
 
-    \brief The Hello Speak example reads out a small piece of text.
-
-    \e{Hello Speak} example demonstrates how QTextToSpeech can be used to read
-    out text, as well as control the pitch, volume, and rate of the speech.
-    It also lets you select a language and voice, if additional languages
-    and voices are found.
+    \e{Quick Speech} example demonstrates how the TextToSpeech type can be used
+    from QML to read out text, as well as control the pitch, volume, and rate
+    of the speech. It also lets you select a language and voice, if additional
+    languages and voices are found.
 
     \image hellospeak-example.png
+
+    \include examples-run.qdocinc
 */

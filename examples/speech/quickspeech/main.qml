@@ -51,7 +51,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtSpeech.TextToSpeech
+import QtTextToSpeech
 
 ApplicationWindow {
     id: root

@@ -47,7 +47,7 @@ QT_DEFINE_QESDP_SPECIALIZATION_DTOR(QVoicePrivate)
 /*!
     \class QVoice
     \brief The QVoice class represents a particular voice.
-    \inmodule QtSpeech
+    \inmodule QtTextToSpeech
 */
 
 /*!

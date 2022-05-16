@@ -43,7 +43,7 @@ QT_BEGIN_NAMESPACE
 
 /*!
     \class QTextToSpeechEngine
-    \inmodule QtSpeech
+    \inmodule QtTextToSpeech
     \brief The QTextToSpeechEngine class is the base for text-to-speech engine integrations.
     \internal
 

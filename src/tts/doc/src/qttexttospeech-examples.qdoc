@@ -1,7 +1,7 @@
 /****************************************************************************
 **
-** Copyright (C) 2017 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
+** Copyright (C) 2022 The Qt Company Ltd.
+** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the documentation of the Qt Toolkit.
 **
@@ -26,8 +26,13 @@
 ****************************************************************************/
 
 /*!
-   \module QtSpeech
-   \title Qt Speech C++ Classes
-   \brief Provides C++ API to access text-to-speech engines.
-   \qtvariable texttospeech
+    \group texttospeech_examples
+    \ingroup all-examples
+    \title Qt TextToSpeech Examples
+    \brief Demonstrates the text-to-speech functionality provided by Qt.
+
+    The \l{Qt TextToSpeech} module provides cross-platform text-to-speech capabilities
+    for Qt based applications.
+
+    The examples listed below show some typical use cases in both C++ and QML.
 */

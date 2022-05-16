@@ -40,7 +40,7 @@ QT_BEGIN_NAMESPACE
 
 /*!
     \class QTextToSpeechPlugin
-    \inmodule QtSpeech
+    \inmodule QtTextToSpeech
     \brief The QTextToSpeechPlugin class is the base for all text-to-speech plug-ins.
     \internal
 

@@ -19,7 +19,7 @@ qt_internal_add_module(TextToSpeech
 
 if(TARGET Qt::Qml)
     qt_internal_add_qml_module(TextToSpeech
-        URI "QtSpeech.TextToSpeech"
+        URI "QtTextToSpeech"
         VERSION "${PROJECT_VERSION}"
         SOURCES
             qtexttospeech_qmltypes_p.h
@@ -37,3 +37,7 @@ if(ANDROID)
         plugins/texttospeech/libplugins_texttospeech_qttexttospeech_android.so
     )
 endif()
+
+qt_internal_add_docs(TextToSpeech
+    doc/qttexttospeech.qdocconf
+)
