@@ -119,8 +119,8 @@ void tst_QTextToSpeech::init()
     if (engine == "speechd") {
         QTextToSpeech tts(engine);
         QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
-        if (tts.state() == QTextToSpeech::BackendError) {
-            QSKIP("speechd engine reported a backend error, "
+        if (tts.state() == QTextToSpeech::Error) {
+            QSKIP("speechd engine reported an error, "
                   "make sure the speech-dispatcher service is running!");
         }
     } else if (engine == "ios"

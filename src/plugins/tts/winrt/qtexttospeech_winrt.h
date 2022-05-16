@@ -75,6 +75,8 @@ public:
     QVoice voice() const override;
     bool setVoice(const QVoice &voice) override;
     QTextToSpeech::State state() const override;
+    QTextToSpeech::ErrorReason errorReason() const override;
+    QString errorString() const override;
 
 private:
     QScopedPointer<QTextToSpeechEngineWinRTPrivate> d_ptr;

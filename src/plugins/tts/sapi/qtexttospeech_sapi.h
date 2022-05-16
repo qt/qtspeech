@@ -76,6 +76,8 @@ public:
     QVoice voice() const override;
     bool setVoice(const QVoice &voice) override;
     QTextToSpeech::State state() const override;
+    QTextToSpeech::ErrorReason errorReason() const override;
+    QString errorString() const override;
 
     HRESULT STDMETHODCALLTYPE NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/) override;
 
@@ -87,7 +89,9 @@ private:
     QLocale lcidToLocale(const QString &lcid) const;
     void updateVoices();
 
-    QTextToSpeech::State m_state = QTextToSpeech::BackendError;
+    QTextToSpeech::State m_state = QTextToSpeech::Error;
+    QTextToSpeech::ErrorReason m_errorReason = QTextToSpeech::ErrorReason::Initialization;
+    QString m_errorString;
     QVoice m_currentVoice;
     // Voices mapped by their locale name.
     QMultiHash<QLocale, QVoice> m_voices;

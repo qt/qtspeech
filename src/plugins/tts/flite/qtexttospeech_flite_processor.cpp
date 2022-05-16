@@ -55,7 +55,7 @@ QTextToSpeechProcessorFlite::QTextToSpeechProcessorFlite(const QAudioDevice &aud
 
 QTextToSpeechProcessorFlite::~QTextToSpeechProcessorFlite()
 {
-    for (const VoiceInfo &voice : qExchange(m_voices, {}))
+    for (const VoiceInfo &voice : qAsConst(m_voices))
         voice.unregister_func(voice.vox);
 }
 
@@ -83,10 +83,8 @@ int QTextToSpeechProcessorFlite::fliteOutput(const cst_wave *w, int start, int s
     int bytesToWrite = size * sizeof(short);
     QString errorString;
     if (!audioOutput((const char *)(&w->samples[start]), bytesToWrite, errorString)) {
-        if (!errorString.isEmpty()) {
-            stopTimer();
-            setError(QAudio::IOError, errorString);
-        }
+        stopTimer();
+        setError(QTextToSpeech::ErrorReason::Playback, errorString);
         stop();
         return CST_AUDIO_STREAM_STOP;
     }
@@ -101,11 +99,9 @@ bool QTextToSpeechProcessorFlite::audioOutput(const char *data, qint64 dataSize,
 {
     // Send data
     if (!m_audioBuffer->write(data, dataSize)) {
-        errorString = "audio streaming error"_L1;
+        errorString = tr("Audio streaming error");
         return false;
     }
-
-    errorString.clear();
 
     // Stats for debugging
     ++numberChunks;
@@ -131,10 +127,13 @@ void QTextToSpeechProcessorFlite::processText(const QString &text, int voiceId, 
     setPitchForVoice(voice, pitch);
     secsToSpeak = flite_text_to_speech(text.toUtf8().constData(), voice, "none");
 
-    if (error() == QAudio::NoError) {
-        startTimer(secsToSpeak * 1000);
-        qCDebug(lcSpeechTtsFlite) << "processText() end" << secsToSpeak << "Seconds";
+    if (secsToSpeak <= 0) {
+        setError(QTextToSpeech::ErrorReason::Input, tr("Text synthesizing failure"));
+        return;
     }
+
+    startTimer(secsToSpeak * 1000);
+    qCDebug(lcSpeechTtsFlite) << "processText() end" << secsToSpeak << "Seconds";
 }
 
 void QTextToSpeechProcessorFlite::setRateForVoice(cst_voice *voice, float rate)
@@ -251,11 +250,6 @@ bool QTextToSpeechProcessorFlite::initAudio(double rate, int channelCount)
 
     createSink();
 
-    if (!m_audioBuffer) {
-        setError(QAudio::OpenError, "Open error: No I/O device assigned."_L1);
-        return false;
-    }
-
     m_audioSink->setVolume(m_volume);
 
     return true;
@@ -274,7 +268,7 @@ void QTextToSpeechProcessorFlite::deleteSink()
 void QTextToSpeechProcessorFlite::createSink()
 {
     // Create new sink if none exists or the format has changed
-    if (!m_audioSink || (m_audioSink && m_audioSink->format() != m_format)) {
+    if (!m_audioSink || (m_audioSink->format() != m_format)) {
         // No signals while we create new sink with QIODevice
         const bool sigs = signalsBlocked();
         auto resetSignals = qScopeGuard([this, sigs](){ blockSignals(sigs); });
@@ -285,6 +279,11 @@ void QTextToSpeechProcessorFlite::createSink()
         connect(QThread::currentThread(), &QThread::finished, m_audioSink, &QObject::deleteLater);
     }
     m_audioBuffer = m_audioSink->start();
+    if (!m_audioBuffer) {
+        deleteSink();
+        setError(QTextToSpeech::ErrorReason::Playback, tr("Audio Open error: No I/O device assigned."));
+    }
+
     numberChunks = 0;
     totalBytes = 0;
 }
@@ -303,27 +302,21 @@ void QTextToSpeechProcessorFlite::changeState(QAudio::State newState)
 
     qCDebug(lcSpeechTtsFlite) << "State transition" << m_state << newState;
     m_state = newState;
+    const QTextToSpeech::State ttsState = audioStateToTts(newState);
 
-    emit stateChanged(audioStateToTts(newState));
+    emit stateChanged(ttsState);
 }
 
-void QTextToSpeechProcessorFlite::setError(QAudio::Error err, const QString &errorString)
+void QTextToSpeechProcessorFlite::setError(QTextToSpeech::ErrorReason err, const QString &errorString)
 {
-    if (m_error == err)
+     if (err == QTextToSpeech::ErrorReason::NoError) {
+        changeState(QAudio::IdleState);
         return;
+     }
 
-     m_error = err;
-     if (err == QAudio::NoError)
-         changeState(QAudio::IdleState);
-
-     qCDebug(lcSpeechTtsFlite) << err << errorString;
-     emit errorChanged(err, errorString);
-     emit stateChanged(QTextToSpeech::BackendError);
-}
-
-QAudio::Error QTextToSpeechProcessorFlite::error() const
-{
-    return m_error;
+     qCDebug(lcSpeechTtsFlite) << "Error" << err << errorString;
+     emit stateChanged(QTextToSpeech::Error);
+     emit errorOccurred(err, errorString);
 }
 
 constexpr QTextToSpeech::State QTextToSpeechProcessorFlite::audioStateToTts(QAudio::State AudioState)
@@ -357,23 +350,20 @@ bool QTextToSpeechProcessorFlite::checkFormat(const QAudioFormat &format)
     // Format must be valid
     if (!format.isValid()) {
         formatOK = false;
-        setError(QAudio::FatalError, "Invalid audio format: "_L1 + formatString);
+        setError(QTextToSpeech::ErrorReason::Playback, tr("Invalid audio format: ") + formatString);
     }
 
     // Device must exist
     if (m_audioDevice.isNull()) {
         formatOK = false;
-        setError (QAudio::FatalError, "No audio device specified"_L1);
+        setError (QTextToSpeech::ErrorReason::Playback, tr("No audio device specified"));
     }
 
     // Device must support requested format
     if (!m_audioDevice.isFormatSupported(format)) {
         formatOK = false;
-        setError(QAudio::FatalError, "Audio device does not support format: "_L1 + formatString);
+        setError(QTextToSpeech::ErrorReason::Playback, tr("Audio device does not support format: ") + formatString);
     }
-
-    if (!formatOK)
-        emit stateChanged(QTextToSpeech::BackendError);
 
     return formatOK;
 }
@@ -384,8 +374,7 @@ bool QTextToSpeechProcessorFlite::checkVoice(int voiceId)
     if (voiceId >= 0 && voiceId < m_voices.size())
         return true;
 
-    qCDebug(lcSpeechTtsFlite) << "Invalid voiceId" << voiceId;
-    setError(QAudio::FatalError, QString("Illegal voiceId %1"_L1).arg(voiceId));
+    setError(QTextToSpeech::ErrorReason::Configuration, tr("Illegal voiceId %1").arg(voiceId));
     return false;;
 }
 
@@ -506,8 +495,6 @@ inline int QTextToSpeechProcessorFlite::remainingTime() const
 
 void QTextToSpeechProcessorFlite::say(const QString &text, int voiceId, double pitch, double rate, double volume)
 {
-    clearError();
-
     if (text.isEmpty())
         return;
 

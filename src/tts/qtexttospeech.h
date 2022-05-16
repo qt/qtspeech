@@ -45,7 +45,6 @@
 #include <QtCore/qshareddata.h>
 #include <QtCore/QSharedDataPointer>
 #include <QtCore/qlocale.h>
-
 #include <QtTextToSpeech/qvoice.h>
 
 QT_BEGIN_NAMESPACE
@@ -67,9 +66,18 @@ public:
         Ready,
         Speaking,
         Paused,
-        BackendError
+        Error
     };
     Q_ENUM(State)
+
+    enum class ErrorReason {
+        NoError,
+        Initialization,
+        Configuration,
+        Input,
+        Playback
+    };
+    Q_ENUM(ErrorReason)
 
     explicit QTextToSpeech(QObject *parent = nullptr);
     explicit QTextToSpeech(const QString &engine, QObject *parent = nullptr);
@@ -80,7 +88,9 @@ public:
     Q_INVOKABLE bool setEngine(const QString &engine, const QVariantMap &params = QVariantMap());
     QString engine() const;
 
-    State state() const;
+    QTextToSpeech::State state() const;
+    Q_INVOKABLE QTextToSpeech::ErrorReason errorReason() const;
+    Q_INVOKABLE QString errorString() const;
 
     Q_INVOKABLE QList<QLocale> availableLocales() const;
     QLocale locale() const;
@@ -110,6 +120,7 @@ public Q_SLOTS:
 Q_SIGNALS:
     void engineChanged(const QString &engine);
     void stateChanged(QTextToSpeech::State state);
+    void errorOccurred(QTextToSpeech::ErrorReason error, const QString &errorString);
     void localeChanged(const QLocale &locale);
     void rateChanged(double rate);
     void pitchChanged(double pitch);

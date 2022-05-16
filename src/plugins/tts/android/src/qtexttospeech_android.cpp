@@ -157,6 +157,16 @@ QTextToSpeech::State QTextToSpeechEngineAndroid::state() const
     return m_state;
 }
 
+QTextToSpeech::ErrorReason QTextToSpeechEngineAndroid::errorReason() const
+{
+    return m_errorReason;
+}
+
+QString QTextToSpeechEngineAndroid::errorString() const
+{
+    return m_errorString;
+}
+
 void QTextToSpeechEngineAndroid::setState(QTextToSpeech::State state)
 {
     if (m_state == state)
@@ -164,6 +174,12 @@ void QTextToSpeechEngineAndroid::setState(QTextToSpeech::State state)
 
     m_state = state;
     emit stateChanged(m_state);
+    if (m_state == QTextToSpeech::Error) {
+        emit errorOccurred(m_errorReason, m_errorString);
+    } else {
+        m_errorReason = QTextToSpeech::ErrorReason::NoError;
+        m_errorString.clear();
+    }
 }
 
 void QTextToSpeechEngineAndroid::processNotifyReady()
@@ -174,7 +190,9 @@ void QTextToSpeechEngineAndroid::processNotifyReady()
 
 void QTextToSpeechEngineAndroid::processNotifyError()
 {
-    setState(QTextToSpeech::BackendError);
+    m_errorReason = QTextToSpeech::ErrorReason::Initialization;
+    m_errorString = tr("Failed to initialize text-to-speech engine");
+    setState(QTextToSpeech::Error);
 }
 
 void QTextToSpeechEngineAndroid::processNotifySpeaking()

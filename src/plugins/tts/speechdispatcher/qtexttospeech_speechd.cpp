@@ -71,7 +71,7 @@ QTextToSpeechEngineSpeechd::QTextToSpeechEngineSpeechd(const QVariantMap &, QObj
 QTextToSpeechEngineSpeechd::~QTextToSpeechEngineSpeechd()
 {
     if (speechDispatcher) {
-        if ((m_state != QTextToSpeech::BackendError) && (m_state != QTextToSpeech::Ready))
+        if ((m_state != QTextToSpeech::Error) && (m_state != QTextToSpeech::Ready))
             spd_cancel_all(speechDispatcher);
         spd_close(speechDispatcher);
     }
@@ -105,29 +105,35 @@ bool QTextToSpeechEngineSpeechd::connectToSpeechDispatcher()
         }
 
         if (availableModules.length() == 0) {
-            qWarning() << "Found no modules in speech-dispatcher. No text to speech possible.";
+            m_errorReason = QTextToSpeech::ErrorReason::Configuration;
+            m_errorString = tr("Found no modules in speech-dispatcher.");
         } else {
             m_state = QTextToSpeech::Ready;
+            m_errorReason = QTextToSpeech::ErrorReason::NoError;
         }
 
         updateVoices();
         // Set the default locale (which is usually the system locale), and fall back
         // to a locale that has the same language if that fails. That might then still fail,
         // in which case there won't be a valid voice.
-        if (!setLocale(QLocale()))
-            setLocale(QLocale().language());
+        if (!setLocale(QLocale()) && !setLocale(QLocale().language())) {
+            m_errorReason = QTextToSpeech::ErrorReason::Configuration;
+            m_errorString = tr("Failed to set default locale and voice");
+        }
         return true;
     }
 
-    qWarning() << "Connection to speech-dispatcher failed";
-    m_state = QTextToSpeech::BackendError;
+    m_state = QTextToSpeech::Error;
+    m_errorReason = QTextToSpeech::ErrorReason::Initialization;
+    m_errorString = tr("Connection to speech-dispatcher failed");
+
     return false;
 }
 
 // hack to get state notifications
 void QTextToSpeechEngineSpeechd::spdStateChanged(SPDNotificationType state)
 {
-    QTextToSpeech::State s = QTextToSpeech::BackendError;
+    QTextToSpeech::State s = QTextToSpeech::Error;
     if (state == SPD_EVENT_PAUSE)
         s = QTextToSpeech::Paused;
     else if ((state == SPD_EVENT_BEGIN) || (state == SPD_EVENT_RESUME))
@@ -298,6 +304,15 @@ QVoice QTextToSpeechEngineSpeechd::voice() const
 QTextToSpeech::State QTextToSpeechEngineSpeechd::state() const
 {
     return m_state;
+}
+
+QTextToSpeech::ErrorReason QTextToSpeechEngineSpeechd::errorReason() const
+{
+    return m_errorReason;
+}
+QString QTextToSpeechEngineSpeechd::errorString() const
+{
+    return m_errorString;
 }
 
 void QTextToSpeechEngineSpeechd::updateVoices()

@@ -80,14 +80,21 @@ QTextToSpeechEngineSapi::QTextToSpeechEngineSapi(const QVariantMap &, QObject *)
 
     HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&m_voice);
     if (!SUCCEEDED(hr)) {
-        qWarning() << "Could not init voice";
+        m_errorReason = QTextToSpeech::ErrorReason::Initialization;
+        m_errorString = tr("Could not initialize text-to-speech engine for SAPI");
         return;
     }
 
     m_voice->SetInterest(SPFEI_ALL_TTS_EVENTS, SPFEI_ALL_TTS_EVENTS);
     m_voice->SetNotifyCallbackInterface(this, 0, 0);
     updateVoices();
-    m_state = QTextToSpeech::Ready;
+    if (m_voices.isEmpty()) {
+        m_errorReason = QTextToSpeech::ErrorReason::Configuration;
+        m_errorString = tr("No voices available");
+    } else {
+        m_state = QTextToSpeech::Ready;
+        m_errorReason = QTextToSpeech::ErrorReason::NoError;
+    }
 }
 
 QTextToSpeechEngineSapi::~QTextToSpeechEngineSapi()
@@ -355,7 +362,7 @@ bool QTextToSpeechEngineSapi::setVoice(const QVoice &voice)
         qWarning() << "Creating the voice token from ID failed";
         if (cpVoiceToken)
             cpVoiceToken->Release();
-        m_state = QTextToSpeech::BackendError;
+        m_state = QTextToSpeech::Error;
         emit stateChanged(m_state);
         return false;
     }
@@ -390,6 +397,16 @@ QVoice QTextToSpeechEngineSapi::voice() const
 QTextToSpeech::State QTextToSpeechEngineSapi::state() const
 {
     return m_state;
+}
+
+QTextToSpeech::ErrorReason QTextToSpeechEngineSapi::errorReason() const
+{
+    return m_errorReason;
+}
+
+QString QTextToSpeechEngineSapi::errorString() const
+{
+    return m_errorString;
 }
 
 HRESULT QTextToSpeechEngineSapi::NotifyCallback(WPARAM /*wParam*/, LPARAM /*lParam*/)

@@ -112,8 +112,13 @@ QTextToSpeechEngineIos::QTextToSpeechEngineIos(const QVariantMap &/*parameters*/
     , m_speechSynthesizer([AVSpeechSynthesizer new])
 {
     m_speechSynthesizer.delegate = [[QIOSSpeechSynthesizerDelegate alloc] initWithQIOSTextToSpeechEngineIos:this];
-    if (!setLocale(QLocale()))
-        setLocale(QLocale().language());
+    if (setLocale(QLocale()) || setLocale(QLocale().language())) {
+        m_state = QTextToSpeech::Ready;
+        m_errorReason = QTextToSpeech::ErrorReason::NoError;
+    } else {
+        m_errorReason = QTextToSpeech::ErrorReason::Configuration;
+        m_errorString = tr("Failed to initialize default locale and voice");
+    }
 }
 
 QTextToSpeechEngineIos::~QTextToSpeechEngineIos()
@@ -323,6 +328,14 @@ QTextToSpeech::State QTextToSpeechEngineIos::state() const
     return m_state;
 }
 
+QTextToSpeech::ErrorReason QTextToSpeechEngineIos::errorReason() const
+{
+    return m_errorReason;
+}
 
+QString QTextToSpeechEngineIos::errorString() const
+{
+    return m_errorString;
+}
 
 QT_END_NAMESPACE

@@ -77,6 +77,8 @@ public:
     QVoice voice() const override;
     bool setVoice(const QVoice &voice) override;
     QTextToSpeech::State state() const override;
+    QTextToSpeech::ErrorReason errorReason() const override;
+    QString errorString() const override;
 
     void speechStopped(bool);
     void speaking();
@@ -84,7 +86,9 @@ public:
 private:
     void updateVoices();
 
-    QTextToSpeech::State m_state;
+    QTextToSpeech::State m_state = QTextToSpeech::Error;
+    QTextToSpeech::ErrorReason m_errorReason = QTextToSpeech::ErrorReason::Initialization;
+    QString m_errorString;
     bool pauseRequested = false;
 
     QVoice voiceForNSVoice(NSString *voiceString) const;

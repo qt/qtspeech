@@ -72,6 +72,8 @@ public:
     virtual QVoice voice() const = 0;
     virtual bool setVoice(const QVoice &voice) = 0;
     virtual QTextToSpeech::State state() const = 0;
+    virtual QTextToSpeech::ErrorReason errorReason() const = 0;
+    virtual QString errorString() const = 0;
 
 protected:
     static QVoice createVoice(const QString &name, const QLocale &locale, QVoice::Gender gender,
@@ -80,6 +82,7 @@ protected:
 
 Q_SIGNALS:
     void stateChanged(QTextToSpeech::State state);
+    void errorOccurred(QTextToSpeech::ErrorReason error, const QString &errorString);
 };
 
 QT_END_NAMESPACE

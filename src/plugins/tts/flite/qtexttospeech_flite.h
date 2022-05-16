@@ -54,7 +54,7 @@ class QTextToSpeechEngineFlite : public QTextToSpeechEngine
     Q_OBJECT
 
 public:
-    QTextToSpeechEngineFlite(QString *errorString, const QVariantMap &parameters, QObject *parent);
+    QTextToSpeechEngineFlite(const QVariantMap &parameters, QObject *parent);
     ~QTextToSpeechEngineFlite() override;
 
     // Plug-in API:
@@ -75,14 +75,21 @@ public:
     QVoice voice() const override;
     bool setVoice(const QVoice &voice) override;
     QTextToSpeech::State state() const override;
+    QTextToSpeech::ErrorReason errorReason() const override;
+    QString errorString() const override;
 
 Q_SIGNALS:
     void speaking();
+    void engineErrorOccurred(QTextToSpeech::ErrorReason, const QString &errorString);
+
 private slots:
     void changeState(QTextToSpeech::State newState);
+    void setError(QTextToSpeech::ErrorReason error, const QString &errorString);
 
 private:
-    QTextToSpeech::State m_state = QTextToSpeech::BackendError;
+    QTextToSpeech::State m_state = QTextToSpeech::Error;
+    QTextToSpeech::ErrorReason m_errorReason = QTextToSpeech::ErrorReason::Initialization;
+    QString m_errorString;
 
     QVoice m_voice;
     double m_rate = 0;

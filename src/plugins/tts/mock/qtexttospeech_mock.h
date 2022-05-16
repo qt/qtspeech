@@ -69,6 +69,8 @@ public:
     QVoice voice() const override;
     bool setVoice(const QVoice &voice) override;
     QTextToSpeech::State state() const override;
+    QTextToSpeech::ErrorReason errorReason() const override;
+    QString errorString() const override;
 
 protected:
     void timerEvent(QTimerEvent *e) override;
@@ -85,7 +87,9 @@ private:
     double m_rate = 0.0;
     double m_pitch = 0.0;
     double m_volume = 0.5;
-    QTextToSpeech::State m_state = QTextToSpeech::Ready;
+    QTextToSpeech::State m_state = QTextToSpeech::Error;
+    QTextToSpeech::ErrorReason m_errorReason = QTextToSpeech::ErrorReason::Initialization;
+    QString m_errorString;
     bool m_pauseRequested = false;
 };
 

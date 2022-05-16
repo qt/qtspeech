@@ -73,6 +73,8 @@ public:
     QVoice voice() const override;
     bool setVoice(const QVoice &voice) override;
     QTextToSpeech::State state() const override;
+    QTextToSpeech::ErrorReason errorReason() const override;
+    QString errorString() const override;
 
 public Q_SLOTS:
     void processNotifyReady();
@@ -84,8 +86,10 @@ private:
     QVoice javaVoiceObjectToQVoice(QJniObject &obj) const;
 
     QJniObject m_speech;
+    QTextToSpeech::State m_state = QTextToSpeech::Error;
+    QTextToSpeech::ErrorReason m_errorReason = QTextToSpeech::ErrorReason::Initialization;
+    QString m_errorString;
     QString m_text;
-    QTextToSpeech::State m_state = QTextToSpeech::BackendError;
 };
 
 QT_END_NAMESPACE

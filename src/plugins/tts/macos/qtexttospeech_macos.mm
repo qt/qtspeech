@@ -70,12 +70,20 @@
 QT_BEGIN_NAMESPACE
 
 QTextToSpeechEngineMacOS::QTextToSpeechEngineMacOS(const QVariantMap &/*parameters*/, QObject *parent)
-    : QTextToSpeechEngine(parent), m_state(QTextToSpeech::Ready)
+    : QTextToSpeechEngine(parent)
 {
     stateDelegate = [[QT_MANGLE_NAMESPACE(StateDelegate) alloc] initWithSpeechPrivate:this];
     speechSynthesizer = [[NSSpeechSynthesizer alloc] init];
     speechSynthesizer.delegate = stateDelegate;
     updateVoices();
+
+    if (m_voices.isEmpty()) {
+        m_errorReason = QTextToSpeech::ErrorReason::Configuration;
+        m_errorString = tr("No voices available");
+    } else {
+        m_state = QTextToSpeech::Ready;
+        m_errorReason = QTextToSpeech::ErrorReason::NoError;
+    }
 }
 
 QTextToSpeechEngineMacOS::~QTextToSpeechEngineMacOS()
@@ -93,6 +101,15 @@ QTextToSpeech::State QTextToSpeechEngineMacOS::state() const
     return m_state;
 }
 
+QTextToSpeech::ErrorReason QTextToSpeechEngineMacOS::errorReason() const
+{
+    return m_errorReason;
+}
+
+QString QTextToSpeechEngineMacOS::errorString() const
+{
+    return m_errorString;
+}
 
 void QTextToSpeechEngineMacOS::speaking()
 {

@@ -69,7 +69,9 @@ public:
     QTextToSpeechEngineWinRTPrivate(QTextToSpeechEngineWinRT *q);
     ~QTextToSpeechEngineWinRTPrivate();
 
-    QTextToSpeech::State state = QTextToSpeech::BackendError;
+    QTextToSpeech::State state = QTextToSpeech::Error;
+    QTextToSpeech::ErrorReason m_errorReason = QTextToSpeech::ErrorReason::Initialization;
+    QString m_errorString;
 
     // interfaces used to access the speech synthesizer
     ComPtr<ISpeechSynthesizer> synth;
@@ -119,14 +121,26 @@ QTextToSpeechEngineWinRT::QTextToSpeechEngineWinRT(const QVariantMap &params, QO
     else
         d->audioDevice = QMediaDevices::defaultAudioOutput();
 
+    if (d->audioDevice.isNull()) {
+        d->m_errorString = tr("No audio device available");
+        d->m_errorReason = QTextToSpeech::ErrorReason::Playback;
+    }
+
     HRESULT hr = CoInitialize(nullptr);
     Q_ASSERT_SUCCEEDED(hr);
 
     hr = RoActivateInstance(HString::MakeReference(RuntimeClass_Windows_Media_SpeechSynthesis_SpeechSynthesizer).Get(),
                             &d->synth);
-    RETURN_VOID_IF_FAILED("Could not instantiate SpeechSynthesizer.");
-
-    d->state = QTextToSpeech::Ready;
+    if (!SUCCEEDED(hr)) {
+        d->m_errorReason = QTextToSpeech::ErrorReason::Initialization;
+        d->m_errorString = tr("Could not instantiate speech synthesizer.");
+    } else if (voice() == QVoice()) {
+        d->m_errorReason = QTextToSpeech::ErrorReason::Configuration;
+        d->m_errorString = tr("Could not set default voice.");
+    } else {
+        d->state = QTextToSpeech::Ready;
+        d->m_errorReason = QTextToSpeech::ErrorReason::NoError;
+    }
 
     // the rest is optional, we might not support these features
 
@@ -333,6 +347,18 @@ QTextToSpeech::State QTextToSpeechEngineWinRT::state() const
     return d->state;
 }
 
+QTextToSpeech::ErrorReason QTextToSpeechEngineWinRT::errorReason() const
+{
+    Q_D(const QTextToSpeechEngineWinRT);
+    return d->m_errorReason;
+}
+
+QString QTextToSpeechEngineWinRT::errorString() const
+{
+    Q_D(const QTextToSpeechEngineWinRT);
+    return d->m_errorString;
+}
+
 void QTextToSpeechEngineWinRTPrivate::initializeAudioSink(const QAudioFormat &format)
 {
     Q_Q(const QTextToSpeechEngineWinRT);
@@ -400,7 +426,7 @@ void QTextToSpeechEngineWinRT::say(const QString &text)
     RETURN_VOID_IF_FAILED("Could not synthesize text.");
 
     if (!SUCCEEDED(hr)) {
-        d->state = QTextToSpeech::BackendError;
+        d->state = QTextToSpeech::Error;
         return;
     }
 
@@ -414,7 +440,7 @@ void QTextToSpeechEngineWinRT::say(const QString &text)
     connect(d->audioSource.Get(), &AudioSource::errorInStream, this, [this]{
         Q_D(QTextToSpeechEngineWinRT);
         QTextToSpeech::State oldState = d->state;
-        d->state = QTextToSpeech::BackendError;
+        d->state = QTextToSpeech::Error;
         if (oldState != d->state)
             emit stateChanged(d->state);
     });

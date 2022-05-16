@@ -45,6 +45,8 @@ QTextToSpeechEngineMock::QTextToSpeechEngineMock(const QVariantMap &parameters, 
 {
     m_locale = availableLocales().first();
     m_voice = availableVoices().first();
+    m_state = QTextToSpeech::Ready;
+    m_errorReason = QTextToSpeech::ErrorReason::NoError;
 }
 
 QTextToSpeechEngineMock::~QTextToSpeechEngineMock()
@@ -93,12 +95,12 @@ void QTextToSpeechEngineMock::say(const QString &text)
     m_words = text.split(" ");
     m_timer.start(wordTime(), Qt::PreciseTimer, this);
     m_state = QTextToSpeech::Speaking;
-    stateChanged(m_state);
+    emit stateChanged(m_state);
 }
 
 void QTextToSpeechEngineMock::stop()
 {
-    if (m_state == QTextToSpeech::Ready || m_state == QTextToSpeech::BackendError)
+    if (m_state == QTextToSpeech::Ready || m_state == QTextToSpeech::Error)
         return;
 
     Q_ASSERT(m_timer.isActive());
@@ -107,7 +109,7 @@ void QTextToSpeechEngineMock::stop()
     m_timer.stop();
 
     m_state = QTextToSpeech::Ready;
-    stateChanged(m_state);
+    emit stateChanged(m_state);
 }
 
 void QTextToSpeechEngineMock::pause()
@@ -126,7 +128,7 @@ void QTextToSpeechEngineMock::resume()
 
     m_timer.start(wordTime(), Qt::PreciseTimer, this);
     m_state = QTextToSpeech::Speaking;
-    stateChanged(m_state);
+    emit stateChanged(m_state);
 }
 
 void QTextToSpeechEngineMock::timerEvent(QTimerEvent *e)
@@ -145,11 +147,11 @@ void QTextToSpeechEngineMock::timerEvent(QTimerEvent *e)
         // done speaking all words
         m_timer.stop();
         m_state = QTextToSpeech::Ready;
-        stateChanged(m_state);
+        emit stateChanged(m_state);
     } else if (m_pauseRequested) {
         m_timer.stop();
         m_state = QTextToSpeech::Paused;
-        stateChanged(m_state);
+        emit stateChanged(m_state);
     }
     m_pauseRequested = false;
 }
@@ -239,5 +241,14 @@ QTextToSpeech::State QTextToSpeechEngineMock::state() const
     return m_state;
 }
 
+QTextToSpeech::ErrorReason QTextToSpeechEngineMock::errorReason() const
+{
+    return m_errorReason;
+}
+
+QString QTextToSpeechEngineMock::errorString() const
+{
+    return m_errorString;
+}
 
 QT_END_NAMESPACE

@@ -114,9 +114,7 @@ private:
     enum TimeoutReason {TimeOut, Stop};
     int stopTimer(TimeoutReason reason = Stop);
     void timerEvent(QTimerEvent *event) override;
-    void setError(QAudio::Error err, const QString &errorString);
-    QAudio::Error error() const;
-    void clearError() { setError(QAudio::NoError, QString()); };
+    void setError(QTextToSpeech::ErrorReason err, const QString &errorString = QString());
 
     // Read available flite voices
     QStringList fliteAvailableVoices(const QString &libPrefix, const QString &langCode) const;
@@ -125,7 +123,7 @@ private slots:
     void changeState(QAudio::State newState);
 
 Q_SIGNALS:
-    void errorChanged(QAudio::Error error, const QString &errorString);
+    void errorOccurred(QTextToSpeech::ErrorReason error, const QString &errorString);
     void stateChanged(QTextToSpeech::State);
 
 private:
@@ -134,7 +132,6 @@ private:
     QIODevice *m_audioBuffer = nullptr;
     QBasicTimer m_sinkTimer;
     int m_sinkTimerPausedAt = 0;
-    QAudio::Error m_error = QAudio::NoError;
 
     QAudioDevice m_audioDevice;
     QAudioFormat m_format;

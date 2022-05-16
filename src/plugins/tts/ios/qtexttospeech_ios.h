@@ -71,6 +71,8 @@ public:
     QVoice voice() const override;
     bool setVoice(const QVoice &voice) override;
     QTextToSpeech::State state() const override;
+    QTextToSpeech::ErrorReason errorReason() const override;
+    QString errorString() const override;
 
     void setState(QTextToSpeech::State state);
 
@@ -81,7 +83,9 @@ private:
 
     AVSpeechSynthesizer *m_speechSynthesizer;
     QVoice m_voice;
-    QTextToSpeech::State m_state = QTextToSpeech::Ready;
+    QTextToSpeech::State m_state = QTextToSpeech::Error;
+    QTextToSpeech::ErrorReason m_errorReason = QTextToSpeech::ErrorReason::Initialization;
+    QString m_errorString;
 
     double m_pitch = 0.0;
     double m_actualPitch = 1.0;

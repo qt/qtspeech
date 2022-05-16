@@ -40,7 +40,7 @@ QT_BEGIN_NAMESPACE
 
 using namespace Qt::StringLiterals;
 
-QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(QString *errorString, const QVariantMap &parameters, QObject *parent)
+QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(const QVariantMap &parameters, QObject *parent)
     : QTextToSpeechEngine(parent)
 {
     Q_UNUSED(parameters);
@@ -50,18 +50,23 @@ QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(QString *errorString, const Q
         audioDevice = (*it).value<QAudioDevice>();
     else
         audioDevice = QMediaDevices::defaultAudioOutput();
-    m_processor.reset(new QTextToSpeechProcessorFlite(audioDevice));
 
-    *errorString = QString();
+    if (audioDevice.isNull()) {
+        m_errorReason = QTextToSpeech::ErrorReason::Playback;
+        m_errorString = tr("No audio device available");
+    }
+    m_processor.reset(new QTextToSpeechProcessorFlite(audioDevice));
 
     // Connect processor to engine for state changes and error
     connect(m_processor.get(), &QTextToSpeechProcessorFlite::stateChanged,
             this, &QTextToSpeechEngineFlite::changeState);
+    connect(m_processor.get(), &QTextToSpeechProcessorFlite::errorOccurred, this,
+            &QTextToSpeechEngineFlite::setError);
 
     // Read voices from processor before moving it to a separate thread
     const QList<QTextToSpeechProcessorFlite::VoiceInfo> voices = m_processor->voices();
 
-    int i = 0;
+    int voiceIndex = 0;
     for (const QTextToSpeechProcessorFlite::VoiceInfo &voiceInfo : voices) {
         const QLocale locale(voiceInfo.locale);
         const QVoice voice = QTextToSpeechEngine::createVoice(voiceInfo.name, locale,
@@ -69,16 +74,19 @@ QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(QString *errorString, const Q
                                                               QVariant(voiceInfo.id));
         m_voices.insert(locale, voice);
         // Use the first available locale/voice as a fallback
-        if (i == 0)
+        if (voiceIndex == 0)
             m_voice = voice;
-        i++;
+        ++voiceIndex;
     }
 
-    if (i)
+    if (voiceIndex) {
         m_state = QTextToSpeech::Ready;
-
-    m_processor->moveToThread(&m_thread);
-    m_thread.start();
+        m_processor->moveToThread(&m_thread);
+        m_thread.start();
+    } else {
+        m_errorReason = QTextToSpeech::ErrorReason::Configuration;
+        m_errorString = tr("No voices available");
+    }
 }
 
 QTextToSpeechEngineFlite::~QTextToSpeechEngineFlite()
@@ -204,6 +212,24 @@ void QTextToSpeechEngineFlite::changeState(QTextToSpeech::State newState)
 QTextToSpeech::State QTextToSpeechEngineFlite::state() const
 {
     return m_state;
+}
+
+QTextToSpeech::ErrorReason QTextToSpeechEngineFlite::errorReason() const
+{
+    return m_errorReason;
+}
+
+QString QTextToSpeechEngineFlite::errorString() const
+{
+    return m_errorString;
+}
+
+void QTextToSpeechEngineFlite::setError(QTextToSpeech::ErrorReason error, const QString &errorString)
+{
+    m_errorReason = error;
+    m_errorString = errorString;
+    changeState(QTextToSpeech::Error);
+    emit errorOccurred(error, errorString);
 }
 
 QT_END_NAMESPACE

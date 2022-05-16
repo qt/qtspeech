@@ -55,6 +55,7 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech)
     : q_ptr(speech)
 {
     qRegisterMetaType<QTextToSpeech::State>();
+    qRegisterMetaType<QTextToSpeech::ErrorReason>();
 }
 
 QTextToSpeechPrivate::~QTextToSpeechPrivate()
@@ -101,9 +102,11 @@ void QTextToSpeechPrivate::setEngineProvider(const QString &engine, const QVaria
         qCritical() << "Error loading text-to-speech plug-in" << m_providerName;
     }
 
-    // Connect state change signal directly from the engine to the public API signal
-    if (m_engine)
+    // Connect state and error change signals directly from the engine to the public API signals
+    if (m_engine) {
         QObject::connect(m_engine, &QTextToSpeechEngine::stateChanged, q, &QTextToSpeech::stateChanged);
+        QObject::connect(m_engine, &QTextToSpeechEngine::errorOccurred, q, &QTextToSpeech::errorOccurred);
+    }
 }
 
 bool QTextToSpeechPrivate::loadMeta()
@@ -188,21 +191,36 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
 /*!
     \enum QTextToSpeech::State
 
-    This enum describes the current state of the text-to-speech engine.
+    \brief This enum describes the current state of the text-to-speech engine.
 
-    \value Ready          The synthesizer is ready to start a new text. This is
-                          also the state after a text was finished.
-    \value Speaking       Text is being spoken.
-    \value Paused         The synthesis was paused and can be resumed with \l resume().
-    \value BackendError   The backend was unable to initialize, or failed to synthesize
-                          the provided text.
+    \value Ready      The synthesizer is ready to start a new text. This is
+                      also the state after a text was finished.
+    \value Speaking   Text is being spoken.
+    \value Paused     The synthesis was paused and can be resumed with \l resume().
+    \value Error      An error has occurred. Details are given by \l errorReason().
+
+    \sa QTextToSpeech::ErrorReason errorReason() errorString()
 */
 
 /*!
-    \property QTextToSpeech::state
-    \brief the current state of the speech synthesizer.
+    \enum QTextToSpeech::ErrorReason
 
-    Use \l say() to start synthesizing text with the current \l voice and \l locale.
+    \brief This enum describes the current error, if any, of the QTextToSpeech engine.
+
+    \value NoError          No error has occurred.
+    \value Initialization   The backend could not be initialized, e.g. due to
+                            a missing driver or operating system requirement.
+    \value Configuration    The given backend configuration is inconsistent, e.g.
+                            due to wrong voice name or parameters.
+    \value Input            The given text could not be synthesized, e.g. due to
+                            invalid size or characters.
+    \value Playback         Audio playback failed e.g. due to missing audio device,
+                            wrong format or audio streaming interruption.
+
+    Use \l errorReason() to obtain the current error and \l errorString() to get the
+    related error message.
+
+    \sa errorOccurred()
 */
 
 /*!
@@ -214,7 +232,7 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
 
     If the engine initializes correctly, then the \l state of the engine will
     change to QTextToSpeech::Ready; note that this might happen asynchronously.
-    If the plugin fails to load, then \l state will be set to QTextToSpeech::BackendError.
+    If the plugin fails to load, then \l state will be set to QTextToSpeech::Error.
 
     \sa availableEngines()
 */
@@ -232,7 +250,7 @@ QTextToSpeech::QTextToSpeech(QObject *parent)
 
     If the engine initializes correctly, the \l state of the engine will be set
     to QTextToSpeech::Ready. If the plugin fails to load, or if the engine fails to
-    initialize, the engine's \l state will be set to QTextToSpeech::BackendError.
+    initialize, the engine's \l state will be set to QTextToSpeech::Error.
 
     \sa availableEngines()
 */
@@ -254,7 +272,7 @@ QTextToSpeech::QTextToSpeech(const QString &engine, QObject *parent)
 
     If the engine initializes correctly, the \l state of the engine will be set
     to QTextToSpeech::Ready. If the plugin fails to load, or if the engine fails to
-    initialize, the engine's \l state will be set to QTextToSpeech::BackendError.
+    initialize, the engine's \l state will be set to QTextToSpeech::Error.
 
     \sa availableEngines()
 */
@@ -322,13 +340,58 @@ QStringList QTextToSpeech::availableEngines()
     return QTextToSpeechPrivate::plugins().keys();
 }
 
+/*!
+    \property QTextToSpeech::state
+    \brief the current state of the speech synthesizer.
 
+    Use \l say() to start synthesizing text with the current \l voice and \l locale.
+*/
 QTextToSpeech::State QTextToSpeech::state() const
 {
     Q_D(const QTextToSpeech);
     if (d->m_engine)
         return d->m_engine->state();
-    return QTextToSpeech::BackendError;
+    return QTextToSpeech::Error;
+}
+
+/*!
+    \fn void QTextToSpeech::errorOccurred(QTextToSpeech::ErrorReason reason, const QString &errorString)
+
+    This signal is emitted after an error occurred and the \l state has been set to
+    QTextToSpeech::Error. The \a reason parameter specifies the type of error,
+    and the \a errorString provides a human-readable error description.
+
+    QTextToSpeech::ErrorReason is not a registered metatype, so for queued
+    connections, you will have to register it with Q_DECLARE_METATYPE() and
+    qRegisterMetaType().
+
+    \sa error(), errorString(), {Creating Custom Qt Types}
+*/
+
+/*!
+    \return the reason why the engine has reported an error
+
+    \sa state errorOccurred()
+*/
+QTextToSpeech::ErrorReason QTextToSpeech::errorReason() const
+{
+    Q_D(const QTextToSpeech);
+    if (d->m_engine)
+        return d->m_engine->errorReason();
+    return QTextToSpeech::ErrorReason::Initialization;
+}
+
+/*!
+    \return the current engine error message
+
+    \sa errorOccurred()
+*/
+QString QTextToSpeech::errorString() const
+{
+    Q_D(const QTextToSpeech);
+    if (d->m_engine)
+        return d->m_engine->errorString();
+    return tr("Text to speech engine not initialized");
 }
 
 /*!

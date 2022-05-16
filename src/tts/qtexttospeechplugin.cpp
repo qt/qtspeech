@@ -57,7 +57,7 @@ QT_BEGIN_NAMESPACE
 
     If an error occurs, the method should return 0 and (optionally) give a description
     of the error in \a errorString. In this case, QTextToSpeech::state() will return
-    QTextToSpeech::BackendError.
+    QTextToSpeech::Error.
 
     If \a parent is 0, the caller takes the ownership of the returned engine instance.
 */

@@ -45,7 +45,7 @@ QTextToSpeechEngine *QTextToSpeechFlitePlugin::createTextToSpeechEngine(
         const QVariantMap &parameters, QObject *parent, QString *errorString) const
 {
     Q_UNUSED(errorString);
-    return new QTextToSpeechEngineFlite(errorString, parameters, parent);
+    return new QTextToSpeechEngineFlite(parameters, parent);
 }
 
 QT_END_NAMESPACE
