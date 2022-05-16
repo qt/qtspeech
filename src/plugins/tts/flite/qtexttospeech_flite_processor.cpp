@@ -285,6 +285,8 @@ void QTextToSpeechProcessorFlite::createSink()
         connect(QThread::currentThread(), &QThread::finished, m_audioSink, &QObject::deleteLater);
     }
     m_audioBuffer = m_audioSink->start();
+    numberChunks = 0;
+    totalBytes = 0;
 }
 
 // Wrapper for QAudioSink::stateChanged, bypassing early idle bug
