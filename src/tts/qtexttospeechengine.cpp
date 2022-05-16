@@ -45,6 +45,7 @@ QT_BEGIN_NAMESPACE
     \class QTextToSpeechEngine
     \inmodule QtSpeech
     \brief The QTextToSpeechEngine class is the base for text-to-speech engine integrations.
+    \internal
 
     An engine implementation must derive from QTextToSpeechEngine and implement all
     its pure virtual methods.

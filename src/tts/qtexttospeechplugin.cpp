@@ -42,6 +42,7 @@ QT_BEGIN_NAMESPACE
     \class QTextToSpeechPlugin
     \inmodule QtSpeech
     \brief The QTextToSpeechPlugin class is the base for all text-to-speech plug-ins.
+    \internal
 
     A plug-in implementation should derive from QTextToSpeechPlugin and re-implement
     \l createTextToSpeechEngine().
