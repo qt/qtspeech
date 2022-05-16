@@ -219,7 +219,7 @@ QStringList QTextToSpeechProcessorFlite::fliteAvailableVoices(const QString &lib
     QStringList ldPaths = pe.value("LD_LIBRARY_PATH"_L1).split(":", Qt::SkipEmptyParts);
     if (ldPaths.isEmpty()) {
         ldPaths = QStringList{"/usr/lib64"_L1, "/usr/local/lib64"_L1, "/lib64"_L1,
-                              "/usr/lib/x86_64-linux-gnu"_L1};
+                              "/usr/lib/x86_64-linux-gnu"_L1, "/usr/lib"_L1};
     } else {
         ldPaths.removeDuplicates();
     }
