@@ -68,26 +68,29 @@ public class QtTextToSpeech
     private float mRate = 1.0f;
     private float mVolume = 1.0f;
 
+    private String TAG = "QtTextToSpeech";
     // OnInitListener
     private final OnInitListener mTtsChangeListener = new OnInitListener() {
         @Override
         public void onInit(int status) {
-            Log.w("QtTextToSpeech", "tts initialized");
             if (status == TextToSpeech.SUCCESS) {
                 mInitialized = true;
                 notifyReady(mId);
+                Log.d(TAG, "TTS initialized");
             } else {
                 mInitialized = false;
                 notifyError(mId);
+                Log.w(TAG, "TTS initialization failed");
             }
         }
     };
 
+    private String utteranceTAG = "UtteranceProgressListener";
     // UtteranceProgressListener
     private final UtteranceProgressListener mTtsUtteranceProgressListener = new UtteranceProgressListener() {
         @Override
         public void onDone(String utteranceId) {
-            Log.w("UtteranceProgressListener", "onDone");
+            Log.d(utteranceTAG, "onDone");
             if (utteranceId.equals("UtteranceId")) {
                 notifyReady(mId);
             }
@@ -95,7 +98,7 @@ public class QtTextToSpeech
 
         @Override
         public void onError(String utteranceId) {
-            Log.w("UtteranceProgressListener", "onError");
+            Log.w(utteranceTAG, "onError");
             if (utteranceId.equals("UtteranceId")) {
                 notifyReady(mId);
             }
@@ -103,7 +106,7 @@ public class QtTextToSpeech
 
         @Override
         public void onStart(String utteranceId) {
-            Log.w("UtteranceProgressListener", "onStart");
+            Log.d(utteranceTAG, "onStart");
             if (utteranceId.equals("UtteranceId")) {
                 notifySpeaking(mId);
             }
@@ -140,8 +143,7 @@ public class QtTextToSpeech
 
     public void say(String text)
     {
-        Log.w("QtTextToSpeech", text);
-
+        Log.d(TAG, "TTS say(): " + text);
         int result = -1;
 
         HashMap<String, String> map = new HashMap<String, String>();
@@ -149,12 +151,12 @@ public class QtTextToSpeech
         map.put(TextToSpeech.Engine.KEY_PARAM_VOLUME, Float.toString(mVolume));
         result = mTts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
 
-        Log.w("QtTextToSpeech", "RESULT: " + Integer.toString(result));
+        Log.d(TAG, "TTS say() result: " + Integer.toString(result));
     }
 
     public void stop()
     {
-        Log.w("QtTextToSpeech", "STOP");
+        Log.d(TAG, "Stopping TTS");
         mTts.stop();
     }
 
@@ -220,7 +222,7 @@ public class QtTextToSpeech
     public List<Object> getAvailableVoices()
     {
         if (mInitialized && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            //Log.d("QtTextToSpeech", "Voices: " + mTts.getVoices());
+            //Log.d(TAG, "Voices: " + mTts.getVoices());
             return new ArrayList<Object>(mTts.getVoices());
         }
         return new ArrayList<Object>();
@@ -229,7 +231,7 @@ public class QtTextToSpeech
     public List<Locale> getAvailableLocales()
     {
         if (mInitialized && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            //Log.d("QtTextToSpeech", "Locales: " + mTts.getAvailableLanguages());
+            //Log.d(TAG, "Locales: " + mTts.getAvailableLanguages());
             final Set<Locale> languages = mTts.getAvailableLanguages();
             ArrayList<Locale> locales = new ArrayList<Locale>();
 
@@ -252,7 +254,7 @@ public class QtTextToSpeech
 
     public Locale getLocale()
     {
-        //Log.d("QtTextToSpeech", "getLocale: " + mLocale);
+        //Log.d(TAG, "getLocale: " + mLocale);
         final Locale language = mTts.getLanguage();
         String languageCode = language.getLanguage();
         String countryCode = language.getCountry();
@@ -282,7 +284,7 @@ public class QtTextToSpeech
                  if (voice.getName().equals(voiceName)) {
                      int result = mTts.setVoice(voice);
                      if (result == TextToSpeech.SUCCESS) {
-                         //Log.d("QtTextToSpeech", "setVoice: " + voice);
+                         //Log.d(TAG, "setVoice: " + voice);
                          return true;
                      }
                      break;
