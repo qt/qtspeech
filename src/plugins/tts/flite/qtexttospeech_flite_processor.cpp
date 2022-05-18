@@ -137,7 +137,7 @@ bool QTextToSpeechProcessorFlite::init()
     // We could source the language and perhaps the list of voices we want to load
     // (hardcoded below) from an environment variable.
     const QLatin1StringView langCode("us");
-    const QLatin1StringView libPrefix("flite_cmu_%1_%2");
+    const QLatin1StringView libPrefix("flite_cmu_%1_%2.so.1");
     const QLatin1StringView registerPrefix("register_cmu_%1_%2");
     const QLatin1StringView unregisterPrefix("unregister_cmu_%1_%2");
 
@@ -191,7 +191,7 @@ QStringList QTextToSpeechProcessorFlite::fliteAvailableVoices(const QString &lib
         ldPaths.removeDuplicates();
     }
 
-    const QString libPattern = ("lib"_L1 + libPrefix).arg(langCode).arg("*.so"_L1);
+    const QString libPattern = ("lib"_L1 + libPrefix).arg(langCode).arg("*"_L1);
     for (const auto &path : ldPaths) {
         QDir dir(path);
         if (!dir.isReadable() || dir.isEmpty())
@@ -200,7 +200,7 @@ QStringList QTextToSpeechProcessorFlite::fliteAvailableVoices(const QString &lib
         dir.setFilter(QDir::Files);
         const QFileInfoList fileList = dir.entryInfoList();
         for (const auto &file : fileList) {
-            const QString vox = file.fileName().mid(16, file.fileName().lastIndexOf(u'.') - 16);
+            const QString vox = file.fileName().mid(16, file.fileName().indexOf(u'.') - 16);
             voices.append(vox);
         }
     }
