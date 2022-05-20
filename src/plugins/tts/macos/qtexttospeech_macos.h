@@ -63,8 +63,8 @@ public:
     QList<QLocale> availableLocales() const override;
     QList<QVoice> availableVoices() const override;
     void say(const QString &text) override;
-    void stop() override;
-    void pause() override;
+    void stop(QTextToSpeech::BoundaryHint boundaryHint) override;
+    void pause(QTextToSpeech::BoundaryHint boundaryHint) override;
     void resume() override;
     double rate() const override;
     bool setRate(double rate) override;

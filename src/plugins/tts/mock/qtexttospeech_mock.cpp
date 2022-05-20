@@ -98,8 +98,9 @@ void QTextToSpeechEngineMock::say(const QString &text)
     emit stateChanged(m_state);
 }
 
-void QTextToSpeechEngineMock::stop()
+void QTextToSpeechEngineMock::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    Q_UNUSED(boundaryHint);
     if (m_state == QTextToSpeech::Ready || m_state == QTextToSpeech::Error)
         return;
 
@@ -112,8 +113,9 @@ void QTextToSpeechEngineMock::stop()
     emit stateChanged(m_state);
 }
 
-void QTextToSpeechEngineMock::pause()
+void QTextToSpeechEngineMock::pause(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    Q_UNUSED(boundaryHint);
     if (m_state != QTextToSpeech::Speaking)
         return;
 

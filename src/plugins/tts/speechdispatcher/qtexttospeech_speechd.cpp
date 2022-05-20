@@ -153,12 +153,14 @@ void QTextToSpeechEngineSpeechd::say(const QString &text)
         return;
 
     if (m_state != QTextToSpeech::Ready)
-        stop();
+        stop(QTextToSpeech::BoundaryHint::Default);
+
     spd_say(speechDispatcher, SPD_MESSAGE, text.toUtf8().constData());
 }
 
-void QTextToSpeechEngineSpeechd::stop()
+void QTextToSpeechEngineSpeechd::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    Q_UNUSED(boundaryHint);
     if (!connectToSpeechDispatcher())
         return;
 
@@ -167,8 +169,9 @@ void QTextToSpeechEngineSpeechd::stop()
     spd_cancel_all(speechDispatcher);
 }
 
-void QTextToSpeechEngineSpeechd::pause()
+void QTextToSpeechEngineSpeechd::pause(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    Q_UNUSED(boundaryHint);
     if (!connectToSpeechDispatcher())
         return;
 

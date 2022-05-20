@@ -112,13 +112,15 @@ void QTextToSpeechEngineFlite::say(const QString &text)
                               Q_ARG(double, rate()), Q_ARG(double, volume()));
 }
 
-void QTextToSpeechEngineFlite::stop()
+void QTextToSpeechEngineFlite::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    Q_UNUSED(boundaryHint);
     QMetaObject::invokeMethod(m_processor.get(), &QTextToSpeechProcessorFlite::stop, Qt::QueuedConnection);
 }
 
-void QTextToSpeechEngineFlite::pause()
+void QTextToSpeechEngineFlite::pause(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    Q_UNUSED(boundaryHint);
     QMetaObject::invokeMethod(m_processor.get(), &QTextToSpeechProcessorFlite::pause, Qt::QueuedConnection);
 }
 

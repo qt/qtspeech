@@ -70,13 +70,13 @@ QT_BEGIN_NAMESPACE
 */
 
 /*!
-    \fn void QTextToSpeechEngine::stop()
+    \fn void QTextToSpeechEngine::stop(QTextToSpeech::BoundaryHint hint)
 
     Implementation of \l QTextToSpeech::stop().
 */
 
 /*!
-    \fn void QTextToSpeechEngine::pause()
+    \fn void QTextToSpeechEngine::pause(QTextToSpeech::BoundaryHint hint)
 
     Implementation of \l QTextToSpeech::pause().
 */

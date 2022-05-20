@@ -140,8 +140,8 @@ void MainWindow::engineSelected(int index)
     setRate(ui.rate->value());
     setPitch(ui.pitch->value());
     setVolume(ui.volume->value());
-    connect(ui.stopButton, &QPushButton::clicked, m_speech, &QTextToSpeech::stop);
-    connect(ui.pauseButton, &QPushButton::clicked, m_speech, &QTextToSpeech::pause);
+    connect(ui.stopButton, &QPushButton::clicked, m_speech, [this]{ m_speech->stop(); });
+    connect(ui.pauseButton, &QPushButton::clicked, m_speech, [this]{ m_speech->pause(); });
     connect(ui.resumeButton, &QPushButton::clicked, m_speech, &QTextToSpeech::resume);
 
     connect(m_speech, &QTextToSpeech::stateChanged, this, &MainWindow::stateChanged);

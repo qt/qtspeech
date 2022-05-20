@@ -67,7 +67,7 @@ void QTextToSpeechPrivate::setEngineProvider(const QString &engine, const QVaria
 {
     Q_Q(QTextToSpeech);
 
-    q->stop();
+    q->stop(QTextToSpeech::BoundaryHint::Immediate);
     delete m_engine;
 
     m_providerName = engine;
@@ -231,6 +231,20 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
 */
 
 /*!
+    \enum QTextToSpeech::BoundaryHint
+
+    \brief describes when speech should be stopped and paused.
+
+    \value Default          Uses the engine specific default behavior.
+    \value Immediate        The engine should stop playback immediately.
+    \value Word             Stop speech when the current word is finished.
+    \value Sentence         Stop speech when the current sentence is finished.
+
+    \note These are hints to the engine. The current engine might not support
+    all options.
+*/
+
+/*!
     Loads a text-to-speech engine from a plug-in that uses the default
     engine plug-in and constructs a QTextToSpeech object as the child
     of \a parent.
@@ -295,7 +309,7 @@ QTextToSpeech::QTextToSpeech(const QString &engine, const QVariantMap &params, Q
 */
 QTextToSpeech::~QTextToSpeech()
 {
-    stop();
+    stop(QTextToSpeech::BoundaryHint::Immediate);
 }
 
 /*!
@@ -424,35 +438,32 @@ void QTextToSpeech::say(const QString &text)
 }
 
 /*!
-    Stops the current reading.
+    Stops the current reading at \a boundaryHint.
 
-    The reading cannot be resumed.
+    The reading cannot be resumed. Whether the \a boundaryHint is
+    respected depends on the engine.
 
     \sa say() pause()
 */
-void QTextToSpeech::stop()
+void QTextToSpeech::stop(BoundaryHint boundaryHint)
 {
     Q_D(QTextToSpeech);
     if (d->m_engine)
-        d->m_engine->stop();
+        d->m_engine->stop(boundaryHint);
 }
 
 /*!
-    Pauses the current speech.
+    Pauses the current speech at \a boundaryHint.
 
-    \note The behavior of this function depends on the platform and the \l engine.
-    Some synthesizers will look for a break that they can later resume from,
-    such as a sentence end, while others may pause instantly. Due to
-    Android platform limitations, pause() stops what is presently being said,
-    while resume() starts the previously queued sentence from the beginning.
+    Whether the \a boundaryHint is respected depends on the  \l engine.
 
     \sa resume()
 */
-void QTextToSpeech::pause()
+void QTextToSpeech::pause(BoundaryHint boundaryHint)
 {
     Q_D(QTextToSpeech);
     if (d->m_engine)
-        d->m_engine->pause();
+        d->m_engine->pause(boundaryHint);
 }
 
 /*!

@@ -146,7 +146,7 @@ void QTextToSpeechEngineAndroid::say(const QString &text)
         return;
 
     if (m_state == QTextToSpeech::Speaking)
-        stop();
+        stop(QTextToSpeech::BoundaryHint::Default);
 
     m_text = text;
     m_speech.callMethod<void>("say", "(Ljava/lang/String;)V", QJniObject::fromString(m_text).object());
@@ -200,8 +200,9 @@ void QTextToSpeechEngineAndroid::processNotifySpeaking()
     setState(QTextToSpeech::Speaking);
 }
 
-void QTextToSpeechEngineAndroid::stop()
+void QTextToSpeechEngineAndroid::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    Q_UNUSED(boundaryHint);
     if (m_state == QTextToSpeech::Ready)
         return;
 
@@ -209,8 +210,9 @@ void QTextToSpeechEngineAndroid::stop()
     setState(QTextToSpeech::Ready);
 }
 
-void QTextToSpeechEngineAndroid::pause()
+void QTextToSpeechEngineAndroid::pause(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    Q_UNUSED(boundaryHint);
     if (m_state == QTextToSpeech::Paused)
         return;
 

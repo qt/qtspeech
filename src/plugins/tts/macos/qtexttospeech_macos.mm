@@ -139,24 +139,50 @@ void QTextToSpeechEngineMacOS::say(const QString &text)
 
     pauseRequested = false;
     if (m_state != QTextToSpeech::Ready)
-        stop();
+        stop(QTextToSpeech::BoundaryHint::Default);
 
     NSString *ntext = text.toNSString();
     [speechSynthesizer startSpeakingString:ntext];
     speaking();
 }
 
-void QTextToSpeechEngineMacOS::stop()
+void QTextToSpeechEngineMacOS::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
-    if (speechSynthesizer.isSpeaking || m_state == QTextToSpeech::Paused)
-        [speechSynthesizer stopSpeakingAtBoundary:NSSpeechImmediateBoundary];
+    if (speechSynthesizer.isSpeaking || m_state == QTextToSpeech::Paused) {
+        const NSSpeechBoundary atBoundary = [boundaryHint]{
+            switch (boundaryHint) {
+            case QTextToSpeech::BoundaryHint::Default:
+            case QTextToSpeech::BoundaryHint::Immediate:
+                return NSSpeechImmediateBoundary;
+            case QTextToSpeech::BoundaryHint::Word:
+                return NSSpeechWordBoundary;
+            case QTextToSpeech::BoundaryHint::Sentence:
+                return NSSpeechSentenceBoundary;
+            }
+            Q_UNREACHABLE();
+        }();
+
+        [speechSynthesizer stopSpeakingAtBoundary:atBoundary];
+    }
 }
 
-void QTextToSpeechEngineMacOS::pause()
+void QTextToSpeechEngineMacOS::pause(QTextToSpeech::BoundaryHint boundaryHint)
 {
     if (speechSynthesizer.isSpeaking) {
         pauseRequested = true;
-        [speechSynthesizer pauseSpeakingAtBoundary: NSSpeechWordBoundary];
+        const NSSpeechBoundary atBoundary = [boundaryHint]{
+            switch (boundaryHint) {
+            case QTextToSpeech::BoundaryHint::Immediate:
+                return NSSpeechImmediateBoundary;
+            case QTextToSpeech::BoundaryHint::Default:
+            case QTextToSpeech::BoundaryHint::Word:
+                return NSSpeechWordBoundary;
+            case QTextToSpeech::BoundaryHint::Sentence:
+                return NSSpeechSentenceBoundary;
+            }
+            Q_UNREACHABLE();
+        }();
+        [speechSynthesizer pauseSpeakingAtBoundary:atBoundary];
     }
 }
 

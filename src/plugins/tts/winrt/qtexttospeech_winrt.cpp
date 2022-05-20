@@ -415,7 +415,7 @@ void QTextToSpeechEngineWinRT::say(const QString &text)
     Q_D(QTextToSpeechEngineWinRT);
 
     // stop ongoing speech
-    stop();
+    stop(QTextToSpeech::BoundaryHint::Default);
 
     HRESULT hr = S_OK;
 
@@ -449,8 +449,9 @@ void QTextToSpeechEngineWinRT::say(const QString &text)
     });
 }
 
-void QTextToSpeechEngineWinRT::stop()
+void QTextToSpeechEngineWinRT::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    Q_UNUSED(boundaryHint);
     Q_D(QTextToSpeechEngineWinRT);
 
     if (d->audioSource) {
@@ -459,8 +460,9 @@ void QTextToSpeechEngineWinRT::stop()
     }
 }
 
-void QTextToSpeechEngineWinRT::pause()
+void QTextToSpeechEngineWinRT::pause(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    Q_UNUSED(boundaryHint);
     Q_D(QTextToSpeechEngineWinRT);
 
     if (d->audioSource)

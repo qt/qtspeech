@@ -118,7 +118,7 @@ void QTextToSpeechEngineSapi::say(const QString &text)
 
     QString textString = text;
     if (m_state != QTextToSpeech::Ready)
-        stop();
+        stop(QTextToSpeech::BoundaryHint::Default);
 
     textString.prepend(QString::fromLatin1("<pitch absmiddle=\"%1\"/>").arg(m_pitch * 10));
 
@@ -126,15 +126,17 @@ void QTextToSpeechEngineSapi::say(const QString &text)
     m_voice->Speak(wtext.data(), SPF_ASYNC, NULL);
 }
 
-void QTextToSpeechEngineSapi::stop()
+void QTextToSpeechEngineSapi::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    Q_UNUSED(boundaryHint);
     if (m_state == QTextToSpeech::Paused)
         resume();
     m_voice->Speak(NULL, SPF_PURGEBEFORESPEAK, 0);
 }
 
-void QTextToSpeechEngineSapi::pause()
+void QTextToSpeechEngineSapi::pause(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    Q_UNUSED(boundaryHint);
     if (!isSpeaking())
         return;
 

@@ -57,8 +57,8 @@ public:
     virtual QList<QVoice> availableVoices() const = 0;
 
     virtual void say(const QString &text) = 0;
-    virtual void stop() = 0;
-    virtual void pause() = 0;
+    virtual void stop(QTextToSpeech::BoundaryHint boundaryHint) = 0;
+    virtual void pause(QTextToSpeech::BoundaryHint boundaryHint) = 0;
     virtual void resume() = 0;
 
     virtual double rate() const = 0;

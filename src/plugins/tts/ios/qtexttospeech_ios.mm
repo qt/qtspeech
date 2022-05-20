@@ -129,7 +129,7 @@ QTextToSpeechEngineIos::~QTextToSpeechEngineIos()
 
 void QTextToSpeechEngineIos::say(const QString &text)
 {
-    stop();
+    stop(QTextToSpeech::BoundaryHint::Default);
 
     // Qt pitch: [-1.0, 1.0], 0 is normal
     // AVF range: [0.5, 2.0], 1.0 is normal
@@ -176,14 +176,22 @@ void QTextToSpeechEngineIos::say(const QString &text)
     [m_speechSynthesizer speakUtterance:utterance];
 }
 
-void QTextToSpeechEngineIos::stop()
+void QTextToSpeechEngineIos::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
-    [m_speechSynthesizer stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
+    Q_UNUSED(boundaryHint);
+    const AVSpeechBoundary atBoundary = (boundaryHint == QTextToSpeech::BoundaryHint::Immediate
+                                      || boundaryHint == QTextToSpeech::BoundaryHint::Default)
+                                      ? AVSpeechBoundaryImmediate
+                                      : AVSpeechBoundaryWord;
+    [m_speechSynthesizer stopSpeakingAtBoundary:atBoundary];
 }
 
-void QTextToSpeechEngineIos::pause()
+void QTextToSpeechEngineIos::pause(QTextToSpeech::BoundaryHint boundaryHint)
 {
-    [m_speechSynthesizer pauseSpeakingAtBoundary:AVSpeechBoundaryWord];
+    const AVSpeechBoundary atBoundary = boundaryHint == QTextToSpeech::BoundaryHint::Immediate
+                                      ? AVSpeechBoundaryImmediate
+                                      : AVSpeechBoundaryWord;
+    [m_speechSynthesizer pauseSpeakingAtBoundary:atBoundary];
 }
 
 void QTextToSpeechEngineIos::resume()

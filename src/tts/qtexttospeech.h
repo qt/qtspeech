@@ -79,6 +79,13 @@ public:
     };
     Q_ENUM(ErrorReason)
 
+    enum class BoundaryHint {
+        Default,
+        Immediate,
+        Word,
+        Sentence
+    };
+
     explicit QTextToSpeech(QObject *parent = nullptr);
     explicit QTextToSpeech(const QString &engine, QObject *parent = nullptr);
     explicit QTextToSpeech(const QString &engine, const QVariantMap &params,
@@ -106,8 +113,8 @@ public:
 
 public Q_SLOTS:
     void say(const QString &text);
-    void stop();
-    void pause();
+    void stop(QTextToSpeech::BoundaryHint boundaryHint = QTextToSpeech::BoundaryHint::Default);
+    void pause(QTextToSpeech::BoundaryHint boundaryHint = QTextToSpeech::BoundaryHint::Default);
     void resume();
 
     void setLocale(const QLocale &locale);
