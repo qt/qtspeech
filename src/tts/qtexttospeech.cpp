@@ -386,7 +386,7 @@ QTextToSpeech::State QTextToSpeech::state() const
     connections, you will have to register it with Q_DECLARE_METATYPE() and
     qRegisterMetaType().
 
-    \sa error(), errorString(), {Creating Custom Qt Types}
+    \sa errorReason(), errorString(), {Creating Custom Qt Types}
 */
 
 /*!
