@@ -84,6 +84,7 @@ private:
     QLocale localeForVoice(SPDVoice *voice) const;
     bool connectToSpeechDispatcher();
     void updateVoices();
+    void setError(QTextToSpeech::ErrorReason reason, const QString &errorString);
 
     QTextToSpeech::State m_state = QTextToSpeech::Error;
     QTextToSpeech::ErrorReason m_errorReason = QTextToSpeech::ErrorReason::Initialization;

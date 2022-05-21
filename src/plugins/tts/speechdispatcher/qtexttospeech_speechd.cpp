@@ -37,7 +37,9 @@
 
 #include "qtexttospeech_speechd.h"
 
-#include <qdebug.h>
+#include <QtCore/QDebug>
+#include <QtCore/QCoreApplication>
+
 #include <libspeechd.h>
 
 #if LIBSPEECHD_MAJOR_VERSION > 0 || LIBSPEECHD_MINOR_VERSION >= 9
@@ -84,50 +86,56 @@ bool QTextToSpeechEngineSpeechd::connectToSpeechDispatcher()
         return true;
 
     speechDispatcher = spd_open("QTextToSpeech", "main", nullptr, SPD_MODE_THREADED);
-    if (speechDispatcher) {
-        speechDispatcher->callback_begin = speech_finished_callback;
-        spd_set_notification_on(speechDispatcher, SPD_BEGIN);
-        speechDispatcher->callback_end = speech_finished_callback;
-        spd_set_notification_on(speechDispatcher, SPD_END);
-        speechDispatcher->callback_cancel = speech_finished_callback;
-        spd_set_notification_on(speechDispatcher, SPD_CANCEL);
-        speechDispatcher->callback_resume = speech_finished_callback;
-        spd_set_notification_on(speechDispatcher, SPD_RESUME);
-        speechDispatcher->callback_pause = speech_finished_callback;
-        spd_set_notification_on(speechDispatcher, SPD_PAUSE);
+    if (!speechDispatcher) {
+        setError(QTextToSpeech::ErrorReason::Initialization,
+                QCoreApplication::translate("QTextToSpeech", "Connection to speech-dispatcher failed"));
+        return false;
+    }
 
-        QStringList availableModules;
-        char **modules = spd_list_modules(speechDispatcher);
-        int i = 0;
-        while (modules && modules[i]) {
-            availableModules.append(QString::fromUtf8(modules[i]));
-            ++i;
-        }
+    speechDispatcher->callback_begin = speech_finished_callback;
+    spd_set_notification_on(speechDispatcher, SPD_BEGIN);
+    speechDispatcher->callback_end = speech_finished_callback;
+    spd_set_notification_on(speechDispatcher, SPD_END);
+    speechDispatcher->callback_cancel = speech_finished_callback;
+    spd_set_notification_on(speechDispatcher, SPD_CANCEL);
+    speechDispatcher->callback_resume = speech_finished_callback;
+    spd_set_notification_on(speechDispatcher, SPD_RESUME);
+    speechDispatcher->callback_pause = speech_finished_callback;
+    spd_set_notification_on(speechDispatcher, SPD_PAUSE);
 
-        if (availableModules.length() == 0) {
-            m_errorReason = QTextToSpeech::ErrorReason::Configuration;
-            m_errorString = tr("Found no modules in speech-dispatcher.");
-        } else {
-            m_state = QTextToSpeech::Ready;
-            m_errorReason = QTextToSpeech::ErrorReason::NoError;
-        }
+    QStringList availableModules;
+    char **modules = spd_list_modules(speechDispatcher);
+    int i = 0;
+    while (modules && modules[i]) {
+        availableModules.append(QString::fromUtf8(modules[i]));
+        ++i;
+    }
 
-        updateVoices();
+    if (availableModules.length() == 0) {
+        setError(QTextToSpeech::ErrorReason::Configuration,
+                    QCoreApplication::translate("QTextToSpeech",
+                                                "Found no modules in speech-dispatcher."));
+        return false;
+    }
+
+    updateVoices();
+    if (m_currentVoice == QVoice()) {
         // Set the default locale (which is usually the system locale), and fall back
         // to a locale that has the same language if that fails. That might then still fail,
         // in which case there won't be a valid voice.
         if (!setLocale(QLocale()) && !setLocale(QLocale().language())) {
-            m_errorReason = QTextToSpeech::ErrorReason::Configuration;
-            m_errorString = tr("Failed to set default locale and voice");
+            setError(QTextToSpeech::ErrorReason::Configuration,
+                    QCoreApplication::translate("QTextToSpeech",
+                                                "Failed to initialize default locale and voice."));
+            return false;
         }
-        return true;
     }
 
-    m_state = QTextToSpeech::Error;
-    m_errorReason = QTextToSpeech::ErrorReason::Initialization;
-    m_errorString = tr("Connection to speech-dispatcher failed");
+    m_state = QTextToSpeech::Ready;
+    m_errorReason = QTextToSpeech::ErrorReason::NoError;
+    m_errorString.clear();
 
-    return false;
+    return true;
 }
 
 // hack to get state notifications
@@ -147,6 +155,22 @@ void QTextToSpeechEngineSpeechd::spdStateChanged(SPDNotificationType state)
     }
 }
 
+void QTextToSpeechEngineSpeechd::setError(QTextToSpeech::ErrorReason reason, const QString &errorString)
+{
+    m_errorReason = reason;
+    m_errorString = errorString;
+    if (reason == QTextToSpeech::ErrorReason::NoError) {
+        m_errorString.clear();
+        return;
+    }
+
+    if (m_state != QTextToSpeech::Error) {
+        m_state = QTextToSpeech::Error;
+        emit stateChanged(m_state);
+    }
+    emit errorOccurred(m_errorReason, m_errorString);
+}
+
 void QTextToSpeechEngineSpeechd::say(const QString &text)
 {
     if (text.isEmpty() || !connectToSpeechDispatcher())
@@ -155,7 +179,9 @@ void QTextToSpeechEngineSpeechd::say(const QString &text)
     if (m_state != QTextToSpeech::Ready)
         stop(QTextToSpeech::BoundaryHint::Default);
 
-    spd_say(speechDispatcher, SPD_MESSAGE, text.toUtf8().constData());
+    if (spd_say(speechDispatcher, SPD_MESSAGE, text.toUtf8().constData()) < 0)
+        setError(QTextToSpeech::ErrorReason::Input,
+                 QCoreApplication::translate("QTextToSpeech", "Text synthesizing failure."));
 }
 
 void QTextToSpeechEngineSpeechd::stop(QTextToSpeech::BoundaryHint boundaryHint)
@@ -262,7 +288,7 @@ bool QTextToSpeechEngineSpeechd::setLocale(const QLocale &locale)
     if (!connectToSpeechDispatcher())
         return false;
 
-    int result = spd_set_language(speechDispatcher, locale.uiLanguages().at(0).toUtf8().data());
+    const int result = spd_set_language(speechDispatcher, locale.uiLanguages().at(0).toUtf8().data());
     if (result == 0) {
         const QVoice previousVoice = m_currentVoice;
 
@@ -274,6 +300,9 @@ bool QTextToSpeechEngineSpeechd::setLocale(const QLocale &locale)
         // try to go back to the previous locale/voice
         setVoice(previousVoice);
     }
+    setError(QTextToSpeech::ErrorReason::Configuration,
+             QCoreApplication::translate("QTextToSpeech", "Locale not available: %1")
+                .arg(locale.name()));
     return false;
 }
 
@@ -289,13 +318,21 @@ bool QTextToSpeechEngineSpeechd::setVoice(const QVoice &voice)
 
     const QByteArray moduleName = voiceData(voice).value<QByteArray>();
     const int result = spd_set_output_module(speechDispatcher, moduleName);
-    if (result != 0)
+    if (result != 0) {
+        setError(QTextToSpeech::ErrorReason::Configuration,
+                 QCoreApplication::translate("QTextToSpeech",
+                    "Output module %1, associated with voice %2 not available")
+                        .arg(moduleName).arg(voice.name()));
         return false;
+    }
     const int result2 = spd_set_synthesis_voice(speechDispatcher, voice.name().toUtf8().data());
     if (result2 == 0) {
         m_currentVoice = voice;
         return true;
     }
+    setError(QTextToSpeech::ErrorReason::Configuration,
+             QCoreApplication::translate("QTextToSpeech", "Invalid voice: %1")
+                .arg(voice.name()));
     return false;
 }
 

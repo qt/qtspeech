@@ -88,6 +88,7 @@ private:
     QString voiceId(ISpObjectToken *speechToken) const;
     QLocale lcidToLocale(const QString &lcid) const;
     void updateVoices();
+    void setError(QTextToSpeech::ErrorReason reason, const QString &string);
 
     QTextToSpeech::State m_state = QTextToSpeech::Error;
     QTextToSpeech::ErrorReason m_errorReason = QTextToSpeech::ErrorReason::Initialization;

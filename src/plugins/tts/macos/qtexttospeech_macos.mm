@@ -36,7 +36,9 @@
 
 #include <Cocoa/Cocoa.h>
 #include "qtexttospeech_macos.h"
-#include <qdebug.h>
+
+#include <QtCore/QDebug>
+#include <QtCore/QCoreApplication>
 
 @interface QT_MANGLE_NAMESPACE(StateDelegate) : NSObject <NSSpeechSynthesizerDelegate>
 @end
@@ -65,6 +67,14 @@
     Q_UNUSED(sender);
     speechPrivate->speechStopped(finishedSpeaking == YES);
 }
+
+- (void)speechSynthesizer:(NSSpeechSynthesizer *)sender  didEncounterSyncMessage:(NSString *)message
+{
+    Q_UNUSED(sender);
+    speechPrivate->setError(QTextToSpeech::ErrorReason::Input,
+                            QCoreApplication::translate("QTextToSpeech",
+                                "Speech synthesizing failure: %1").arg(QString::fromNSString(message)));
+}
 @end
 
 QT_BEGIN_NAMESPACE
@@ -78,8 +88,8 @@ QTextToSpeechEngineMacOS::QTextToSpeechEngineMacOS(const QVariantMap &/*paramete
     updateVoices();
 
     if (m_voices.isEmpty()) {
-        m_errorReason = QTextToSpeech::ErrorReason::Configuration;
-        m_errorString = tr("No voices available");
+        setError(QTextToSpeech::ErrorReason::Configuration,
+                 QCoreApplication::translate("QTextToSpeech", "No voices available."));
     } else {
         m_state = QTextToSpeech::Ready;
         m_errorReason = QTextToSpeech::ErrorReason::NoError;
@@ -99,6 +109,19 @@ QTextToSpeechEngineMacOS::~QTextToSpeechEngineMacOS()
 QTextToSpeech::State QTextToSpeechEngineMacOS::state() const
 {
     return m_state;
+}
+
+void QTextToSpeechEngineMacOS::setError(QTextToSpeech::ErrorReason reason, const QString &string)
+{
+    m_errorReason = reason;
+    m_errorString = string;
+    if (reason != QTextToSpeech::ErrorReason::NoError)
+        return;
+    if (m_state != QTextToSpeech::Error) {
+        m_state = QTextToSpeech::Error;
+        emit stateChanged(m_state);
+    }
+    emit errorOccurred(m_errorReason, m_errorString);
 }
 
 QTextToSpeech::ErrorReason QTextToSpeechEngineMacOS::errorReason() const
@@ -277,6 +300,10 @@ bool QTextToSpeechEngineMacOS::setLocale(const QLocale &locale)
             return true;
         }
     }
+
+    setError(QTextToSpeech::ErrorReason::Configuration,
+             QCoreApplication::translate("QTextToSpeech", "No voice available for locale %1.")
+                .arg(locale.bcp47Name()));
     return false;
 }
 

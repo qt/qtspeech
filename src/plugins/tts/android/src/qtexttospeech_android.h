@@ -78,11 +78,12 @@ public:
 
 public Q_SLOTS:
     void processNotifyReady();
-    void processNotifyError();
+    void processNotifyError(int reason);
     void processNotifySpeaking();
 
 private:
     void setState(QTextToSpeech::State state);
+    void setError(QTextToSpeech::ErrorReason reason, const QString &string);
     QVoice javaVoiceObjectToQVoice(QJniObject &obj) const;
 
     QJniObject m_speech;

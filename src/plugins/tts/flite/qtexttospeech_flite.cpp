@@ -36,6 +36,8 @@
 
 #include "qtexttospeech_flite.h"
 
+#include <QtCore/QCoreApplication>
+
 QT_BEGIN_NAMESPACE
 
 using namespace Qt::StringLiterals;
@@ -53,7 +55,7 @@ QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(const QVariantMap &parameters
 
     if (audioDevice.isNull()) {
         m_errorReason = QTextToSpeech::ErrorReason::Playback;
-        m_errorString = tr("No audio device available");
+        m_errorString = QCoreApplication::translate("QTextToSpeech", "No audio device available");
     }
     m_processor.reset(new QTextToSpeechProcessorFlite(audioDevice));
 
@@ -85,7 +87,7 @@ QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(const QVariantMap &parameters
         m_thread.start();
     } else {
         m_errorReason = QTextToSpeech::ErrorReason::Configuration;
-        m_errorString = tr("No voices available");
+        m_errorString = QCoreApplication::translate("QTextToSpeech", "No voices available");
     }
 }
 

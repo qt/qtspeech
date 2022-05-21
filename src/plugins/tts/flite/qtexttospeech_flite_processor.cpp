@@ -37,6 +37,7 @@
 #include "qtexttospeech_flite_processor.h"
 #include "qtexttospeech_flite_plugin.h"
 
+#include <QtCore/QCoreApplication>
 #include <QtCore/QString>
 #include <QtCore/QLocale>
 #include <QtCore/QMap>
@@ -99,7 +100,7 @@ bool QTextToSpeechProcessorFlite::audioOutput(const char *data, qint64 dataSize,
 {
     // Send data
     if (!m_audioBuffer->write(data, dataSize)) {
-        errorString = tr("Audio streaming error");
+        errorString = QCoreApplication::translate("QTextToSpeech", "Audio streaming error.");
         return false;
     }
 
@@ -128,7 +129,8 @@ void QTextToSpeechProcessorFlite::processText(const QString &text, int voiceId, 
     secsToSpeak = flite_text_to_speech(text.toUtf8().constData(), voice, "none");
 
     if (secsToSpeak <= 0) {
-        setError(QTextToSpeech::ErrorReason::Input, tr("Text synthesizing failure"));
+        setError(QTextToSpeech::ErrorReason::Input,
+                 QCoreApplication::translate("QTextToSpeech", "Speech synthesizing failure."));
         return;
     }
 
@@ -307,7 +309,8 @@ void QTextToSpeechProcessorFlite::createSink()
     m_audioBuffer = m_audioSink->start();
     if (!m_audioBuffer) {
         deleteSink();
-        setError(QTextToSpeech::ErrorReason::Playback, tr("Audio Open error: No I/O device assigned."));
+        setError(QTextToSpeech::ErrorReason::Playback,
+                 QCoreApplication::translate("QTextToSpeech", "Audio Open error: No I/O device available."));
     }
 
     numberChunks = 0;
@@ -368,19 +371,24 @@ bool QTextToSpeechProcessorFlite::checkFormat(const QAudioFormat &format)
     // Format must be valid
     if (!format.isValid()) {
         formatOK = false;
-        setError(QTextToSpeech::ErrorReason::Playback, tr("Invalid audio format: ") + formatString);
+        setError(QTextToSpeech::ErrorReason::Playback,
+                 QCoreApplication::translate("QTextToSpeech", "Invalid audio format: %1")
+                    .arg(formatString));
     }
 
     // Device must exist
     if (m_audioDevice.isNull()) {
         formatOK = false;
-        setError (QTextToSpeech::ErrorReason::Playback, tr("No audio device specified"));
+        setError(QTextToSpeech::ErrorReason::Playback,
+                 QCoreApplication::translate("QTextToSpeech", "No audio device specified."));
     }
 
     // Device must support requested format
     if (!m_audioDevice.isFormatSupported(format)) {
         formatOK = false;
-        setError(QTextToSpeech::ErrorReason::Playback, tr("Audio device does not support format: ") + formatString);
+        setError(QTextToSpeech::ErrorReason::Playback,
+                 QCoreApplication::translate("QTextToSpeech", "Audio device does not support format: %1")
+                    .arg(formatString));
     }
 
     return formatOK;
@@ -392,7 +400,8 @@ bool QTextToSpeechProcessorFlite::checkVoice(int voiceId)
     if (voiceId >= 0 && voiceId < m_voices.size())
         return true;
 
-    setError(QTextToSpeech::ErrorReason::Configuration, tr("Illegal voiceId %1").arg(voiceId));
+    setError(QTextToSpeech::ErrorReason::Configuration,
+             QCoreApplication::translate("QTextToSpeech", "Invalid voiceId %1.").arg(voiceId));
     return false;;
 }
 

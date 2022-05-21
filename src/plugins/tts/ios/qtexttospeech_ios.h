@@ -80,6 +80,7 @@ public:
 private:
     AVSpeechSynthesisVoice *fromQVoice(const QVoice &voice) const;
     QVoice toQVoice(AVSpeechSynthesisVoice *avVoice) const;
+    void setError(QTextToSpeech::ErrorReason reason, const QString &string);
 
     AVSpeechSynthesizer *m_speechSynthesizer;
     QVoice m_voice;

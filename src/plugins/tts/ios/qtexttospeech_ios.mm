@@ -38,6 +38,8 @@
 
 #include "qtexttospeech_ios.h"
 
+#include <QtCore/QCoreApplication>
+
 @interface QIOSSpeechSynthesizerDelegate : NSObject <AVSpeechSynthesizerDelegate>
 @end
 
@@ -116,8 +118,8 @@ QTextToSpeechEngineIos::QTextToSpeechEngineIos(const QVariantMap &/*parameters*/
         m_state = QTextToSpeech::Ready;
         m_errorReason = QTextToSpeech::ErrorReason::NoError;
     } else {
-        m_errorReason = QTextToSpeech::ErrorReason::Configuration;
-        m_errorString = tr("Failed to initialize default locale and voice");
+        setError(QTextToSpeech::ErrorReason::Configuration,
+                 QCoreApplication::translate("QTextToSpeech", "Failed to initialize default locale and voice."));
     }
 }
 
@@ -246,8 +248,13 @@ QList<QLocale> QTextToSpeechEngineIos::availableLocales() const
 bool QTextToSpeechEngineIos::setLocale(const QLocale &locale)
 {
     AVSpeechSynthesisVoice *defaultAvVoice = [AVSpeechSynthesisVoice voiceWithLanguage:locale.bcp47Name().toNSString()];
-    if (!defaultAvVoice)
+
+    if (!defaultAvVoice) {
+        setError(QTextToSpeech::ErrorReason::Configuration,
+                 QCoreApplication::translate("QTextToSpeech", "No voice available for locale %1.")
+                    .arg(locale.bcp47Name()));
         return false;
+    }
 
     m_voice = toQVoice(defaultAvVoice);
     // workaround for AVFoundation bug: the default voice doesn't have the gender flag set, but
@@ -281,8 +288,11 @@ QList<QVoice> QTextToSpeechEngineIos::availableVoices() const
 bool QTextToSpeechEngineIos::setVoice(const QVoice &voice)
 {
     AVSpeechSynthesisVoice *avVoice = fromQVoice(voice);
-    if (!avVoice)
+    if (!avVoice) {
+        setError(QTextToSpeech::ErrorReason::Configuration,
+                 QCoreApplication::translate("QTextToSpeech", "Voice is not available with this engine."));
         return false;
+    }
 
     m_voice = voice;
     return true;
@@ -334,6 +344,19 @@ void QTextToSpeechEngineIos::setState(QTextToSpeech::State state)
 QTextToSpeech::State QTextToSpeechEngineIos::state() const
 {
     return m_state;
+}
+
+void QTextToSpeechEngineIos::setError(QTextToSpeech::ErrorReason reason, const QString &string)
+{
+    m_errorReason = reason;
+    m_errorString = string;
+    if (reason != QTextToSpeech::ErrorReason::NoError)
+        return;
+    if (m_state != QTextToSpeech::Error) {
+        m_state = QTextToSpeech::Error;
+        emit stateChanged(m_state);
+    }
+    emit errorOccurred(m_errorReason, m_errorString);
 }
 
 QTextToSpeech::ErrorReason QTextToSpeechEngineIos::errorReason() const

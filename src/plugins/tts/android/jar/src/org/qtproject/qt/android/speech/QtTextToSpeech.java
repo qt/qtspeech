@@ -57,7 +57,7 @@ import java.util.Set;
 public class QtTextToSpeech
 {
     // Native callback functions
-    native public void notifyError(long id);
+    native public void notifyError(long id, long reason);
     native public void notifyReady(long id);
     native public void notifySpeaking(long id);
 
@@ -79,7 +79,7 @@ public class QtTextToSpeech
                 Log.d(TAG, "TTS initialized");
             } else {
                 mInitialized = false;
-                notifyError(mId);
+                notifyError(mId, 1); // QTextToSpeech::ErrorReason::Initialization
                 Log.w(TAG, "TTS initialization failed");
             }
         }
@@ -100,7 +100,7 @@ public class QtTextToSpeech
         public void onError(String utteranceId) {
             Log.w(utteranceTAG, "onError");
             if (utteranceId.equals("UtteranceId")) {
-                notifyReady(mId);
+                notifyError(mId, 4);  // QTextToSpeech::ErrorReason::Playback
             }
         }
 
@@ -156,6 +156,8 @@ public class QtTextToSpeech
         result = mTts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
 
         Log.d(TAG, "TTS say() result: " + Integer.toString(result));
+        if (result == TextToSpeech.ERROR)
+            notifyError(mId, 3); // QTextToSpeech::ErrorReason::Input
     }
 
     public void stop()
@@ -177,6 +179,8 @@ public class QtTextToSpeech
         int success = mTts.setPitch(pitch);
         if (success == TextToSpeech.SUCCESS)
             mPitch = pitch;
+        else
+            notifyError(mId, 2); // QTextToSpeech::ErrorReason::Configuration
 
         return success;
     }
@@ -194,6 +198,8 @@ public class QtTextToSpeech
         int success = mTts.setSpeechRate(rate);
         if (success == TextToSpeech.SUCCESS)
             mRate = rate;
+        else
+            notifyError(mId, 2); // QTextToSpeech::ErrorReason::Configuration
 
         return success;
     }

@@ -41,6 +41,7 @@
 #include <QtMultimedia/QMediaDevices>
 #include <QtMultimedia/QAudioDevice>
 
+#include <QtCore/QCoreApplication>
 #include <QtCore/private/qfunctions_winrt_p.h>
 
 #include <winrt/base.h>
@@ -69,9 +70,10 @@ public:
     QTextToSpeechEngineWinRTPrivate(QTextToSpeechEngineWinRT *q);
     ~QTextToSpeechEngineWinRTPrivate();
 
+    void setError(QTextToSpeech::ErrorReason reason, const QString &string);
     QTextToSpeech::State state = QTextToSpeech::Error;
-    QTextToSpeech::ErrorReason m_errorReason = QTextToSpeech::ErrorReason::Initialization;
-    QString m_errorString;
+    QTextToSpeech::ErrorReason errorReason = QTextToSpeech::ErrorReason::Initialization;
+    QString errorString;
 
     // interfaces used to access the speech synthesizer
     ComPtr<ISpeechSynthesizer> synth;
@@ -110,6 +112,20 @@ QTextToSpeechEngineWinRTPrivate::~QTextToSpeechEngineWinRTPrivate()
     }
 }
 
+void QTextToSpeechEngineWinRTPrivate::setError(QTextToSpeech::ErrorReason reason, const QString &string)
+{
+    Q_Q(QTextToSpeechEngineWinRT);
+    errorReason = reason;
+    errorString = string;
+    if (reason != QTextToSpeech::ErrorReason::NoError)
+        return;
+    if (state != QTextToSpeech::Error) {
+        state = QTextToSpeech::Error;
+        emit q->stateChanged(state);
+    }
+    emit q->errorOccurred(errorReason, errorString);
+}
+
 QTextToSpeechEngineWinRT::QTextToSpeechEngineWinRT(const QVariantMap &params, QObject *parent)
     : QTextToSpeechEngine(parent)
     , d_ptr(new QTextToSpeechEngineWinRTPrivate(this))
@@ -121,10 +137,9 @@ QTextToSpeechEngineWinRT::QTextToSpeechEngineWinRT(const QVariantMap &params, QO
     else
         d->audioDevice = QMediaDevices::defaultAudioOutput();
 
-    if (d->audioDevice.isNull()) {
-        d->m_errorString = tr("No audio device available");
-        d->m_errorReason = QTextToSpeech::ErrorReason::Playback;
-    }
+    if (d->audioDevice.isNull())
+        d->setError(QTextToSpeech::ErrorReason::Playback,
+                    QCoreApplication::translate("QTextToSpeech", "No audio device available."));
 
     HRESULT hr = CoInitialize(nullptr);
     Q_ASSERT_SUCCEEDED(hr);
@@ -132,14 +147,14 @@ QTextToSpeechEngineWinRT::QTextToSpeechEngineWinRT(const QVariantMap &params, QO
     hr = RoActivateInstance(HString::MakeReference(RuntimeClass_Windows_Media_SpeechSynthesis_SpeechSynthesizer).Get(),
                             &d->synth);
     if (!SUCCEEDED(hr)) {
-        d->m_errorReason = QTextToSpeech::ErrorReason::Initialization;
-        d->m_errorString = tr("Could not instantiate speech synthesizer.");
+        d->setError(QTextToSpeech::ErrorReason::Initialization,
+                    QCoreApplication::translate("QTextToSpeech", "Could not initialize text-to-speech engine."));
     } else if (voice() == QVoice()) {
-        d->m_errorReason = QTextToSpeech::ErrorReason::Configuration;
-        d->m_errorString = tr("Could not set default voice.");
+        d->setError(QTextToSpeech::ErrorReason::Configuration,
+                    QCoreApplication::translate("QTextToSpeech", "Could not set default voice."));
     } else {
         d->state = QTextToSpeech::Ready;
-        d->m_errorReason = QTextToSpeech::ErrorReason::NoError;
+        d->errorReason = QTextToSpeech::ErrorReason::NoError;
     }
 
     // the rest is optional, we might not support these features
@@ -295,7 +310,9 @@ bool QTextToSpeechEngineWinRT::setLocale(const QLocale &locale)
     });
 
     if (!foundVoice) {
-        qWarning() << "No voice found for locale" << locale;
+        d->setError(QTextToSpeech::ErrorReason::Configuration,
+                    QCoreApplication::translate("QTextToSpeech", "No voice available for locale %1.")
+                        .arg(locale.bcp47Name()));
         return false;
     }
 
@@ -318,7 +335,8 @@ bool QTextToSpeechEngineWinRT::setVoice(const QVoice &voice)
 
     const QString data = QTextToSpeechEngine::voiceData(voice).toString();
     if (data.isEmpty())
-        return false;
+        d->setError(QTextToSpeech::ErrorReason::Configuration,
+                    QCoreApplication::translate("QTextToSpeech", "Invalid voice."));
 
     ComPtr<IVoiceInformation> foundVoice;
     d->forEachVoice([&data, &foundVoice](const ComPtr<IVoiceInformation> &voiceInfo) {
@@ -332,7 +350,8 @@ bool QTextToSpeechEngineWinRT::setVoice(const QVoice &voice)
     });
 
     if (!foundVoice) {
-        qWarning() << "No voice found for " << voice;
+        d->setError(QTextToSpeech::ErrorReason::Configuration,
+                    QCoreApplication::translate("QTextToSpeech", "Invalid voice."));
         return false;
     }
 
@@ -350,13 +369,13 @@ QTextToSpeech::State QTextToSpeechEngineWinRT::state() const
 QTextToSpeech::ErrorReason QTextToSpeechEngineWinRT::errorReason() const
 {
     Q_D(const QTextToSpeechEngineWinRT);
-    return d->m_errorReason;
+    return d->errorReason;
 }
 
 QString QTextToSpeechEngineWinRT::errorString() const
 {
     Q_D(const QTextToSpeechEngineWinRT);
-    return d->m_errorString;
+    return d->errorString;
 }
 
 void QTextToSpeechEngineWinRTPrivate::initializeAudioSink(const QAudioFormat &format)
@@ -423,10 +442,9 @@ void QTextToSpeechEngineWinRT::say(const QString &text)
 
     ComPtr<IAsyncOperation<SpeechSynthesisStream*>> synthOperation;
     hr = d->synth->SynthesizeTextToStreamAsync(nativeText.Get(), &synthOperation);
-    RETURN_VOID_IF_FAILED("Could not synthesize text.");
-
     if (!SUCCEEDED(hr)) {
-        d->state = QTextToSpeech::Error;
+        d->setError(QTextToSpeech::ErrorReason::Input,
+                    QCoreApplication::translate("QTextToSpeech", "Speech synthesizing failure."));
         return;
     }
 
@@ -439,10 +457,8 @@ void QTextToSpeechEngineWinRT::say(const QString &text)
     });
     connect(d->audioSource.Get(), &AudioSource::errorInStream, this, [this]{
         Q_D(QTextToSpeechEngineWinRT);
-        QTextToSpeech::State oldState = d->state;
-        d->state = QTextToSpeech::Error;
-        if (oldState != d->state)
-            emit stateChanged(d->state);
+        d->setError(QTextToSpeech::ErrorReason::Playback,
+                    QCoreApplication::translate("QTextToSpeech", "Error in audio stream."));
     });
     connect(d->audioSource.Get(), &QIODevice::aboutToClose, this, [d]{
         d->audioSink.reset();

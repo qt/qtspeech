@@ -42,7 +42,9 @@
 #endif
 #include <sapi.h>
 #include <sphelper.h>
-#include <qdebug.h>
+
+#include <QtCore/QCoreApplication>
+#include <QtCore/QDebug>
 
 QT_BEGIN_NAMESPACE
 
@@ -80,8 +82,9 @@ QTextToSpeechEngineSapi::QTextToSpeechEngineSapi(const QVariantMap &, QObject *)
 
     HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&m_voice);
     if (!SUCCEEDED(hr)) {
-        m_errorReason = QTextToSpeech::ErrorReason::Initialization;
-        m_errorString = tr("Could not initialize text-to-speech engine for SAPI");
+        setError(QTextToSpeech::ErrorReason::Initialization,
+                 QCoreApplication::translate("QTextToSpeech",
+                                             "Could not initialize text-to-speech engine."));
         return;
     }
 
@@ -89,8 +92,8 @@ QTextToSpeechEngineSapi::QTextToSpeechEngineSapi(const QVariantMap &, QObject *)
     m_voice->SetNotifyCallbackInterface(this, 0, 0);
     updateVoices();
     if (m_voices.isEmpty()) {
-        m_errorReason = QTextToSpeech::ErrorReason::Configuration;
-        m_errorString = tr("No voices available");
+        setError(QTextToSpeech::ErrorReason::Configuration,
+                 QCoreApplication::translate("QTextToSpeech", "No voices available."));
     } else {
         m_state = QTextToSpeech::Ready;
         m_errorReason = QTextToSpeech::ErrorReason::NoError;
@@ -123,7 +126,10 @@ void QTextToSpeechEngineSapi::say(const QString &text)
     textString.prepend(QString::fromLatin1("<pitch absmiddle=\"%1\"/>").arg(m_pitch * 10));
 
     std::wstring wtext = textString.toStdWString();
-    m_voice->Speak(wtext.data(), SPF_ASYNC, NULL);
+    HRESULT hr = m_voice->Speak(wtext.data(), SPF_ASYNC, NULL);
+    if (!SUCCEEDED(hr))
+        setError(QTextToSpeech::ErrorReason::Input,
+                 QCoreApplication::translate("QTextToSpeech", "Speech synthesizing failure."));
 }
 
 void QTextToSpeechEngineSapi::stop(QTextToSpeech::BoundaryHint boundaryHint)
@@ -320,7 +326,9 @@ bool QTextToSpeechEngineSapi::setLocale(const QLocale &locale)
 {
     const QList<QVoice> voicesForLocale = m_voices.values(locale);
     if (voicesForLocale.isEmpty()) {
-        qWarning() << "No voice found for given locale";
+        setError(QTextToSpeech::ErrorReason::Configuration,
+                 QCoreApplication::translate("QTextToSpeech", "No voice found for locale %1.")
+                    .arg(locale.bcp47Name()));
         return false;
     }
 
@@ -361,11 +369,10 @@ bool QTextToSpeechEngineSapi::setVoice(const QVoice &voice)
     ISpObjectToken *cpVoiceToken = nullptr;
     hr = SpCreateNewToken(tokenId.constData(), &cpVoiceToken);
     if (FAILED(hr)) {
-        qWarning() << "Creating the voice token from ID failed";
         if (cpVoiceToken)
             cpVoiceToken->Release();
-        m_state = QTextToSpeech::Error;
-        emit stateChanged(m_state);
+        setError(QTextToSpeech::ErrorReason::Configuration,
+                 QCoreApplication::translate("QTextToSpeech", "Could not set voice."));
         return false;
     }
 
@@ -399,6 +406,19 @@ QVoice QTextToSpeechEngineSapi::voice() const
 QTextToSpeech::State QTextToSpeechEngineSapi::state() const
 {
     return m_state;
+}
+
+void QTextToSpeechEngineSapi::setError(QTextToSpeech::ErrorReason reason, const QString &string)
+{
+    m_errorReason = reason;
+    m_errorString = string;
+    if (reason != QTextToSpeech::ErrorReason::NoError)
+        return;
+    if (m_state != QTextToSpeech::Error) {
+        m_state = QTextToSpeech::Error;
+        emit stateChanged(m_state);
+    }
+    emit errorOccurred(m_errorReason, m_errorString);
 }
 
 QTextToSpeech::ErrorReason QTextToSpeechEngineSapi::errorReason() const

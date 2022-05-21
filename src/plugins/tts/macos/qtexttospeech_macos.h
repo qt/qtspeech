@@ -80,6 +80,7 @@ public:
     QTextToSpeech::ErrorReason errorReason() const override;
     QString errorString() const override;
 
+    void setError(QTextToSpeech::ErrorReason reason, const QString &string);
     void speechStopped(bool);
     void speaking();
 
