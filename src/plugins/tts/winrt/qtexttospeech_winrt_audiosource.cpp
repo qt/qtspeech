@@ -37,6 +37,7 @@
 #include "qtexttospeech_winrt_audiosource.h"
 
 #include <QtCore/QDebug>
+#include <QtCore/QTimer>
 
 #include <QtCore/private/qfunctions_winrt_p.h>
 #include <QtCore/private/qsystemerror_p.h>
@@ -189,11 +190,9 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
 
     memcpy(data, pbyte, maxlen);
 
-    // If we emptied the buffer, fetch more. This should always happen, as the
-    // IBuffer has the same capacity as QIODevice's default read chunk size, unless
-    // we entered pause mode.
+    // We emptied the buffer, so schedule fetching more
     if (available <= maxlen)
-        fetchMore();
+        QTimer::singleShot(0, this, &AudioSource::fetchMore);
     else
         m_bufferOffset += maxlen;
 
@@ -339,7 +338,7 @@ HRESULT AudioSource::Invoke(IAsyncOperationWithProgress<IBuffer*, unsigned int> 
     readOperation.Reset();
 
     // inform the sink that more data has arrived
-    if (m_pause == NoPause)
+    if (m_pause == NoPause && bytesInBuffer())
         emit readyRead();
 
     return S_OK;

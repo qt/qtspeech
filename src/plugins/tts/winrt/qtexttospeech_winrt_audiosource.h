@@ -89,7 +89,8 @@ public:
     void resume()
     {
         m_pause = NoPause;
-        emit readyRead();
+        if (bytesAvailable())
+            emit readyRead();
     }
 
     // IUnknown
