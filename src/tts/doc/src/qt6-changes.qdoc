@@ -43,42 +43,12 @@
 
     \section1 Available Engines
 
-    The following engines are available in Qt 6.4:
+    All engines that were available in Qt 5 are also available in Qt 6.4. For a
+    complete list of available engines in Qt 6.4, see \l{Qt TextToSpeech Engines}.
 
-    \table
-        \header
-            \li Engine name
-            \li Platform
-            \li Dependency
-        \row
-            \li sapi
-            \li Windows
-            \li Windows SDK (SAPI 5.3)
-        \row
-            \li winrt
-            \li Windows
-            \li Windows SDK (not available with MinGW)
-        \row
-            \li android
-            \li Android
-            \li TextToSpeech package
-        \row
-            \li ios
-            \li macOS 10.15+, iOS
-            \li macOS 10.15 SDK
-        \row
-            \li macos
-            \li macOS 10.14+
-            \li macOS 10.15 SDK
-        \row
-            \li speechd
-            \li Linux
-            \li libspeechd 0.9 and speech-dispatcher daemon
-        \row
-            \li flite
-            \li Linux
-            \li flite 2.2
-    \endtable
+    Engines can now receive additional configuration parameters. When constructing
+    a QTextToSpeech instance, pass a QVariantMap with engine-specific key/value
+    pairs.
 
     \section1 API changes
 
@@ -87,8 +57,7 @@
 
     \section2 The QTextToSpeech class
 
-    Existing code using the QTextToSpeech class continues to work as before.
-    The new {QTextToSpeech::engine} property allows changing of the engine on an
+    The new \l{QTextToSpeech::}{engine} property allows changing of the engine on an
     initialized QTextToSpeech object.
 
     \section2 The QVoice class

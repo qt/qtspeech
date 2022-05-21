@@ -80,5 +80,6 @@
       \li \l{Qt TextToSpeech QML Types}{QML Types}
       \li \l{Qt TextToSpeech C++ Classes}{C++ Classes}
       \li \l{Qt TextToSpeech Examples}{Examples}
+      \li \l{Qt TextToSpeech Engines}{Engine Documentation}
    \endlist
 */

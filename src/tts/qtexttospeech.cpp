@@ -289,7 +289,8 @@ QTextToSpeech::QTextToSpeech(const QString &engine, QObject *parent)
 
     If \a engine is empty, the default engine plug-in is used. The default
     engine is platform-specific. Which key/value pairs in \a params are supported
-    depends on the engine. Unsupported entries will be ignored.
+    depends on the engine. See \l{Qt TextToSpeech Engines}{the engine documentation}
+    for details. Unsupported entries will be ignored.
 
     If the engine initializes correctly, the \l state of the engine will be set
     to QTextToSpeech::Ready. If the plugin fails to load, or if the engine fails to
@@ -331,6 +332,7 @@ QTextToSpeech::~QTextToSpeech()
     \return whether \a engine could be set successfully.
 
     Which key/value pairs in \a params are supported depends on the engine.
+    See \l{Qt TextToSpeech Engines}{the engine documentation} for details.
     Unsupported entries will be ignored.
 */
 bool QTextToSpeech::setEngine(const QString &engine, const QVariantMap &params)
