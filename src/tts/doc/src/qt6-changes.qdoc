@@ -57,8 +57,28 @@
 
     \section2 The QTextToSpeech class
 
+    The \l QTextToSpeech::State enum value \c BackendError has been renamed to
+    \c Error. Detailed error information is available via QTextToSpeech::errorReason()
+    and QTextToSpeech::errorString().
+
     The new \l{QTextToSpeech::}{engine} property allows changing of the engine on an
     initialized QTextToSpeech object.
+
+    The \l{QTextToSpeech::}{pause} and \l{QTextToSpeech::stop} slots take a
+    \l{QTextToSpeech::BoundaryHint} enum value. This will break the compilation for
+    signal/slot connections that use PMF syntax if the signal has parameters that were
+    previously ignored:
+
+    \badcode
+    connect(stopButton, &QPushButton, tts, &QTextToSpeech::stop);
+    \endcode
+
+    Either connect to a signal without parameters, or use a lambda and call the
+    respective slot method explicitly:
+
+    \code
+    connect(stopButton, &QPushButton, tts, [tts]{ tts->stop(); });
+    \endcode
 
     \section2 The QVoice class
 
