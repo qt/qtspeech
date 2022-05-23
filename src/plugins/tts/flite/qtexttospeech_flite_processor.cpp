@@ -83,15 +83,15 @@ int QTextToSpeechProcessorFlite::fliteOutput(const cst_wave *w, int start, int s
     int bytesToWrite = size * sizeof(short);
     QString errorString;
     if (!audioOutput((const char *)(&w->samples[start]), bytesToWrite, errorString)) {
-        stopTimer();
         setError(QTextToSpeech::ErrorReason::Playback, errorString);
         stop();
         return CST_AUDIO_STREAM_STOP;
     }
 
-    if (last == 1)
+    if (last == 1) {
         qCDebug(lcSpeechTtsFlite) << "last data chunk written";
-
+        m_audioBuffer->close();
+    }
     return CST_AUDIO_STREAM_CONT;
 }
 
@@ -132,7 +132,6 @@ void QTextToSpeechProcessorFlite::processText(const QString &text, int voiceId, 
         return;
     }
 
-    startTimer(secsToSpeak * 1000);
     qCDebug(lcSpeechTtsFlite) << "processText() end" << secsToSpeak << "Seconds";
 }
 
@@ -294,16 +293,9 @@ void QTextToSpeechProcessorFlite::changeState(QAudio::State newState)
     if (m_state == newState)
         return;
 
-    if (m_state == QAudio::ActiveState && newState == QAudio::IdleState && m_sinkTimer.isActive()) {
-        // FIXME: Wait because GStreamer backend transitions to idle while playing back
-        qCDebug(lcSpeechTtsFlite) << "early transition to idle despite of " << remainingTime() << "ms to talk!";
-        return;
-    }
-
-    qCDebug(lcSpeechTtsFlite) << "State transition" << m_state << newState;
+    qCDebug(lcSpeechTtsFlite) << "Audio sink state transition" << m_state << newState;
     m_state = newState;
     const QTextToSpeech::State ttsState = audioStateToTts(newState);
-
     emit stateChanged(ttsState);
 }
 
@@ -336,7 +328,6 @@ constexpr QTextToSpeech::State QTextToSpeechProcessorFlite::audioStateToTts(QAud
 
 void QTextToSpeechProcessorFlite::deinitAudio()
 {
-    stopTimer();
     deleteSink();
 }
 
@@ -387,110 +378,23 @@ QAudio::State QTextToSpeechProcessorFlite::audioSinkState() const
 // Stop current and cancel subsequent utterances
 void QTextToSpeechProcessorFlite::stop()
 {
-    if (audioSinkState() != QAudio::ActiveState && audioSinkState() != QAudio::SuspendedState)
-        return;
-
-    // Block signals while we abort
-    const bool sigs = signalsBlocked();
-    blockSignals(true);
-    deinitAudio();
-    blockSignals(sigs);
-
-    // Call manual state change as audio sink has been deleted
-    changeState(QAudio::StoppedState);
+    if (audioSinkState() == QAudio::ActiveState || audioSinkState() == QAudio::SuspendedState) {
+        deinitAudio();
+        // Call manual state change as audio sink has been deleted
+        changeState(QAudio::StoppedState);
+    }
 }
 
 void QTextToSpeechProcessorFlite::pause()
 {
-    if (!m_audioSink)
-        return;
-
-    if (audioSinkState() != QAudio::ActiveState)
-        return;
-
-    // FIXME
-    // save remaining time
-    if (m_sinkTimer.isActive())
-        m_sinkTimerPausedAt = stopTimer();
-
-    m_audioSink->suspend();
+    if (audioSinkState() == QAudio::ActiveState)
+        m_audioSink->suspend();
 }
 
 void QTextToSpeechProcessorFlite::resume()
 {
-    if (!m_audioSink)
-        return;
-
-    if (audioSinkState() != QAudio::SuspendedState)
-        return;
-
-    if (m_sinkTimerPausedAt > 0)
-        startTimer(m_sinkTimerPausedAt);
-
-    // FIXME
-    // AudioSink emits stopped state after resume
-    // ==> block signals and call manual state change
-    const bool sigs = signalsBlocked();
-    blockSignals(true);
-    m_audioSink->blockSignals(true);
-    m_audioSink->resume();
-    m_audioSink->blockSignals(false);
-    blockSignals(sigs);
-    changeState(QAudio::ActiveState);
-}
-
-void QTextToSpeechProcessorFlite::startTimer(int msecs)
-{
-    // Stop first
-    stopTimer();
-
-    qCDebug(lcSpeechTtsFlite) << "Started timer with ms:" << msecs;
-
-    // FIXME: adding 10% margin, otherwise the end will be cut off
-    // 10% works well for different lengths, but I don't know why!
-    m_sinkTimer.start(float(msecs * 1.1), this);
-}
-
-void QTextToSpeechProcessorFlite::timerEvent(QTimerEvent *event)
-{
-    if (event->type() != QEvent::Timer or signalsBlocked())
-        return;
-
-    stopTimer(TimeoutReason::TimeOut);
-    changeState(QAudio::IdleState);
-}
-
-int QTextToSpeechProcessorFlite::stopTimer(TimeoutReason reason)
-{
-    if (!m_sinkTimer.isActive())
-        return -1;
-
-    // QBasicTimer remains active until timerEvent returns
-    // => assume 0 remaining time if entered from timerEvent
-    const int rt = (reason == Stop) ? remainingTime() : 0;
-
-    // Block signals while we stop
-    const bool sigs = signalsBlocked();
-    blockSignals(true);
-    m_sinkTimer.stop();
-    blockSignals(sigs);
-    m_sinkTimerPausedAt = 0;
-
-    if (reason == Stop)
-        qCDebug(lcSpeechTtsFlite) << "Stopped timer at" << rt;
-    else
-        qCDebug(lcSpeechTtsFlite) << "Timer elapsed";
-
-    return rt;
-}
-
-inline int QTextToSpeechProcessorFlite::remainingTime() const
-{
-    if (!m_sinkTimer.isActive())
-        return -1;
-
-    // FIXME: remove 10% margin
-    return float(QAbstractEventDispatcher::instance()->remainingTime(m_sinkTimer.timerId()) / 1.1);
+    if (audioSinkState() == QAudio::SuspendedState)
+        m_audioSink->resume();
 }
 
 void QTextToSpeechProcessorFlite::say(const QString &text, int voiceId, double pitch, double rate, double volume)

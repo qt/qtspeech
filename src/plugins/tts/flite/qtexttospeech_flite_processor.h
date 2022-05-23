@@ -107,13 +107,6 @@ private:
     void deleteSink();
     void createSink();
     QAudio::State audioSinkState() const;
-
-    inline int remainingTime() const;
-
-    void startTimer(int msecs);
-    enum TimeoutReason {TimeOut, Stop};
-    int stopTimer(TimeoutReason reason = Stop);
-    void timerEvent(QTimerEvent *event) override;
     void setError(QTextToSpeech::ErrorReason err, const QString &errorString = QString());
 
     // Read available flite voices
@@ -130,8 +123,6 @@ private:
     QAudioSink *m_audioSink = nullptr;
     QAudio::State m_state = QAudio::IdleState;
     QIODevice *m_audioBuffer = nullptr;
-    QBasicTimer m_sinkTimer;
-    int m_sinkTimerPausedAt = 0;
 
     QAudioDevice m_audioDevice;
     QAudioFormat m_format;
