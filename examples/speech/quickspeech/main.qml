@@ -77,7 +77,7 @@ ApplicationWindow {
                 case TextToSpeech.Paused:
                     statusLabel.text = qsTr("Paused...")
                     break
-                case TextToSpeech.Error
+                case TextToSpeech.Error:
                     statusLabel.text = qsTr("Error!")
                     break
             }
