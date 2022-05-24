@@ -44,6 +44,8 @@ static jclass g_qtSpeechClass = 0;
 typedef QMap<jlong, QTextToSpeechEngineAndroid *> TextToSpeechMap;
 Q_GLOBAL_STATIC(TextToSpeechMap, textToSpeechMap)
 
+Q_DECLARE_JNI_TYPE(Locale, "Ljava/util/Locale;")
+
 static void notifyError(JNIEnv *env, jobject thiz, jlong id, jlong reason)
 {
     Q_UNUSED(env);
@@ -56,6 +58,7 @@ static void notifyError(JNIEnv *env, jobject thiz, jlong id, jlong reason)
     QMetaObject::invokeMethod(tts, "processNotifyError", Qt::AutoConnection,
                               Q_ARG(int, reason));
 }
+Q_DECLARE_JNI_NATIVE_METHOD(notifyError)
 
 static void notifyReady(JNIEnv *env, jobject thiz, jlong id)
 {
@@ -68,6 +71,7 @@ static void notifyReady(JNIEnv *env, jobject thiz, jlong id)
 
     QMetaObject::invokeMethod(tts, "processNotifyReady", Qt::AutoConnection);
 }
+Q_DECLARE_JNI_NATIVE_METHOD(notifyReady)
 
 static void notifySpeaking(JNIEnv *env, jobject thiz, jlong id)
 {
@@ -80,6 +84,7 @@ static void notifySpeaking(JNIEnv *env, jobject thiz, jlong id)
 
     QMetaObject::invokeMethod(tts, "processNotifySpeaking", Qt::AutoConnection);
 }
+Q_DECLARE_JNI_NATIVE_METHOD(notifySpeaking)
 
 Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
 {
@@ -99,20 +104,16 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
     if (vm->GetEnv(&uenv.venv, JNI_VERSION_1_6) != JNI_OK)
         return JNI_ERR;
 
-    JNIEnv *jniEnv = uenv.nativeEnvironment;
-    jclass clazz = jniEnv->FindClass("org/qtproject/qt/android/speech/QtTextToSpeech");
-
-    static const JNINativeMethod methods[] = {
-        {"notifyError", "(JJ)V", reinterpret_cast<void *>(notifyError)},
-        {"notifyReady", "(J)V", reinterpret_cast<void *>(notifyReady)},
-        {"notifySpeaking", "(J)V", reinterpret_cast<void *>(notifySpeaking)}
-    };
+    QJniEnvironment jniEnv;
+    jclass clazz = jniEnv.findClass<QtJniTypes::QtTextToSpeech>();
 
     if (clazz) {
         g_qtSpeechClass = static_cast<jclass>(jniEnv->NewGlobalRef(clazz));
-        if (jniEnv->RegisterNatives(g_qtSpeechClass,
-                                    methods,
-                                    sizeof(methods) / sizeof(methods[0])) != JNI_OK) {
+        if (!jniEnv.registerNativeMethods(clazz, {
+            Q_JNI_NATIVE_METHOD(notifyError),
+            Q_JNI_NATIVE_METHOD(notifyReady),
+            Q_JNI_NATIVE_METHOD(notifySpeaking)
+        })) {
             return JNI_ERR;
         }
     }
@@ -128,10 +129,8 @@ QTextToSpeechEngineAndroid::QTextToSpeechEngineAndroid(const QVariantMap &parame
     const QString engine = parameters.value("androidEngine").toString();
 
     const jlong id = reinterpret_cast<jlong>(this);
-    m_speech = QJniObject::callStaticObjectMethod(
-                    g_qtSpeechClass, "open",
-                    "(Landroid/content/Context;JLjava/lang/String;)Lorg/qtproject/qt/android/speech/QtTextToSpeech;",
-                    QNativeInterface::QAndroidApplication::context(), id, QJniObject::fromString(engine).object());
+    m_speech = QJniObject::construct<QtJniTypes::QtTextToSpeech>(QNativeInterface::QAndroidApplication::context(),
+                                                                 id, QJniObject::fromString(engine).object<jstring>());
     (*textToSpeechMap)[id] = this;
 }
 
@@ -150,7 +149,7 @@ void QTextToSpeechEngineAndroid::say(const QString &text)
         stop(QTextToSpeech::BoundaryHint::Default);
 
     m_text = text;
-    m_speech.callMethod<void>("say", "(Ljava/lang/String;)V", QJniObject::fromString(m_text).object());
+    m_speech.callMethod<void>("say", QJniObject::fromString(m_text).object<jstring>());
 }
 
 QTextToSpeech::State QTextToSpeechEngineAndroid::state() const
@@ -243,7 +242,7 @@ void QTextToSpeechEngineAndroid::stop(QTextToSpeech::BoundaryHint boundaryHint)
     if (m_state == QTextToSpeech::Ready)
         return;
 
-    m_speech.callMethod<void>("stop", "()V");
+    m_speech.callMethod<void>("stop");
     setState(QTextToSpeech::Ready);
 }
 
@@ -253,7 +252,7 @@ void QTextToSpeechEngineAndroid::pause(QTextToSpeech::BoundaryHint boundaryHint)
     if (m_state == QTextToSpeech::Paused)
         return;
 
-    m_speech.callMethod<void>("stop", "()V");
+    m_speech.callMethod<void>("stop");
     setState(QTextToSpeech::Paused);
 }
 
@@ -285,7 +284,7 @@ bool QTextToSpeechEngineAndroid::setPitch(double pitch)
         pitch += 1.0f;
 
     // 0 == SUCCESS
-    return m_speech.callMethod<int>("setPitch", "(F)I", pitch) == 0;
+    return m_speech.callMethod<int>("setPitch", float(pitch)) == 0;
 }
 
 // Android API's rate is from [0.5, 2.0[, with 1.0 being normal.
@@ -303,7 +302,7 @@ bool QTextToSpeechEngineAndroid::setRate(double rate)
 {
     rate = 1.0 + (rate >= 0 ? rate : (rate * 0.5));
     // 0 == SUCCESS
-    return m_speech.callMethod<int>("setRate", "(F)I", rate) == 0;
+    return m_speech.callMethod<int>("setRate", float(rate)) == 0;
 }
 
 double QTextToSpeechEngineAndroid::volume() const
@@ -315,7 +314,7 @@ double QTextToSpeechEngineAndroid::volume() const
 bool QTextToSpeechEngineAndroid::setVolume(double volume)
 {
     // 0 == SUCCESS
-    return m_speech.callMethod<jint>("setVolume", "(F)I", float(volume)) == 0;
+    return m_speech.callMethod<jint>("setVolume", float(volume)) == 0;
 }
 
 QList<QLocale> QTextToSpeechEngineAndroid::availableLocales() const
@@ -325,9 +324,9 @@ QList<QLocale> QTextToSpeechEngineAndroid::availableLocales() const
     QList<QLocale> result;
     result.reserve(count);
     for (int i = 0; i < count; ++i) {
-        auto locale = locales.callObjectMethod("get", "(I)Ljava/lang/Object;", i);
-        auto localeLanguage = locale.callObjectMethod<jstring>("getLanguage").toString();
-        auto localeCountry = locale.callObjectMethod<jstring>("getCountry").toString();
+        auto locale = locales.callMethod<jobject>("get", i);
+        auto localeLanguage = locale.callMethod<jstring>("getLanguage").toString();
+        auto localeCountry = locale.callMethod<jstring>("getCountry").toString();
         if (!localeCountry.isEmpty())
             localeLanguage += QString("_%1").arg(localeCountry).toUpper();
         result << QLocale(localeLanguage);
@@ -345,11 +344,10 @@ bool QTextToSpeechEngineAndroid::setLocale(const QLocale &locale)
     QString languageCode = parts.at(0);
     QString countryCode = parts.at(1);
 
-    QJniObject jLocale("java/util/Locale", "(Ljava/lang/String;Ljava/lang/String;)V",
-                              QJniObject::fromString(languageCode).object(),
-                              QJniObject::fromString(countryCode).object());
+    QJniObject jLocale("java/util/Locale", QJniObject::fromString(languageCode).object<jstring>(),
+                                           QJniObject::fromString(countryCode).object<jstring>());
 
-    if (!m_speech.callMethod<jboolean>("setLocale", "(Ljava/util/Locale;)Z", jLocale.object())) {
+    if (!m_speech.callMethod<jboolean>("setLocale", jLocale.object<QtJniTypes::Locale>())) {
         setError(QTextToSpeech::ErrorReason::Configuration,
                  QCoreApplication::translate("QTextToSpeech", "No voice available for locale %1")
                     .arg(locale.bcp47Name()));
@@ -360,7 +358,7 @@ bool QTextToSpeechEngineAndroid::setLocale(const QLocale &locale)
 
 QLocale QTextToSpeechEngineAndroid::locale() const
 {
-    auto locale = m_speech.callObjectMethod("getLocale", "()Ljava/util/Locale;");
+    auto locale = m_speech.callMethod<QtJniTypes::Locale>("getLocale");
     if (locale.isValid()) {
         auto localeLanguage = locale.callObjectMethod<jstring>("getLanguage").toString();
         auto localeCountry = locale.callObjectMethod<jstring>("getCountry").toString();
@@ -382,7 +380,7 @@ QVoice QTextToSpeechEngineAndroid::javaVoiceObjectToQVoice(QJniObject &obj) cons
     } else {
         gender = QVoice::Unknown;
     }
-    QJniObject locale = obj.callObjectMethod("getLocale", "()Ljava/util/Locale;");
+    QJniObject locale = obj.callMethod<QtJniTypes::Locale>("getLocale");
     QLocale qlocale;
     if (locale.isValid()) {
         auto localeLanguage = locale.callObjectMethod<jstring>("getLanguage").toString();
@@ -402,7 +400,7 @@ QList<QVoice> QTextToSpeechEngineAndroid::availableVoices() const
     QList<QVoice> result;
     result.reserve(count);
     for (int i = 0; i < count; ++i) {
-        auto jvoice = voices.callObjectMethod("get", "(I)Ljava/lang/Object;", i);
+        auto jvoice = voices.callMethod<jobject>("get", i);
         const QVoice voice = javaVoiceObjectToQVoice(jvoice);
         if (voice.locale() == ttsLocale)
             result << voice;
@@ -412,8 +410,8 @@ QList<QVoice> QTextToSpeechEngineAndroid::availableVoices() const
 
 bool QTextToSpeechEngineAndroid::setVoice(const QVoice &voice)
 {
-    if (!m_speech.callMethod<jboolean>("setVoice", "(Ljava/lang/String;)Z",
-                                       QJniObject::fromString(voiceData(voice).toString()).object())) {
+    const QString id = voiceData(voice).toString();
+    if (!m_speech.callMethod<jboolean>("setVoice", QJniObject::fromString(id).object<jstring>())) {
         setError(QTextToSpeech::ErrorReason::Configuration,
                  QCoreApplication::translate("QTextToSpeech", "Could not set voice"));
         return false;
@@ -423,7 +421,7 @@ bool QTextToSpeechEngineAndroid::setVoice(const QVoice &voice)
 
 QVoice QTextToSpeechEngineAndroid::voice() const
 {
-    auto voice = m_speech.callObjectMethod("getVoice", "()Ljava/lang/Object;");
+    auto voice = m_speech.callMethod<jobject>("getVoice");
     if (voice.isValid())
         return javaVoiceObjectToQVoice(voice);
     return QVoice();
