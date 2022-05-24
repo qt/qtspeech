@@ -93,6 +93,8 @@ private:
     QString m_text;
 };
 
+Q_DECLARE_JNI_CLASS(QtTextToSpeech, "org/qtproject/qt/android/speech/QtTextToSpeech")
+
 QT_END_NAMESPACE
 
 #endif

@@ -110,13 +110,8 @@ public class QtTextToSpeech
             if (utteranceId.equals("UtteranceId")) {
                 notifySpeaking(mId);
             }
-         }
-     };
-
-    public static QtTextToSpeech open(final Context context, final long id, String engine)
-    {
-        return new QtTextToSpeech(context, id, engine);
-    }
+        }
+    };
 
     QtTextToSpeech(final Context context, final long id, String engine) {
         mId = id;
