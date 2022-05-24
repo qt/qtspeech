@@ -3,7 +3,6 @@ qt_internal_add_module(TextToSpeech
     SOURCES
         qtexttospeech.cpp qtexttospeech.h qtexttospeech_p.h
         qtexttospeech_global.h
-        qtexttospeech_qmltypes_p.h
         qtexttospeechengine.cpp qtexttospeechengine.h
         qtexttospeechplugin.cpp qtexttospeechplugin.h
         qvoice.cpp qvoice.h qvoice_p.h
@@ -11,21 +10,23 @@ qt_internal_add_module(TextToSpeech
         QTEXTTOSPEECH_LIBRARY
     LIBRARIES
         Qt::CorePrivate
+        Qt::QmlIntegration
     PUBLIC_LIBRARIES
         Qt::Core
     PRIVATE_MODULE_INTERFACE
         Qt::CorePrivate
 )
 
+
 if(TARGET Qt::Qml)
-    qt_internal_add_qml_module(TextToSpeech
+    qt_internal_add_qml_module(TextToSpeechQml
         URI "QtTextToSpeech"
         VERSION "${PROJECT_VERSION}"
+        PLUGIN_TARGET TextToSpeechQml
         SOURCES
             qtexttospeech_qmltypes_p.h
         PUBLIC_LIBRARIES
             Qt::TextToSpeech
-        GENERATE_CPP_EXPORTS
     )
 endif()
 
