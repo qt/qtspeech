@@ -56,6 +56,10 @@
 
    \include {module-use.qdocinc} {building with cmake} {TextToSpeech}
 
+   \section3 Building with qmake
+
+   \include {module-use.qdocinc} {building_with_qmake} {texttospeech}
+
    \section1 Overviews and Important Topics
 
    \list

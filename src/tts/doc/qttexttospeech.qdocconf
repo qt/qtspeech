@@ -15,7 +15,7 @@ exampledirs     += ../../../examples
 moduleheader     = QtTextToSpeechDoc
 includepaths    += .
 
-depends         += qtcore qtdoc qtgui qtquick qtmultimedia
+depends         += qtcore qtdoc qtgui qtquick qtmultimedia qtcmake
 
 # Ignore \since commands for versions earlier than 6.4
 ignoresince = 6.4
