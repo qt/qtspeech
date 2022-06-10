@@ -74,14 +74,14 @@
 
     The SAPI engine does not support any engine specific parameters.
 
-    \section1 iOS
+    \section1 Darwin
 
-    The "ios" engine uses the \l{https://developer.apple.com/documentation/avfoundation/speech_synthesis?language=objc}
+    The "darwin" engine uses the \l{https://developer.apple.com/documentation/avfoundation/speech_synthesis?language=objc}
     {AVFoundation} framework that is available on iOS devices and on macOS 10.15. The
     documentation of the framework states support for macOS 10.14 as well, but by default
     no voices are available on that platform.
 
-    The iOS engine does not support any engine specific parameters.
+    The Darwin engine does not support any engine specific parameters.
 
     \section1 macOS
 

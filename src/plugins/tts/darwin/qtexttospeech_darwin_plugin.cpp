@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -34,11 +34,11 @@
 **
 ****************************************************************************/
 
-#include "qtexttospeech_ios_plugin.h"
-#include "qtexttospeech_ios.h"
+#include "qtexttospeech_darwin_plugin.h"
+#include "qtexttospeech_darwin.h"
 
-QTextToSpeechEngine *QTextToSpeechIosPlugin::createTextToSpeechEngine(const QVariantMap &parameters, QObject *parent, QString *errorString) const
+QTextToSpeechEngine *QTextToSpeechDarwinPlugin::createTextToSpeechEngine(const QVariantMap &parameters, QObject *parent, QString *errorString) const
 {
     Q_UNUSED(errorString);
-    return new QTextToSpeechEngineIos(parameters, parent);
+    return new QTextToSpeechEngineDarwin(parameters, parent);
 }

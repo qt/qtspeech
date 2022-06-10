@@ -123,7 +123,7 @@ void tst_QTextToSpeech::init()
             QSKIP("speechd engine reported an error, "
                   "make sure the speech-dispatcher service is running!");
         }
-    } else if (engine == "ios"
+    } else if (engine == "darwin"
         && QOperatingSystemVersion::current() <= QOperatingSystemVersion::MacOSMojave) {
         QTextToSpeech tts(engine);
         if (!tts.availableLocales().count())
