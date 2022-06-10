@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -34,8 +34,8 @@
 **
 ****************************************************************************/
 
-#ifndef QTEXTTOSPEECHENGINE_IOS_H
-#define QTEXTTOSPEECHENGINE_IOS_H
+#ifndef QTEXTTOSPEECHENGINE_DARWIN_H
+#define QTEXTTOSPEECHENGINE_DARWIN_H
 
 #include <QtCore/qlist.h>
 #include <QtTextToSpeech/qtexttospeechengine.h>
@@ -46,13 +46,13 @@ Q_FORWARD_DECLARE_OBJC_CLASS(AVSpeechSynthesisVoice);
 
 QT_BEGIN_NAMESPACE
 
-class QTextToSpeechEngineIos : public QTextToSpeechEngine
+class QTextToSpeechEngineDarwin : public QTextToSpeechEngine
 {
     Q_OBJECT
 
 public:
-    QTextToSpeechEngineIos(const QVariantMap &parameters, QObject *parent);
-    ~QTextToSpeechEngineIos();
+    QTextToSpeechEngineDarwin(const QVariantMap &parameters, QObject *parent);
+    ~QTextToSpeechEngineDarwin();
 
     QList<QLocale> availableLocales() const override;
     QList<QVoice> availableVoices() const override;

@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -34,8 +34,8 @@
 **
 ****************************************************************************/
 
-#ifndef QTEXTTOSPEECHPLUGIN_IOS_H
-#define QTEXTTOSPEECHPLUGIN_IOS_H
+#ifndef QTEXTTOSPEECHPLUGIN_DARWIN_H
+#define QTEXTTOSPEECHPLUGIN_DARWIN_H
 
 #include <QtCore/QObject>
 #include <QtCore/QLoggingCategory>
@@ -44,12 +44,12 @@
 
 QT_BEGIN_NAMESPACE
 
-class QTextToSpeechIosPlugin : public QObject, public QTextToSpeechPlugin
+class QTextToSpeechDarwinPlugin : public QObject, public QTextToSpeechPlugin
 {
     Q_OBJECT
     Q_INTERFACES(QTextToSpeechPlugin)
     Q_PLUGIN_METADATA(IID "org.qt-project.qt.speech.tts.plugin/6.0"
-                      FILE "ios_plugin.json")
+                      FILE "darwin_plugin.json")
 
 public:
     QTextToSpeechEngine *createTextToSpeechEngine(

@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 The Qt Company Ltd.
+** Copyright (C) 2022 The Qt Company Ltd.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the Qt Speech module of the Qt Toolkit.
@@ -36,19 +36,19 @@
 
 #include <AVFoundation/AVFoundation.h>
 
-#include "qtexttospeech_ios.h"
+#include "qtexttospeech_darwin.h"
 
 #include <QtCore/QCoreApplication>
 
-@interface QIOSSpeechSynthesizerDelegate : NSObject <AVSpeechSynthesizerDelegate>
+@interface QDarwinSpeechSynthesizerDelegate : NSObject <AVSpeechSynthesizerDelegate>
 @end
 
-@implementation QIOSSpeechSynthesizerDelegate
+@implementation QDarwinSpeechSynthesizerDelegate
 {
-    QTextToSpeechEngineIos *_engine;
+    QTextToSpeechEngineDarwin *_engine;
 }
 
-- (instancetype)initWithQIOSTextToSpeechEngineIos:(QTextToSpeechEngineIos *)engine
+- (instancetype)initWithTextToSpeechEngineDarwin:(QTextToSpeechEngineDarwin *)engine
 {
     if ((self = [self init]))
         _engine = engine;
@@ -109,11 +109,11 @@
 
 QT_BEGIN_NAMESPACE
 
-QTextToSpeechEngineIos::QTextToSpeechEngineIos(const QVariantMap &/*parameters*/, QObject *parent)
+QTextToSpeechEngineDarwin::QTextToSpeechEngineDarwin(const QVariantMap &/*parameters*/, QObject *parent)
     : QTextToSpeechEngine(parent)
     , m_speechSynthesizer([AVSpeechSynthesizer new])
 {
-    m_speechSynthesizer.delegate = [[QIOSSpeechSynthesizerDelegate alloc] initWithQIOSTextToSpeechEngineIos:this];
+    m_speechSynthesizer.delegate = [[QDarwinSpeechSynthesizerDelegate alloc] initWithTextToSpeechEngineDarwin:this];
     if (setLocale(QLocale()) || setLocale(QLocale().language())) {
         m_state = QTextToSpeech::Ready;
         m_errorReason = QTextToSpeech::ErrorReason::NoError;
@@ -123,13 +123,13 @@ QTextToSpeechEngineIos::QTextToSpeechEngineIos(const QVariantMap &/*parameters*/
     }
 }
 
-QTextToSpeechEngineIos::~QTextToSpeechEngineIos()
+QTextToSpeechEngineDarwin::~QTextToSpeechEngineDarwin()
 {
     [m_speechSynthesizer.delegate autorelease];
     [m_speechSynthesizer release];
 }
 
-void QTextToSpeechEngineIos::say(const QString &text)
+void QTextToSpeechEngineDarwin::say(const QString &text)
 {
     stop(QTextToSpeech::BoundaryHint::Default);
 
@@ -178,7 +178,7 @@ void QTextToSpeechEngineIos::say(const QString &text)
     [m_speechSynthesizer speakUtterance:utterance];
 }
 
-void QTextToSpeechEngineIos::stop(QTextToSpeech::BoundaryHint boundaryHint)
+void QTextToSpeechEngineDarwin::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
     Q_UNUSED(boundaryHint);
     const AVSpeechBoundary atBoundary = (boundaryHint == QTextToSpeech::BoundaryHint::Immediate
@@ -188,7 +188,7 @@ void QTextToSpeechEngineIos::stop(QTextToSpeech::BoundaryHint boundaryHint)
     [m_speechSynthesizer stopSpeakingAtBoundary:atBoundary];
 }
 
-void QTextToSpeechEngineIos::pause(QTextToSpeech::BoundaryHint boundaryHint)
+void QTextToSpeechEngineDarwin::pause(QTextToSpeech::BoundaryHint boundaryHint)
 {
     const AVSpeechBoundary atBoundary = boundaryHint == QTextToSpeech::BoundaryHint::Immediate
                                       ? AVSpeechBoundaryImmediate
@@ -196,45 +196,45 @@ void QTextToSpeechEngineIos::pause(QTextToSpeech::BoundaryHint boundaryHint)
     [m_speechSynthesizer pauseSpeakingAtBoundary:atBoundary];
 }
 
-void QTextToSpeechEngineIos::resume()
+void QTextToSpeechEngineDarwin::resume()
 {
     [m_speechSynthesizer continueSpeaking];
 }
 
-bool QTextToSpeechEngineIos::setRate(double rate)
+bool QTextToSpeechEngineDarwin::setRate(double rate)
 {
     m_rate = rate;
     return true;
 }
 
-double QTextToSpeechEngineIos::rate() const
+double QTextToSpeechEngineDarwin::rate() const
 {
     return m_rate;
 }
 
-bool QTextToSpeechEngineIos::setPitch(double pitch)
+bool QTextToSpeechEngineDarwin::setPitch(double pitch)
 {
     m_pitch = pitch;
     return true;
 }
 
-double QTextToSpeechEngineIos::pitch() const
+double QTextToSpeechEngineDarwin::pitch() const
 {
     return m_pitch;
 }
 
-bool QTextToSpeechEngineIos::setVolume(double volume)
+bool QTextToSpeechEngineDarwin::setVolume(double volume)
 {
     m_volume = volume;
     return true;
 }
 
-double QTextToSpeechEngineIos::volume() const
+double QTextToSpeechEngineDarwin::volume() const
 {
     return m_volume;
 }
 
-QList<QLocale> QTextToSpeechEngineIos::availableLocales() const
+QList<QLocale> QTextToSpeechEngineDarwin::availableLocales() const
 {
     QSet<QLocale> locales;
     for (AVSpeechSynthesisVoice *voice in [AVSpeechSynthesisVoice speechVoices]) {
@@ -245,7 +245,7 @@ QList<QLocale> QTextToSpeechEngineIos::availableLocales() const
     return locales.values();
 }
 
-bool QTextToSpeechEngineIos::setLocale(const QLocale &locale)
+bool QTextToSpeechEngineDarwin::setLocale(const QLocale &locale)
 {
     AVSpeechSynthesisVoice *defaultAvVoice = [AVSpeechSynthesisVoice voiceWithLanguage:locale.bcp47Name().toNSString()];
 
@@ -267,12 +267,12 @@ bool QTextToSpeechEngineIos::setLocale(const QLocale &locale)
     return true;
 }
 
-QLocale QTextToSpeechEngineIos::locale() const
+QLocale QTextToSpeechEngineDarwin::locale() const
 {
     return m_voice.locale();
 }
 
-QList<QVoice> QTextToSpeechEngineIos::availableVoices() const
+QList<QVoice> QTextToSpeechEngineDarwin::availableVoices() const
 {
     QList<QVoice> voices;
 
@@ -285,7 +285,7 @@ QList<QVoice> QTextToSpeechEngineIos::availableVoices() const
     return voices;
 }
 
-bool QTextToSpeechEngineIos::setVoice(const QVoice &voice)
+bool QTextToSpeechEngineDarwin::setVoice(const QVoice &voice)
 {
     AVSpeechSynthesisVoice *avVoice = fromQVoice(voice);
     if (!avVoice) {
@@ -298,19 +298,19 @@ bool QTextToSpeechEngineIos::setVoice(const QVoice &voice)
     return true;
 }
 
-QVoice QTextToSpeechEngineIos::voice() const
+QVoice QTextToSpeechEngineDarwin::voice() const
 {
     return m_voice;
 }
 
-AVSpeechSynthesisVoice *QTextToSpeechEngineIos::fromQVoice(const QVoice &voice) const
+AVSpeechSynthesisVoice *QTextToSpeechEngineDarwin::fromQVoice(const QVoice &voice) const
 {
     const QString identifier = voiceData(voice).toString();
     AVSpeechSynthesisVoice *avVoice = [AVSpeechSynthesisVoice voiceWithIdentifier:identifier.toNSString()];
     return avVoice;
 }
 
-QVoice QTextToSpeechEngineIos::toQVoice(AVSpeechSynthesisVoice *avVoice) const
+QVoice QTextToSpeechEngineDarwin::toQVoice(AVSpeechSynthesisVoice *avVoice) const
 {
     // only from macOS 10.15 and iOS 13 on
     const QVoice::Gender gender = [avVoice]{
@@ -332,7 +332,7 @@ QVoice QTextToSpeechEngineIos::toQVoice(AVSpeechSynthesisVoice *avVoice) const
                        gender, QVoice::Other, QString::fromNSString(avVoice.identifier));
 }
 
-void QTextToSpeechEngineIos::setState(QTextToSpeech::State state)
+void QTextToSpeechEngineDarwin::setState(QTextToSpeech::State state)
 {
     if (m_state == state)
         return;
@@ -341,12 +341,12 @@ void QTextToSpeechEngineIos::setState(QTextToSpeech::State state)
     emit stateChanged(m_state);
 }
 
-QTextToSpeech::State QTextToSpeechEngineIos::state() const
+QTextToSpeech::State QTextToSpeechEngineDarwin::state() const
 {
     return m_state;
 }
 
-void QTextToSpeechEngineIos::setError(QTextToSpeech::ErrorReason reason, const QString &string)
+void QTextToSpeechEngineDarwin::setError(QTextToSpeech::ErrorReason reason, const QString &string)
 {
     m_errorReason = reason;
     m_errorString = string;
@@ -359,12 +359,12 @@ void QTextToSpeechEngineIos::setError(QTextToSpeech::ErrorReason reason, const Q
     emit errorOccurred(m_errorReason, m_errorString);
 }
 
-QTextToSpeech::ErrorReason QTextToSpeechEngineIos::errorReason() const
+QTextToSpeech::ErrorReason QTextToSpeechEngineDarwin::errorReason() const
 {
     return m_errorReason;
 }
 
-QString QTextToSpeechEngineIos::errorString() const
+QString QTextToSpeechEngineDarwin::errorString() const
 {
     return m_errorString;
 }
