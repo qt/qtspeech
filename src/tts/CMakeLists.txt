@@ -25,7 +25,7 @@ if(TARGET Qt::Qml)
         PLUGIN_TARGET TextToSpeechQml
         SOURCES
             qtexttospeech_qmltypes_p.h
-        PUBLIC_LIBRARIES
+        LIBRARIES
             Qt::TextToSpeech
     )
 endif()
