@@ -385,22 +385,23 @@ void tst_QTextToSpeech::sayWithRates()
     QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
 
+    QElapsedTimer timer;
+    qint64 time = 0;
+    connect(&tts, &QTextToSpeech::stateChanged, this, [&](QTextToSpeech::State state){
+        if (state == QTextToSpeech::Speaking)
+            timer.start();
+        else if (state == QTextToSpeech::Ready)
+            time = timer.elapsed();
+    });
+
     qint64 lastTime = 0;
     // check that speaking at slower rate takes more time (for 0.5, 0.0, -0.5)
     for (int i = 1; i >= -1; --i) {
+        time = 0;
         tts.setRate(i * 0.5);
-        QElapsedTimer timer;
-        qint64 time = 0;
-        connect(&tts, &QTextToSpeech::stateChanged, this, [&](QTextToSpeech::State state){
-            if (state == QTextToSpeech::Ready)
-                time = timer.elapsed();
-        });
-        timer.start();
         tts.say(text);
-        QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
-        QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
-        QVERIFY2(time > lastTime, qPrintable(QString("%1 took %2, last was %3"_L1)
-                                             .arg(i).arg(time).arg(lastTime)));
+        QTRY_VERIFY2(time > lastTime, qPrintable(QString("%1 took %2, last was %3"_L1)
+                                                 .arg(i).arg(time).arg(lastTime)));
         lastTime = time;
     }
 }
