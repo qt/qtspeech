@@ -55,6 +55,7 @@ public:
         Word,
         Sentence
     };
+    Q_ENUM(BoundaryHint)
 
     explicit QTextToSpeech(QObject *parent = nullptr);
     explicit QTextToSpeech(const QString &engine, QObject *parent = nullptr);
