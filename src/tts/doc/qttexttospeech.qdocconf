@@ -10,12 +10,12 @@ headerdirs      += ../..
 
 imagedirs       += src/images
 
-exampledirs     += ../../../examples
+exampledirs     += ../../../examples/speech
 
 moduleheader     = QtTextToSpeechDoc
 includepaths    += .
 
-depends         += qtcore qtdoc qtgui qtquick qtmultimedia qtcmake
+depends         += qtcore qtdoc qtgui qtwidgets qtquick qtquickcontrols qtmultimedia qtcmake
 
 # Ignore \since commands for versions earlier than 6.4
 ignoresince = 6.4

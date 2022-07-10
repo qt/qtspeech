@@ -39,6 +39,7 @@ ApplicationWindow {
 
     ColumnLayout {
         anchors.fill: parent
+        anchors.margins: 8
         id: inputForm
 
         TextArea {
