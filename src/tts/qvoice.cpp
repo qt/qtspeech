@@ -15,6 +15,20 @@ QT_DEFINE_QESDP_SPECIALIZATION_DTOR(QVoicePrivate)
     \class QVoice
     \brief The QVoice class represents a particular voice.
     \inmodule QtTextToSpeech
+    \ingroup qttexttospeech_cpp
+
+    To get a voice that is supported by the current text-to-speech engine,
+    use \l QTextToSpeech::availableVoices().
+*/
+
+/*!
+    \qmltype Voice
+    \inqmlmodule QtTextToSpeech
+    \ingroup texttospeech_qml
+    \brief The Voice type represents a particular voice.
+
+    To get a voice that is supported by the current text-to-speech engine,
+    use \l TextToSpeech::availableVoices().
 */
 
 /*!
@@ -92,7 +106,7 @@ QVoice::QVoice(const QString &name, const QLocale &locale, Gender gender,
 
 /*!
     \internal
-    Compares the \l name, \l gender, and \l age of this voice with \a other.
+    Compares all attributes of this voice with \a other.
     Returns \c true if all of them match.
 */
 bool QVoice::isEqual(const QVoice &other) const noexcept
@@ -102,11 +116,11 @@ bool QVoice::isEqual(const QVoice &other) const noexcept
     if (!d || !other.d)
         return false;
 
-    return d->name == other.d->name
+    return d->data == other.d->data
+        && d->name == other.d->name
         && d->locale == other.d->locale
         && d->gender == other.d->gender
-        && d->age == other.d->age
-        && d->data == other.d->data;
+        && d->age == other.d->age;
 }
 
 /*!
@@ -123,6 +137,11 @@ bool QVoice::isEqual(const QVoice &other) const noexcept
 */
 
 /*!
+    \qmlproperty string Voice::name
+    \brief This property holds the name of the voice.
+*/
+
+/*!
     \property QVoice::name
     \brief the name of a voice
 */
@@ -130,6 +149,14 @@ QString QVoice::name() const
 {
     return d ? d->name : QString();
 }
+
+/*!
+    \qmlproperty locale Voice::locale
+    \brief This property holds the locale of the voice.
+
+    The locale includes the language and the territory (i.e. accent or dialect)
+    of the voice.
+*/
 
 /*!
     \property QVoice::locale
@@ -145,6 +172,13 @@ QLocale QVoice::locale() const
 }
 
 /*!
+    \qmlproperty enumeration Voice::gender
+    \brief This property holds the gender of the voice.
+
+    \sa QVoice::Gender
+*/
+
+/*!
     \property QVoice::gender
     \brief the gender of a voice
 */
@@ -152,6 +186,13 @@ QVoice::Gender QVoice::gender() const
 {
     return d ? d->gender : QVoice::Unknown;
 }
+
+/*!
+    \qmlproperty enumeration Voice::age
+    \brief This property holds the age of the voice.
+
+    \sa QVoice::Age
+*/
 
 /*!
     \property QVoice::age
