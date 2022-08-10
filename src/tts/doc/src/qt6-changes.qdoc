@@ -29,7 +29,7 @@
     \section1 API changes
 
     The \l{Qt TextToSpeech} module has undergone some basic consolidation and
-    cleanup. There should be minimal porting effort to be able to switch to Qt6.
+    cleanup. There should be minimal porting effort to be able to switch to Qt 6.
 
     \section2 The QTextToSpeech class
 
