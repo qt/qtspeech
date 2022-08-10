@@ -15,7 +15,6 @@ QT_DEFINE_QESDP_SPECIALIZATION_DTOR(QVoicePrivate)
     \class QVoice
     \brief The QVoice class represents a particular voice.
     \inmodule QtTextToSpeech
-    \ingroup qttexttospeech_cpp
 
     To get a voice that is supported by the current text-to-speech engine,
     use \l QTextToSpeech::availableVoices().
@@ -24,7 +23,6 @@ QT_DEFINE_QESDP_SPECIALIZATION_DTOR(QVoicePrivate)
 /*!
     \qmltype Voice
     \inqmlmodule QtTextToSpeech
-    \ingroup texttospeech_qml
     \brief The Voice type represents a particular voice.
 
     To get a voice that is supported by the current text-to-speech engine,

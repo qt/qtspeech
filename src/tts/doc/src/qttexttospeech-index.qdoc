@@ -46,13 +46,13 @@
 
    The following lists some important QML types.
 
-   \annotatedlist texttospeech_qml
+   \generatelist qmltypesbymodule QtTextToSpeech
 
    \section1 C++ Classes
 
    The following lists some important C++ Classes.
 
-   \annotatedlist qttexttospeech_cpp
+   \generatelist classesbymodule QtTextToSpeech
 
    \section1 Reference and Examples
 
