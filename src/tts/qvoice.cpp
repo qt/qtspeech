@@ -122,6 +122,13 @@ bool QVoice::isEqual(const QVoice &other) const noexcept
 }
 
 /*!
+    \fn void QVoice::swap(QVoice &other) noexcept
+    \since 6.4
+
+    Swaps \a other with this voice. This operation is very fast and never fails.
+*/
+
+/*!
     \fn bool QVoice::operator==(const QVoice &lhs, const QVoice &rhs)
     \return whether the \a lhs voice and the \a rhs voice are identical.
 
@@ -132,6 +139,24 @@ bool QVoice::isEqual(const QVoice &other) const noexcept
 /*!
     \fn bool QVoice::operator!=(const QVoice &lhs, const QVoice &rhs)
     \return whether the \a lhs voice and the \a rhs voice are different.
+*/
+
+/*!
+    \fn QDataStream &QVoice::operator<<(QDataStream &stream, const QVoice &voice)
+    \since 6.4
+
+    Serializes \a voice to data stream \a stream.
+
+    \sa {Serializing Qt Data Types}
+*/
+
+/*!
+    \fn QDataStream &QVoice::operator>>(QDataStream &stream, QVoice &voice)
+    \since 6.4
+
+    Deserializes \a voice from data stream \a stream.
+
+    \sa {Serializing Qt Data Types}
 */
 
 /*!
@@ -276,6 +301,15 @@ QDataStream &QVoice::readFrom(QDataStream &stream)
 #endif
 
 #ifndef QT_NO_DEBUG_STREAM
+
+/*!
+   \fn QDebug QVoice::operator<<(QDebug debug, const QVoice &voice)
+   \since 6.4
+
+    Writes information about \a voice to the \a debug stream.
+
+   \sa QDebug
+ */
 QDebug operator<<(QDebug dbg, const QVoice &voice)
 {
     QDebugStateSaver state(dbg);
