@@ -7,7 +7,7 @@
     \ingroup qttexttospeech_examples
     \brief The Quick Speech example reads out user-provided text.
 
-    The \e{Quick Speech} example demonstrates how the TextToSpeech type can be used
+    The \e{Quick Speech} example demonstrates how the \l[QML]{TextToSpeech} type can be used
     in a \l{Qt Quick} application to read out text, and to control the speech.
 
     The example uses \l{Qt Quick Controls} to provide controls for the pitch, volume, and

@@ -6,7 +6,7 @@
     \title Qt TextToSpeech Engines
     \brief Engine specific documentation
 
-    Qt TextToSpeech supports several engine implementations for different platforms, and
+    \l{Qt TextToSpeech} supports several engine implementations for different platforms, and
     with different tradeoffs between capabilities, availability, and runtime cost.
 
     An engine can be selected when a QTextToSpeech instance is constructed, or on an already

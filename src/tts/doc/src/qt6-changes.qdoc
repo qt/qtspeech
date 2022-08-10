@@ -14,7 +14,7 @@
     APIs in each release. But some changes were inevitable in an effort to
     make Qt a better framework.
 
-    In this topic we summarize those changes in Qt TextToSpeech, and provide
+    In this topic we summarize those changes in \l{Qt TextToSpeech}, and provide
     guidance to handle them.
 
     \section1 Available Engines
@@ -28,7 +28,7 @@
 
     \section1 API changes
 
-    The Qt TextToSpeech module has undergone some basic consolidation and
+    The \l{Qt TextToSpeech} module has undergone some basic consolidation and
     cleanup. There should be minimal porting effort to be able to switch to Qt6.
 
     \section2 The QTextToSpeech class
