@@ -143,7 +143,6 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
     \class QTextToSpeech
     \brief The QTextToSpeech class provides a convenient access to text-to-speech engines.
     \inmodule QtTextToSpeech
-    \ingroup qttexttospeech_cpp
 
     Use \l say() to start synthesizing text, and \l stop(), \l pause(), and \l resume()
     to control the reading of the text.
@@ -156,7 +155,6 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
 /*!
     \qmltype TextToSpeech
     \inqmlmodule QtTextToSpeech
-    \ingroup texttospeech_qml
     \brief The TextToSpeech type provides access to text-to-speech engines.
 
     Use \l say() to start synthesizing text, and \l stop(), \l pause(), and \l resume()
