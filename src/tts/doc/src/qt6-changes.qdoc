@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GFDL-1.3-no-invariants-only
 
 /*!
-    \page texttospeech-changes-qt6.html
+    \page qttexttospeech-changes-qt6.html
     \title Changes to Qt TextToSpeech
     \ingroup changes-qt-5-to-6
     \brief Migrate Qt TextToSpeech to Qt 6.

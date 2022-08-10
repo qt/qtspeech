@@ -4,7 +4,7 @@
 /*!
     \example quickspeech
     \title Quick Speech Example
-    \ingroup texttospeech_examples
+    \ingroup qttexttospeech_examples
     \brief The Quick Speech example reads out user-provided text.
 
     The \e{Quick Speech} example demonstrates how the TextToSpeech type can be used
