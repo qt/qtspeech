@@ -6,17 +6,16 @@
    \title Qt TextToSpeech
    \brief The Qt TextToSpeech module enables access to text-to-speech engines
 
-   The module enables a Qt application to support accessibility features such
-   as text-to-speech, which is useful for end-users who cannot access the
-   application's visual interface. In addition to assistive technologies like
-   screen readers, the most common use case for text-to-speech is when the
-   end-user is driving or operating machinery. In such a scenario, an application
-   can use text-to-speech to read out incoming notifications, or to provide
-   turn-by-turn navigation instructions.
+   The Qt \TextToSpeech module enables a Qt application to read out text by
+   using speech synthesis. This is especially useful in scenarios where the
+   end-user cannot access the application's visual interface, for example, when
+   driving or operating machinery. In such setups, the module can be used to
+   read out incoming notifications or to provide turn-by-turn navigation
+   instructions.
 
-   On Linux, the module can use the Speech Dispatcher daemon (libspeechd), or
-   flite. On other platforms, it uses the native system APIs to access the
-   platform-specific text-to-speech engines.
+   The module does not provide a text-to-speech engine itself. Instead, it
+   uses engines native to the operating system. See \l{Qt TextToSpeech Engines}
+   for more details about this.
 
    \section1 Using the Module
 
