@@ -27,6 +27,20 @@ struct QTextToSpeechForeign
     QML_NAMED_ELEMENT(TextToSpeech)
 };
 
+struct QVoiceForeign
+{
+    Q_GADGET
+    QML_FOREIGN(QVoice)
+    QML_NAMED_ELEMENT(voice)
+};
+
+namespace QVoiceForeignNamespace
+{
+    Q_NAMESPACE
+    QML_FOREIGN_NAMESPACE(QVoice)
+    QML_NAMED_ELEMENT(Voice)
+}
+
 QT_END_NAMESPACE
 
 #endif // QTTEXTTOSPEECHTYPES_H

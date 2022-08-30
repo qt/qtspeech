@@ -21,9 +21,9 @@ QT_DEFINE_QESDP_SPECIALIZATION_DTOR(QVoicePrivate)
 */
 
 /*!
-    \qmltype Voice
+    \qmltype voice
     \inqmlmodule QtTextToSpeech
-    \brief The Voice type represents a particular voice.
+    \brief The voice type represents a particular voice.
 
     To get a voice that is supported by the current text-to-speech engine,
     use \l TextToSpeech::availableVoices().
@@ -174,7 +174,7 @@ QString QVoice::name() const
 }
 
 /*!
-    \qmlproperty locale Voice::locale
+    \qmlproperty locale voice::locale
     \brief This property holds the locale of the voice.
 
     The locale includes the language and the territory (i.e. accent or dialect)
@@ -195,7 +195,7 @@ QLocale QVoice::locale() const
 }
 
 /*!
-    \qmlproperty enumeration Voice::gender
+    \qmlproperty enumeration voice::gender
     \brief This property holds the gender of the voice.
 
     \sa QVoice::Gender
