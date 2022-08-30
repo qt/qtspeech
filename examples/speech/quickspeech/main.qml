@@ -11,7 +11,7 @@ ApplicationWindow {
     visible: true
     title: qsTr("Text to Speech")
     minimumWidth: inputForm.implicitWidth
-    minimumHeight: inputForm.implicitHeight
+    minimumHeight: inputForm.implicitHeight + footer.implicitHeight
 
     TextToSpeech {
         id: tts
@@ -46,7 +46,7 @@ ApplicationWindow {
             id: input
             text: qsTr("Hello, world!")
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            Layout.minimumHeight: implicitHeight
         }
         RowLayout {
             Button {
@@ -150,9 +150,6 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        root.width = inputForm.implicitWidth
-        root.height = inputForm.implicitHeight
-
         enginesComboBox.currentIndex = tts.availableEngines().indexOf(tts.engine)
         updateLocales()
         updateVoices()
