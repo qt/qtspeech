@@ -161,7 +161,7 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
     to control the reading of the text.
 
     It is possible to specify the language with \l locale. To set a \l voice, get the
-    list of \l availableVoices() and set the desired \l Voice. The list of available
+    list of \l availableVoices() and set the desired \l voice. The list of available
     voices depends on the active locale on most platforms.
 */
 
