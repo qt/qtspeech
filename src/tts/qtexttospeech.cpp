@@ -147,9 +147,16 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
     Use \l say() to start synthesizing text, and \l stop(), \l pause(), and \l resume()
     to control the reading of the text.
 
-    It is possible to specify the language with \l setLocale(). To set a voice, get the
-    list of \l availableVoices() and set the desired voice using \l setVoice(). The list
-    of available voices depends on the active locale on most platforms.
+    The list of voices the engine supports for the current language is returned by
+    \l availableVoices(). Change the language using \l setLocale(), using one of the
+    \l availableLocales() that is a good match for the language that the input text
+    is in, and for the accent of the desired voice output. This will change the list
+    of available voices on most platforms. Then use one of the available voices in
+    a call to \l setVoice().
+
+    \note Which locales and voices the engine supports depends usually on the Operating
+    System configuration. E.g. on macOS, end users can install voices through the
+    \e Accessibility panel in \e{System Preferences}.
 */
 
 /*!
@@ -160,9 +167,16 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
     Use \l say() to start synthesizing text, and \l stop(), \l pause(), and \l resume()
     to control the reading of the text.
 
-    It is possible to specify the language with \l locale. To set a \l voice, get the
-    list of \l availableVoices() and set the desired \l voice. The list of available
-    voices depends on the active locale on most platforms.
+    The list of voices the engine supports for the current language is returned by
+    \l availableVoices(). Change the language using the \l locale property, using one
+    of the \l availableLocales() that is a good match for the language that the input text
+    is in, and for the accent of the desired voice output. This will change the list
+    of available voices on most platforms. Then use one of the available voices in
+    the \l voice property.
+
+    \note Which locales and voices the engine supports depends usually on the Operating
+    System configuration. E.g. on macOS, end users can install voices through the
+    \e Accessibility panel in \e{System Preferences}.
 */
 
 /*!
@@ -716,9 +730,10 @@ QList<QLocale> QTextToSpeech::availableLocales() const
 /*!
     \qmlproperty Voice TextToSpeech::voice
 
-    \brief This property holds the current locale in use.
+    \brief This property holds the voice that will be used for the speech.
 
-    By default, the system locale is used.
+    The voice needs to be one of the \l{availableVoices()}{voices available} for
+    the engine.
 
     On some platforms, setting the voice changes other voice attributes such
     as \l locale, \l pitch, and so on. These changes trigger the emission of
@@ -728,6 +743,9 @@ QList<QLocale> QTextToSpeech::availableLocales() const
 /*!
     \property QTextToSpeech::voice
     \brief the voice that will be used for the speech.
+
+    The voice needs to be one of the \l{availableVoices()}{voices available} for
+    the engine.
 
     On some platforms, setting the voice changes other voice attributes such
     as \l locale, \l pitch, and so on. These changes trigger the emission of
