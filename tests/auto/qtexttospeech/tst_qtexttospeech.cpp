@@ -101,7 +101,6 @@ void tst_QTextToSpeech::init()
     QFETCH_GLOBAL(QString, engine);
     if (engine == "speechd") {
         QTextToSpeech tts(engine);
-        QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
         if (tts.state() == QTextToSpeech::Error) {
             QSKIP("speechd engine reported an error, "
                   "make sure the speech-dispatcher service is running!");
@@ -375,7 +374,14 @@ void tst_QTextToSpeech::sayWithVoices()
     selectWorkingVoice(&tts);
 
     const QList<QVoice> voices = tts.availableVoices();
-    for (const auto &voice : voices) {
+    for (qsizetype i = 0; i < voices.count(); ++i) {
+
+        if (i > 9) {
+            qWarning() << "sayWithVoices ended after 10 out of" << voices.count() << "voices.";
+            break;
+        }
+
+        const auto voice = voices.at(i);
         if (engine == "speechd" && voice.name().startsWith("dfki-")) {
             qWarning() << "Voice dysfunctional:" << voice;
             continue;
@@ -388,6 +394,7 @@ void tst_QTextToSpeech::sayWithVoices()
 
         QElapsedTimer timer;
         timer.start();
+        qDebug() << text.arg(engine, voice.name());
         tts.say(text.arg(engine, voice.name()));
         QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
         QSignalSpy spy(&tts, &QTextToSpeech::stateChanged);
