@@ -24,7 +24,7 @@ void tst_QVoice::initTestCase_data()
     qInfo("Available text-to-speech engines:");
     QTest::addColumn<QString>("engine");
     const auto engines = QTextToSpeech::availableEngines();
-    if (!engines.count())
+    if (!engines.size())
         QSKIP("No speech engines available, skipping test case");
     for (const auto &engine : engines) {
         QTest::addRow("%s", engine.toUtf8().constData()) << engine;
@@ -44,7 +44,7 @@ void tst_QVoice::init()
     } else if (engine == "darwin"
         && QOperatingSystemVersion::current() <= QOperatingSystemVersion::MacOSMojave) {
         QTextToSpeech tts(engine);
-        if (!tts.availableLocales().count())
+        if (!tts.availableLocales().size())
             QSKIP("iOS engine is not functional on macOS <= 10.14");
     }
 }
@@ -58,7 +58,7 @@ void tst_QVoice::basic()
     QTextToSpeech tts(engine);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
     const QList<QVoice> voices = tts.availableVoices();
-    QVERIFY(voices.count());
+    QVERIFY(voices.size());
 
     QVoice emptyVoice;
     for (const auto &voice : voices) {
@@ -88,7 +88,7 @@ void tst_QVoice::sameEngine()
     QTRY_COMPARE(tts2.state(), QTextToSpeech::Ready);
 
     const QList<QVoice> voices = tts1.availableVoices();
-    QVERIFY(voices.count());
+    QVERIFY(voices.size());
     QCOMPARE(tts1.availableVoices(), tts2.availableVoices());
 
     for (const auto &voice : voices)
@@ -105,7 +105,7 @@ void tst_QVoice::datastream()
         QTextToSpeech tts(engine);
         QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
         const QList<QVoice> voices = tts.availableVoices();
-        QVERIFY(voices.count());
+        QVERIFY(voices.size());
         savedVoice = voices.first();
 
         QDataStream writeStream(&storage, QIODevice::WriteOnly);

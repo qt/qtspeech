@@ -72,7 +72,7 @@ void tst_QTextToSpeech::initTestCase_data()
     qInfo("Available text-to-speech engines:");
     QTest::addColumn<QString>("engine");
     const auto engines = QTextToSpeech::availableEngines();
-    if (!engines.count())
+    if (!engines.size())
         QSKIP("No speech engines available, skipping test case");
     for (const auto &engine : engines) {
 
@@ -108,7 +108,7 @@ void tst_QTextToSpeech::init()
     } else if (engine == "darwin"
         && QOperatingSystemVersion::current() <= QOperatingSystemVersion::MacOSMojave) {
         QTextToSpeech tts(engine);
-        if (!tts.availableLocales().count())
+        if (!tts.availableLocales().size())
             QSKIP("iOS engine is not functional on macOS <= 10.14");
     }
 }
@@ -120,7 +120,7 @@ void tst_QTextToSpeech::availableVoices()
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
     qInfo("Available voices:");
     const auto availableVoices = tts.availableVoices();
-    QVERIFY(availableVoices.count() > 0);
+    QVERIFY(availableVoices.size() > 0);
     for (const auto &voice : availableVoices)
         qInfo().noquote() << "-" << voice;
 }
@@ -131,7 +131,7 @@ void tst_QTextToSpeech::availableLocales()
     QTextToSpeech tts(engine);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
     const auto availableLocales = tts.availableLocales();
-    QVERIFY(availableLocales.count() > 0);
+    QVERIFY(availableLocales.size() > 0);
     qInfo("Available locales:");
     for (const auto &locale : availableLocales)
         qInfo().noquote() << "-" << locale;
@@ -150,7 +150,7 @@ void tst_QTextToSpeech::locale()
     const auto availableLocales = tts.availableLocales();
     // every engine must have a working default locale if it's Ready
     QVERIFY(availableLocales.contains(tts.locale()));
-    if (availableLocales.count() < 2)
+    if (availableLocales.size() < 2)
         QSKIP("Engine doesn't support more than one locale");
 
     tts.setLocale(availableLocales[0]);
@@ -164,17 +164,17 @@ void tst_QTextToSpeech::locale()
 
     // repeat, watch signal emissions
     tts.setLocale(availableLocales[1]);
-    QCOMPARE(localeSpy.count(), 1);
+    QCOMPARE(localeSpy.size(), 1);
 
     // a locale is only available if it has voices
     const auto voices1 = tts.availableVoices();
-    QVERIFY(voices1.count());
+    QVERIFY(voices1.size());
     // If the voice is supported in the new locale, then it shouldn't change,
     // otherwise the voice should change as well.
     if (voices1.contains(voice0))
-        QCOMPARE(voiceSpy.count(), 0);
+        QCOMPARE(voiceSpy.size(), 0);
     else
-        QCOMPARE(voiceSpy.count(), 1);
+        QCOMPARE(voiceSpy.size(), 1);
 }
 
 /*
@@ -203,7 +203,7 @@ void tst_QTextToSpeech::voice()
     for (const auto &locale : tts.availableLocales()) {
         tts.setLocale(locale);
         const auto voices = tts.availableVoices();
-        if (voices.count() > 1 && availableVoices.isEmpty()) {
+        if (voices.size() > 1 && availableVoices.isEmpty()) {
             availableVoices = voices;
             voicesLocale = locale;
         }
@@ -212,11 +212,11 @@ void tst_QTextToSpeech::voice()
             otherLocale = locale;
         }
         // we found everything
-        if (availableVoices.count() > 1 && otherVoice != QVoice())
+        if (availableVoices.size() > 1 && otherVoice != QVoice())
             break;
     }
     // if we found neither, then we cannot test
-    if (availableVoices.count() < 2 && otherVoice == QVoice())
+    if (availableVoices.size() < 2 && otherVoice == QVoice())
         QSKIP("Engine %s supports only a single voice", qPrintable(engine));
 
     tts.setVoice(defaultVoice);
@@ -233,25 +233,25 @@ void tst_QTextToSpeech::voice()
         ++expectedVoiceChanged;
         ++expectedLocaleChanged;
         tts.setVoice(otherVoice);
-        QCOMPARE(voiceSpy.count(), expectedVoiceChanged);
+        QCOMPARE(voiceSpy.size(), expectedVoiceChanged);
         QCOMPARE(tts.locale(), otherLocale);
-        QCOMPARE(localeSpy.count(), expectedLocaleChanged);
+        QCOMPARE(localeSpy.size(), expectedLocaleChanged);
     } else {
         otherLocale = defaultLocale;
     }
 
     // two voices from the same locale
-    if (availableVoices.count() > 1) {
+    if (availableVoices.size() > 1) {
         if (tts.voice() != availableVoices[0])
             ++expectedVoiceChanged;
         tts.setVoice(availableVoices[0]);
-        QCOMPARE(voiceSpy.count(), expectedVoiceChanged);
+        QCOMPARE(voiceSpy.size(), expectedVoiceChanged);
         if (voicesLocale != otherLocale)
             ++expectedLocaleChanged;
-        QCOMPARE(localeSpy.count(), expectedLocaleChanged);
+        QCOMPARE(localeSpy.size(), expectedLocaleChanged);
         tts.setVoice(availableVoices[1]);
-        QCOMPARE(voiceSpy.count(), ++expectedVoiceChanged);
-        QCOMPARE(localeSpy.count(), expectedLocaleChanged);
+        QCOMPARE(voiceSpy.size(), ++expectedVoiceChanged);
+        QCOMPARE(localeSpy.size(), expectedLocaleChanged);
     }
 }
 
@@ -265,11 +265,11 @@ void tst_QTextToSpeech::rate()
     QCOMPARE(tts.rate(), 0.5);
     QSignalSpy spy(&tts, &QTextToSpeech::rateChanged);
     tts.setRate(0.0);
-    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.size(), 1);
     QCOMPARE(spy.value(0).first().toDouble(), 0.0);
 
     tts.setRate(tts.rate());
-    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.size(), 1);
 }
 
 void tst_QTextToSpeech::pitch()
@@ -287,9 +287,9 @@ void tst_QTextToSpeech::pitch()
         QString actual = QString("%1").arg(tts.pitch(), 0, 'g', 2);
         QString expected = QString("%1").arg(i / 10.0, 0, 'g', 2);
         QCOMPARE(actual, expected);
-        QCOMPARE(spy.count(), ++signalCount);
+        QCOMPARE(spy.size(), ++signalCount);
         tts.setPitch(tts.pitch());
-        QCOMPARE(spy.count(), signalCount);
+        QCOMPARE(spy.size(), signalCount);
     }
 }
 
@@ -302,14 +302,14 @@ void tst_QTextToSpeech::volume()
 
     QSignalSpy spy(&tts, &QTextToSpeech::volumeChanged);
     tts.setVolume(0.7);
-    QTRY_COMPARE(spy.count(), 1);
+    QTRY_COMPARE(spy.size(), 1);
     QVERIFY(spy.value(0).first().toDouble() > 0.6);
 
     QVERIFY2(tts.volume() > 0.65, QByteArray::number(tts.volume()));
     QVERIFY2(tts.volume() < 0.75, QByteArray::number(tts.volume()));
 
     tts.setVolume(tts.volume());
-    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.size(), 1);
 }
 
 
@@ -374,10 +374,10 @@ void tst_QTextToSpeech::sayWithVoices()
     selectWorkingVoice(&tts);
 
     const QList<QVoice> voices = tts.availableVoices();
-    for (qsizetype i = 0; i < voices.count(); ++i) {
+    for (qsizetype i = 0; i < voices.size(); ++i) {
 
         if (i > 9) {
-            qWarning() << "sayWithVoices ended after 10 out of" << voices.count() << "voices.";
+            qWarning() << "sayWithVoices ended after 10 out of" << voices.size() << "voices.";
             break;
         }
 
