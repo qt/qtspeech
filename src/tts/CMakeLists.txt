@@ -38,7 +38,7 @@ if(ANDROID)
         jar/QtAndroidTextToSpeech.jar
     )
     set_property(TARGET TextToSpeech APPEND PROPERTY QT_ANDROID_LIB_DEPENDENCIES
-        plugins/texttospeech/libplugins_texttospeech_qttexttospeech_android.so
+        ${INSTALL_PLUGINSDIR}/texttospeech/libplugins_texttospeech_qttexttospeech_android.so
     )
 endif()
 
