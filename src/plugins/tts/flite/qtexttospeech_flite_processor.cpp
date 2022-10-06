@@ -23,7 +23,7 @@ QTextToSpeechProcessorFlite::QTextToSpeechProcessorFlite(const QAudioDevice &aud
 
 QTextToSpeechProcessorFlite::~QTextToSpeechProcessorFlite()
 {
-    for (const VoiceInfo &voice : qAsConst(m_voices))
+    for (const VoiceInfo &voice : std::as_const(m_voices))
         voice.unregister_func(voice.vox);
 }
 
