@@ -108,7 +108,7 @@ void QTextToSpeechEngineMock::timerEvent(QTimerEvent *e)
     }
 
     Q_ASSERT(m_state == QTextToSpeech::Speaking);
-    Q_ASSERT(m_words.count());
+    Q_ASSERT(m_words.size());
 
     m_words.takeFirst(); // next word has been spoken
 
