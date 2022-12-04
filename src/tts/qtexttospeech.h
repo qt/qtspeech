@@ -14,15 +14,12 @@
 #include <QtCore/qlocale.h>
 #include <QtTextToSpeech/qvoice.h>
 
-#include <QtQmlIntegration/qqmlintegration.h>
-
 QT_BEGIN_NAMESPACE
 
 class QTextToSpeechPrivate;
 class Q_TEXTTOSPEECH_EXPORT QTextToSpeech : public QObject
 {
     Q_OBJECT
-    QML_ELEMENT
     Q_PROPERTY(QString engine READ engine WRITE setEngine NOTIFY engineChanged)
     Q_PROPERTY(State state READ state NOTIFY stateChanged)
     Q_PROPERTY(double volume READ volume WRITE setVolume NOTIFY volumeChanged)
