@@ -10,7 +10,6 @@
 #include <QtCore/QList>
 #include <QtCore/QMutex>
 #include <QtCore/QThread>
-#include <QtCore/QSharedPointer>
 #include <QtCore/QLibrary>
 #include <QtCore/QString>
 #include <QtCore/QBasicTimer>

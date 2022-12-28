@@ -11,7 +11,6 @@
 #include <QtCore/QString>
 #include <QtCore/QList>
 #include <QtCore/QLocale>
-#include <QtCore/QSharedPointer>
 #include <QtCore/QMultiHash>
 
 QT_BEGIN_NAMESPACE
