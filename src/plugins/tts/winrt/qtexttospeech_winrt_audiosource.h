@@ -43,6 +43,8 @@ public:
     bool atEnd() const override;
     qint64 bytesAvailable() const override;
 
+    QAudioFormat format() const { return audioFormat; }
+
     enum PauseState {
         NoPause,
         PauseRequested,

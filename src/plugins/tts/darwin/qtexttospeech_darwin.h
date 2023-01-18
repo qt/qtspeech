@@ -10,6 +10,7 @@
 
 Q_FORWARD_DECLARE_OBJC_CLASS(AVSpeechSynthesizer);
 Q_FORWARD_DECLARE_OBJC_CLASS(AVSpeechSynthesisVoice);
+Q_FORWARD_DECLARE_OBJC_CLASS(AVSpeechUtterance);
 
 QT_BEGIN_NAMESPACE
 
@@ -24,6 +25,7 @@ public:
     QList<QLocale> availableLocales() const override;
     QList<QVoice> availableVoices() const override;
     void say(const QString &text) override;
+    void synthesize(const QString &text) override;
     void stop(QTextToSpeech::BoundaryHint boundaryHint) override;
     void pause(QTextToSpeech::BoundaryHint boundaryHint) override;
     void resume() override;
@@ -48,12 +50,14 @@ private:
     AVSpeechSynthesisVoice *fromQVoice(const QVoice &voice) const;
     QVoice toQVoice(AVSpeechSynthesisVoice *avVoice) const;
     void setError(QTextToSpeech::ErrorReason reason, const QString &string);
+    AVSpeechUtterance *prepareUtterance(const QString &text);
 
     AVSpeechSynthesizer *m_speechSynthesizer;
     QVoice m_voice;
     QTextToSpeech::State m_state = QTextToSpeech::Error;
     QTextToSpeech::ErrorReason m_errorReason = QTextToSpeech::ErrorReason::Initialization;
     QString m_errorString;
+    QAudioFormat m_format;
 
     double m_pitch = 0.0;
     double m_actualPitch = 1.0;

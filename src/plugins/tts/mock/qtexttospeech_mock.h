@@ -21,6 +21,7 @@ public:
     QList<QVoice> availableVoices() const override;
 
     void say(const QString &text) override;
+    void synthesize(const QString &text) override;
     void stop(QTextToSpeech::BoundaryHint boundaryHint) override;
     void pause(QTextToSpeech::BoundaryHint boundaryHint) override;
     void resume() override;
@@ -59,6 +60,7 @@ private:
     QString m_errorString;
     bool m_pauseRequested = false;
     qsizetype m_currentIndex = -1;
+    QAudioFormat m_format;
 };
 
 QT_END_NAMESPACE

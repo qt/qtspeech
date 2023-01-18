@@ -22,6 +22,7 @@ QT_BEGIN_NAMESPACE
 #ifdef Q_CC_MINGW // from sphelper.h
 
 static const GUID CLSD_SpVoice = {0x96749377, 0x3391, 0x11d2,{0x9e, 0xe3, 0x0, 0xc0, 0x4f, 0x79, 0x73, 0x96}};
+const GUID SPDFID_WaveFormatEx = {0xC31ADBAE, 0x527F, 0x4ff5,{0xA2, 0x30, 0xF6, 0x2B, 0xB6, 0x1F, 0xF7, 0x0C}};
 
 static inline HRESULT SpGetTokenFromId(const WCHAR *pszTokenId, ISpObjectToken **cpToken, BOOL fCreateIfNotExist = FALSE)
 {
@@ -54,7 +55,6 @@ inline void SpClearEvent(SPEVENT *pe)
         break;
     }
 }
-
 #endif // Q_CC_MINGW
 
 QTextToSpeechEngineSapi::QTextToSpeechEngineSapi(const QVariantMap &, QObject *)
@@ -111,6 +111,123 @@ void QTextToSpeechEngineSapi::say(const QString &text)
     textOffset = prefix.length();
     currentText.prepend(prefix);
 
+    HRESULT hr = m_voice->Speak(currentText.toStdWString().data(), SPF_ASYNC, NULL);
+    if (!SUCCEEDED(hr))
+        setError(QTextToSpeech::ErrorReason::Input,
+                 QCoreApplication::translate("QTextToSpeech", "Speech synthesizing failure."));
+}
+
+void QTextToSpeechEngineSapi::synthesize(const QString &text)
+{
+    class OutputStream : public ISpStreamFormat
+    {
+        ULONG m_ref = 1;
+        qint64 m_pos = 0;
+        qint64 m_length = 0;
+        QTextToSpeechEngineSapi *m_engine = nullptr;
+        QAudioFormat m_format;
+
+    public:
+        OutputStream(QTextToSpeechEngineSapi *engine)
+            : m_engine(engine)
+        {
+            m_format.setChannelConfig(QAudioFormat::ChannelConfigMono);
+            m_format.setSampleRate(16000);
+            m_format.setSampleFormat(QAudioFormat::Int16);
+        }
+        virtual ~OutputStream() = default;
+
+        // IUnknown
+        ULONG AddRef() override { return ++m_ref; }
+        ULONG Release() override {
+            if (!--m_ref) {
+                delete this;
+                return 0;
+            }
+            return m_ref;
+        }
+
+        HRESULT QueryInterface(REFIID riid, VOID **ppvInterface) override
+        {
+            if (!ppvInterface)
+                return E_POINTER;
+
+            if (riid == __uuidof(IUnknown)) {
+                *ppvInterface = static_cast<IUnknown*>(this);
+            } else if (riid == __uuidof(IStream)) {
+                *ppvInterface = static_cast<IStream *>(this);
+            } else if (riid == __uuidof(ISpStreamFormat)) {
+                *ppvInterface = static_cast<ISpStreamFormat *>(this);
+            } else {
+                *ppvInterface = nullptr;
+                return E_NOINTERFACE;
+            }
+            AddRef();
+            return S_OK;
+        }
+
+        // IStream
+        HRESULT Read(void *,ULONG,ULONG *) override { return E_NOTIMPL; }
+        HRESULT Write(const void *pv,ULONG cb,ULONG *pcbWritten) override
+        {
+            emit m_engine->synthesized(m_format, QByteArray(static_cast<const char *>(pv), cb));
+            *pcbWritten = cb;
+            return S_OK;
+        }
+        HRESULT Seek(LARGE_INTEGER dlibMove, DWORD dwOrigin, ULARGE_INTEGER *plibNewPosition) override
+        {
+            qint64 move = dlibMove.QuadPart;
+            switch (dwOrigin) {
+            case STREAM_SEEK_SET:
+                m_pos = move;
+                break;
+            case STREAM_SEEK_CUR:
+                m_pos += move;
+                break;
+            case STREAM_SEEK_END:
+                m_pos = m_length + move;
+                break;
+            }
+            (*plibNewPosition).QuadPart = m_pos;
+            return S_OK;
+        }
+        HRESULT SetSize(ULARGE_INTEGER) override { return E_NOTIMPL; }
+        HRESULT CopyTo(IStream *,ULARGE_INTEGER,ULARGE_INTEGER *,ULARGE_INTEGER *) override { return E_NOTIMPL; }
+        HRESULT Commit(DWORD) override { return E_NOTIMPL; }
+        HRESULT Revert(void) override { return E_NOTIMPL; }
+        HRESULT LockRegion(ULARGE_INTEGER,ULARGE_INTEGER,DWORD) override { return E_NOTIMPL; }
+        HRESULT UnlockRegion(ULARGE_INTEGER,ULARGE_INTEGER,DWORD) override { return E_NOTIMPL; }
+        HRESULT Stat(STATSTG *,DWORD) override { return E_NOTIMPL; }
+        HRESULT Clone(IStream **) override { return E_NOTIMPL; }
+
+        // ISpStreamFormat
+        HRESULT GetFormat(GUID *pguidFormatId,WAVEFORMATEX **ppCoMemWaveFormatEx) override
+        {
+            *pguidFormatId = SPDFID_WaveFormatEx;
+            WAVEFORMATEX *format = static_cast<WAVEFORMATEX *>(CoTaskMemAlloc(sizeof(WAVEFORMATEX)));
+            format->wFormatTag = WAVE_FORMAT_PCM;
+            format->nChannels = m_format.channelCount();
+            format->nSamplesPerSec = m_format.sampleRate();
+            format->wBitsPerSample = m_format.bytesPerSample() * 8;
+            format->nBlockAlign = format->nChannels * format->wBitsPerSample / 8;
+            format->nAvgBytesPerSec = format->nSamplesPerSec * format->nBlockAlign;
+            format->cbSize = 0; // amount of extra format information
+
+            *ppCoMemWaveFormatEx = format;
+            return S_OK;
+        }
+    };
+
+    if (text.isEmpty())
+        return;
+
+    currentText = text;
+    const QString prefix = u"<pitch absmiddle=\"%1\"/>"_qs.arg(m_pitch * 10);
+    textOffset = prefix.length();
+    currentText.prepend(prefix);
+
+    OutputStream *outputStream = new OutputStream(this);
+    m_voice->SetOutput(outputStream, false);
     HRESULT hr = m_voice->Speak(currentText.toStdWString().data(), SPF_ASYNC, NULL);
     if (!SUCCEEDED(hr))
         setError(QTextToSpeech::ErrorReason::Input,

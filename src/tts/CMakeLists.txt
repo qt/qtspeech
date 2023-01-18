@@ -16,6 +16,7 @@ qt_internal_add_module(TextToSpeech
         Qt::QmlIntegration
     PUBLIC_LIBRARIES
         Qt::Core
+        Qt::Multimedia
     PRIVATE_MODULE_INTERFACE
         Qt::CorePrivate
 )

@@ -41,8 +41,8 @@ void QTextToSpeechProcessorFlite::startTokenTimer()
     m_tokenTimer.start(qMax(token.startTime - playedTime, 0), Qt::PreciseTimer, this);
 }
 
-int QTextToSpeechProcessorFlite::fliteOutputCb(const cst_wave *w, int start, int size,
-    int last, cst_audio_streaming_info *asi)
+int QTextToSpeechProcessorFlite::audioOutputCb(const cst_wave *w, int start, int size,
+                                               int last, cst_audio_streaming_info *asi)
 {
     QTextToSpeechProcessorFlite *processor = static_cast<QTextToSpeechProcessorFlite *>(asi->userdata);
     if (processor) {
@@ -72,13 +72,13 @@ int QTextToSpeechProcessorFlite::fliteOutputCb(const cst_wave *w, int start, int
             }
             asi->item = item_next(asi->item);
         }
-        return processor->fliteOutput(w, start, size, last, asi);
+        return processor->audioOutput(w, start, size, last, asi);
     }
     return CST_AUDIO_STREAM_STOP;
 }
 
-int QTextToSpeechProcessorFlite::fliteOutput(const cst_wave *w, int start, int size,
-                int last, cst_audio_streaming_info *asi)
+int QTextToSpeechProcessorFlite::audioOutput(const cst_wave *w, int start, int size,
+                                             int last, cst_audio_streaming_info *asi)
 {
     Q_UNUSED(asi);
     Q_ASSERT(QThread::currentThread() == thread());
@@ -87,18 +87,58 @@ int QTextToSpeechProcessorFlite::fliteOutput(const cst_wave *w, int start, int s
     if (start == 0 && !initAudio(w->sample_rate, w->num_channels))
         return CST_AUDIO_STREAM_STOP;
 
-    int bytesToWrite = size * sizeof(short);
-    QString errorString;
-    if (!audioOutput((const char *)(&w->samples[start]), bytesToWrite, errorString)) {
-        setError(QTextToSpeech::ErrorReason::Playback, errorString);
+    const qsizetype bytesToWrite = size * sizeof(short);
+
+    if (!m_audioBuffer->write(reinterpret_cast<const char *>(&w->samples[start]), bytesToWrite)) {
+        setError(QTextToSpeech::ErrorReason::Playback,
+                 QCoreApplication::translate("QTextToSpeech", "Audio streaming error."));
         stop();
         return CST_AUDIO_STREAM_STOP;
     }
+
+    // Stats for debugging
+    ++numberChunks;
+    totalBytes += bytesToWrite;
 
     if (last == 1) {
         qCDebug(lcSpeechTtsFlite) << "last data chunk written";
         m_audioBuffer->close();
     }
+    return CST_AUDIO_STREAM_CONT;
+}
+
+int QTextToSpeechProcessorFlite::dataOutputCb(const cst_wave *w, int start, int size,
+                                              int last, cst_audio_streaming_info *asi)
+{
+    QTextToSpeechProcessorFlite *processor = static_cast<QTextToSpeechProcessorFlite *>(asi->userdata);
+    if (processor)
+        return processor->dataOutput(w, start, size, last, asi);
+    return CST_AUDIO_STREAM_STOP;
+}
+
+int QTextToSpeechProcessorFlite::dataOutput(const cst_wave *w, int start, int size,
+                                            int last, cst_audio_streaming_info *)
+{
+    if (start == 0)
+        emit stateChanged(QTextToSpeech::Synthesizing);
+
+    QAudioFormat format;
+    if (w->num_channels == 1)
+        format.setChannelConfig(QAudioFormat::ChannelConfigMono);
+    else
+        format.setChannelCount(w->num_channels);
+    format.setSampleRate(w->sample_rate);
+    format.setSampleFormat(QAudioFormat::Int16);
+
+    if (!format.isValid())
+        return CST_AUDIO_STREAM_STOP;
+
+    const qsizetype bytesToWrite = size * format.bytesPerSample();
+    emit synthesized(format, QByteArray(reinterpret_cast<const char *>(&w->samples[start]), bytesToWrite));
+
+    if (last == 1)
+        emit stateChanged(QTextToSpeech::Ready);
+
     return CST_AUDIO_STREAM_CONT;
 }
 
@@ -121,22 +161,7 @@ void QTextToSpeechProcessorFlite::timerEvent(QTimerEvent *event)
         startTokenTimer();
 }
 
-bool QTextToSpeechProcessorFlite::audioOutput(const char *data, qint64 dataSize, QString &errorString)
-{
-    // Send data
-    if (!m_audioBuffer->write(data, dataSize)) {
-        errorString = QCoreApplication::translate("QTextToSpeech", "Audio streaming error.");
-        return false;
-    }
-
-    // Stats for debugging
-    ++numberChunks;
-    totalBytes += dataSize;
-
-    return true;
-}
-
-void QTextToSpeechProcessorFlite::processText(const QString &text, int voiceId, double pitch, double rate)
+void QTextToSpeechProcessorFlite::processText(const QString &text, int voiceId, double pitch, double rate, OutputHandler outputHandler)
 {
     qCDebug(lcSpeechTtsFlite) << "processText() begin";
     if (!checkVoice(voiceId))
@@ -150,7 +175,7 @@ void QTextToSpeechProcessorFlite::processText(const QString &text, int voiceId, 
     const VoiceInfo &voiceInfo = m_voices.at(voiceId);
     cst_voice *voice = voiceInfo.vox;
     cst_audio_streaming_info *asi = new_audio_streaming_info();
-    asi->asc = QTextToSpeechProcessorFlite::fliteOutputCb;
+    asi->asc = outputHandler;
     asi->userdata = (void *)this;
     feat_set(voice->features, "streaming_info", audio_streaming_info_val(asi));
     setRateForVoice(voice, rate);
@@ -493,7 +518,19 @@ void QTextToSpeechProcessorFlite::say(const QString &text, int voiceId, double p
         return;
 
     m_volume = volume;
-    processText(text, voiceId, pitch, rate);
+    processText(text, voiceId, pitch, rate, QTextToSpeechProcessorFlite::audioOutputCb);
+}
+
+void QTextToSpeechProcessorFlite::synthesize(const QString &text, int voiceId, double pitch, double rate, double volume)
+{
+    if (text.isEmpty())
+        return;
+
+    if (!checkVoice(voiceId))
+        return;
+
+    m_volume = volume;
+    processText(text, voiceId, pitch, rate, QTextToSpeechProcessorFlite::dataOutputCb);
 }
 
 QT_END_NAMESPACE

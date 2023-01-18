@@ -9,8 +9,11 @@
 #include <QtCore/QObject>
 #include <QtCore/QLocale>
 #include <QtCore/QDir>
+#include <QtMultimedia/QAudioFormat>
 
 QT_BEGIN_NAMESPACE
+
+class QAudioFormat;
 
 class Q_TEXTTOSPEECH_EXPORT QTextToSpeechEngine : public QObject
 {
@@ -24,6 +27,9 @@ public:
     virtual QList<QVoice> availableVoices() const = 0;
 
     virtual void say(const QString &text) = 0;
+    virtual void synthesize(const QString &text) {
+        Q_UNUSED(text);
+    };
     virtual void stop(QTextToSpeech::BoundaryHint boundaryHint) = 0;
     virtual void pause(QTextToSpeech::BoundaryHint boundaryHint) = 0;
     virtual void resume() = 0;
@@ -52,6 +58,7 @@ Q_SIGNALS:
     void errorOccurred(QTextToSpeech::ErrorReason error, const QString &errorString);
 
     void sayingWord(qsizetype start, qsizetype length);
+    void synthesized(const QAudioFormat &format, const QByteArray &data);
 };
 
 QT_END_NAMESPACE

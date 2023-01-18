@@ -150,6 +150,11 @@ void QTextToSpeechEngineMacOS::say(const QString &text)
     speaking();
 }
 
+void QTextToSpeechEngineMacOS::synthesize(const QString &)
+{
+    setError(QTextToSpeech::ErrorReason::Configuration, tr("Synthesize not supported"));
+}
+
 void QTextToSpeechEngineMacOS::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
     if (speechSynthesizer.isSpeaking || m_state == QTextToSpeech::Paused) {

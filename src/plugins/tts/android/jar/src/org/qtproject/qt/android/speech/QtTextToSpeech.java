@@ -5,6 +5,7 @@ package org.qtproject.qt.android.speech;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.media.AudioFormat;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
 import android.speech.tts.TextToSpeech;
@@ -15,6 +16,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import java.lang.Float;
+import java.io.File;
 import java.util.Locale;
 import java.util.List;
 import java.util.ArrayList;
@@ -23,12 +25,16 @@ import java.util.Set;
 public class QtTextToSpeech
 {
     private static final String UTTERANCE_ID = "UtteranceId";
+    private static final String SYNTHESIZE_ID = "SynthesizeId";
 
     // Native callback functions
     native public void notifyError(long id, long reason);
     native public void notifyReady(long id);
     native public void notifySpeaking(long id);
     native public void notifyRangeStart(long id, int start, int end, int frame);
+    native public void notifyBeginSynthesis(long id, int sampleRateInHz, int audioFormat, int channelCount);
+    native public void notifyAudioAvailable(long id, byte[] bytes);
+    native public void notifyEndSynthesis(long id);
 
     private TextToSpeech mTts;
     private final long mId;
@@ -62,6 +68,8 @@ public class QtTextToSpeech
             Log.d(utteranceTAG, "onDone");
             if (utteranceId.equals(UTTERANCE_ID)) {
                 notifyReady(mId);
+            } else if (utteranceId.equals(SYNTHESIZE_ID)) {
+                notifyEndSynthesis(mId);
             }
         }
 
@@ -94,6 +102,36 @@ public class QtTextToSpeech
             Log.w("UtteranceProgressListener", "onRangeStart");
             if (utteranceId.equals("UtteranceId")) {
                 notifyRangeStart(mId, start, end, frame);
+            }
+        }
+
+        @Override
+        public void onBeginSynthesis(String utteranceId, int sampleRateInHz, int audioFormat, int channelCount) {
+            Log.d(utteranceTAG, "onBeginSynthesis");
+            if (utteranceId.equals(SYNTHESIZE_ID)) {
+                switch (audioFormat) {
+                case AudioFormat.ENCODING_PCM_8BIT:
+                    audioFormat = 1; // QAudioFormat::UInt8
+                    break;
+                case AudioFormat.ENCODING_PCM_16BIT:
+                    audioFormat = 2; // QAudioFormat::Int16;
+                    break;
+                case AudioFormat.ENCODING_PCM_FLOAT:
+                    audioFormat = 4; // QAudioFormat::Float;
+                    break;
+                default:
+                    audioFormat = 0; // QAudioFormat::Unknown;
+                }
+
+                notifyBeginSynthesis(mId, sampleRateInHz, audioFormat, channelCount);
+            }
+        }
+
+        @Override
+        public void onAudioAvailable(String utteranceId, byte[] bytes) {
+            Log.d(utteranceTAG, "onAudioAvailable");
+            if (utteranceId.equals(SYNTHESIZE_ID)) {
+                notifyAudioAvailable(mId, bytes);
             }
         }
     };
@@ -137,6 +175,22 @@ public class QtTextToSpeech
         Log.d(TAG, "TTS say() result: " + Integer.toString(result));
         if (result == TextToSpeech.ERROR)
             notifyError(mId, 3); // QTextToSpeech::ErrorReason::Input
+    }
+
+    public int synthesize(String text)
+    {
+        Log.d(TAG, "TTS synthesize(): " + text);
+        int result = -1;
+
+        Bundle params = new Bundle();
+        params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, mVolume);
+        File file = new File("/dev/null");
+        result = mTts.synthesizeToFile(text, params, file, SYNTHESIZE_ID);
+
+        Log.d(TAG, "TTS synthesize() result: " + Integer.toString(result));
+        if (result == TextToSpeech.ERROR)
+            notifyError(mId, 3); // QTextToSpeech::ErrorReason::Input
+        return -1;
     }
 
     public void stop()

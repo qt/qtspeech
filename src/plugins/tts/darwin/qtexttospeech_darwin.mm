@@ -6,6 +6,7 @@
 #include "qtexttospeech_darwin.h"
 
 #include <QtCore/QCoreApplication>
+#include <QtMultimedia/QAudioFormat>
 
 @interface QDarwinSpeechSynthesizerDelegate : NSObject <AVSpeechSynthesizerDelegate>
 @end
@@ -112,10 +113,8 @@ QTextToSpeechEngineDarwin::~QTextToSpeechEngineDarwin()
     [m_speechSynthesizer release];
 }
 
-void QTextToSpeechEngineDarwin::say(const QString &text)
+AVSpeechUtterance *QTextToSpeechEngineDarwin::prepareUtterance(const QString &text)
 {
-    stop(QTextToSpeech::BoundaryHint::Default);
-
     // Qt pitch: [-1.0, 1.0], 0 is normal
     // AVF range: [0.5, 2.0], 1.0 is normal
     const double desiredPitch = 1.0 + (m_pitch >= 0 ? m_pitch : (m_pitch * 0.5));
@@ -158,7 +157,77 @@ void QTextToSpeechEngineDarwin::say(const QString &text)
     utterance.volume = m_volume;
     utterance.voice = fromQVoice(m_voice);
 
+    return utterance;
+}
+
+void QTextToSpeechEngineDarwin::say(const QString &text)
+{
+    stop(QTextToSpeech::BoundaryHint::Default);
+
+    AVSpeechUtterance *utterance = prepareUtterance(text);
     [m_speechSynthesizer speakUtterance:utterance];
+}
+
+void QTextToSpeechEngineDarwin::synthesize(const QString &text)
+{
+    AVSpeechUtterance *utterance = prepareUtterance(text);
+    m_format = {};
+
+    const auto bufferCallback = ^(AVAudioBuffer *buffer){
+        setState(QTextToSpeech::Synthesizing);
+
+        if (!m_format.isValid()) {
+            const AVAudioFormat *format = buffer.format;
+            if (format.channelCount == 1)
+                m_format.setChannelConfig(QAudioFormat::ChannelConfigMono);
+            else
+                m_format.setChannelCount(format.channelCount);
+            m_format.setSampleRate(format.sampleRate);
+            m_format.setSampleFormat([&format]{
+                switch (format.commonFormat) {
+                case AVAudioPCMFormatFloat32:
+                    return QAudioFormat::Float;
+                case AVAudioPCMFormatInt16:
+                    return QAudioFormat::Int16;
+                case AVAudioPCMFormatInt32:
+                    return QAudioFormat::Int32;
+                case AVAudioPCMFormatFloat64:
+                    return QAudioFormat::Unknown;
+                case AVAudioOtherFormat: {
+                    const id bitKey = format.settings[@"AVLinearPCMBitDepthKey"];
+                    const id isFloatKey = format.settings[@"AVLinearPCMIsFloatKey"];
+                    if ([isFloatKey isEqual:@(YES)]) {
+                        if ([bitKey isEqual:@(32)])
+                            return QAudioFormat::Float;
+                    } else if ([bitKey isEqual:@(8)]) {
+                        return QAudioFormat::UInt8;
+                    } else if ([bitKey isEqual:@(16)]) {
+                        return QAudioFormat::Int16;
+                    } else if ([bitKey isEqual:@(32)]) {
+                        return QAudioFormat::Int32;
+                    }
+                    break;
+                }
+                default:
+                    break;
+                }
+                return QAudioFormat::Unknown;
+            }());
+            if (!m_format.isValid())
+                qWarning() << "Audio arrived with invalid format:" << format.settings;
+        }
+
+        const AudioBufferList *bufferList = buffer.audioBufferList;
+        for (UInt32 i = 0; i < bufferList->mNumberBuffers; ++i) {
+            const AudioBuffer &buffer = bufferList->mBuffers[i];
+            // we expect all buffers to have the same number of channels
+            if (int(buffer.mNumberChannels) != m_format.channelCount())
+                continue;
+            emit synthesized(m_format, QByteArray::fromRawData(static_cast<const char *>(buffer.mData), buffer.mDataByteSize));
+        }
+    };
+    [m_speechSynthesizer writeUtterance:utterance
+                         toBufferCallback:bufferCallback];
 }
 
 void QTextToSpeechEngineDarwin::stop(QTextToSpeech::BoundaryHint boundaryHint)
@@ -321,6 +390,8 @@ void QTextToSpeechEngineDarwin::setState(QTextToSpeech::State state)
         return;
 
     m_state = state;
+    if (m_state == QTextToSpeech::Ready)
+        m_format = {};
     emit stateChanged(m_state);
 }
 

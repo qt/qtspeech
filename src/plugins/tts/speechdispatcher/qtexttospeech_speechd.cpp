@@ -151,6 +151,11 @@ void QTextToSpeechEngineSpeechd::say(const QString &text)
                  QCoreApplication::translate("QTextToSpeech", "Text synthesizing failure."));
 }
 
+void QTextToSpeechEngineSpeechd::synthesize(const QString &)
+{
+    setError(QTextToSpeech::ErrorReason::Configuration, tr("Synthesize not supported"));
+}
+
 void QTextToSpeechEngineSpeechd::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
     Q_UNUSED(boundaryHint);

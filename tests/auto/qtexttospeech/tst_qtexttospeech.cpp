@@ -6,6 +6,7 @@
 #include <QTextToSpeech>
 #include <QSignalSpy>
 #include <QMediaDevices>
+#include <QAudioFormat>
 #include <QAudioDevice>
 #include <QOperatingSystemVersion>
 #include <QRegularExpression>
@@ -53,6 +54,12 @@ private slots:
     void sayingWordWithPause_data();
     void sayingWordWithPause();
 
+    void synthesize_data();
+    void synthesize();
+
+    void synthesizeCallback_data();
+    void synthesizeCallback();
+
 private:
     static bool hasDefaultAudioOutput()
     {
@@ -74,6 +81,13 @@ private:
             }
         }
     }
+
+    void onError(QTextToSpeech::ErrorReason error, const QString &errorString) {
+        errorReason = error;
+        qCritical() << "Error:" << errorString;
+    }
+
+    QTextToSpeech::ErrorReason errorReason = QTextToSpeech::ErrorReason::NoError;
 };
 
 void tst_QTextToSpeech::initTestCase_data()
@@ -599,6 +613,176 @@ void tst_QTextToSpeech::sayingWordWithPause()
         QVERIFY(spokenWords.contains(word));
 
     debugHelper.dismiss();
+}
+
+void tst_QTextToSpeech::synthesize_data()
+{
+    QTest::addColumn<QString>("text");
+
+    QTest::addRow("text") << "Let's synthesize some text!";
+}
+
+void tst_QTextToSpeech::synthesize()
+{
+    QFETCH_GLOBAL(QString, engine);
+    if (engine != "mock" && !hasDefaultAudioOutput())
+        QSKIP("No audio device present");
+    if (engine == "android" && QOperatingSystemVersion::current() < QOperatingSystemVersion::Android10)
+        QSKIP("Only testing on recent Android versions");
+
+    QFETCH(QString, text);
+
+    QTextToSpeech tts(engine);
+    if (!(tts.engineCapabilities() & QTextToSpeech::Capability::Synthesize))
+        QSKIP("This engine doesn't support synthesize()");
+
+    connect(&tts, &QTextToSpeech::errorOccurred, this, &tst_QTextToSpeech::onError);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    selectWorkingVoice(&tts);
+
+    QElapsedTimer speechTimer;
+    // We can't assume that synthesis isn't done before we can check, and that we only
+    // have a single change during an event loop cycle, so connect to the signal
+    // and keep track ourselves.
+    bool running = false;
+    bool finished = false;
+    qint64 speechTime = 0;
+    connect(&tts, &QTextToSpeech::stateChanged, [&running, &finished, &speechTimer, &speechTime](QTextToSpeech::State state) {
+        if (state == QTextToSpeech::Synthesizing || state == QTextToSpeech::Speaking) {
+            speechTimer.start();
+            running = true;
+            finished = false;
+        }
+        if (running && state == QTextToSpeech::Ready) {
+            if (!speechTime)
+                speechTime = speechTimer.elapsed();
+            finished = true;
+        }
+    });
+
+    // first, measure how long it takes to speak the text
+    tts.say(text);
+    QTRY_VERIFY(running);
+    QTRY_VERIFY(finished);
+
+    running = false;
+
+    QAudioFormat pcmFormat;
+    QByteArray pcmData;
+
+    connect(&tts, &QTextToSpeech::synthesized,
+            this, [&pcmFormat, &pcmData](const QAudioFormat &format, const QByteArray &bytes) {
+        pcmFormat = format;
+        pcmData += bytes;
+    });
+
+    QElapsedTimer notBlockingTimer;
+    notBlockingTimer.start();
+    tts.synthesize(text);
+    QCOMPARE_LT(notBlockingTimer.elapsed(), 250);
+    QTRY_VERIFY(running);
+    QTRY_VERIFY(finished);
+
+    QVERIFY(pcmFormat.isValid());
+    // bytesForDuration takes micro seconds, we measured in milliseconds.
+    const qint32 bytesExpected = pcmFormat.bytesForDuration(speechTime * 1000);
+
+    // We should have as much data as the format requires for the time it took
+    // to play the speech, +/- 10% as we can't measure the exact audio duration.
+    QCOMPARE_GE(pcmData.size(), double(bytesExpected) * 0.9);
+    if (engine == "flite") // flite is very unreliable
+        QCOMPARE_LT(pcmData.size(), double(bytesExpected) * 1.5);
+    else
+        QCOMPARE_LT(pcmData.size(), double(bytesExpected) * 1.1);
+}
+
+/*!
+    API test for the functor variants of synthesize(), using only the mock
+    engine as the engine implementation is identical to the non-functor
+    version tested above.
+*/
+void tst_QTextToSpeech::synthesizeCallback_data()
+{
+    QTest::addColumn<QString>("text");
+
+    QTest::addRow("one") << "test";
+    QTest::addRow("several") << "this will produce more than one chunk.";
+}
+
+void tst_QTextToSpeech::synthesizeCallback()
+{
+    QFETCH_GLOBAL(QString, engine);
+    if (engine != "mock")
+        QSKIP("Only testing with mock engine");
+
+    QTextToSpeech tts(engine);
+    QVERIFY(tts.engineCapabilities() & QTextToSpeech::Capability::Synthesize);
+
+    QFETCH(QString, text);
+
+    QAudioFormat expectedFormat;
+    QByteArray expectedBytes;
+
+    // record a reference using the already tested synthesized() signal
+    auto connection = connect(&tts, &QTextToSpeech::synthesized,
+            [&expectedFormat, &expectedBytes](const QAudioFormat &format, const QByteArray &bytes){
+        expectedFormat = format;
+        expectedBytes += bytes;
+    });
+    tts.synthesize(text);
+    QTRY_VERIFY(expectedFormat.isValid());
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    tts.disconnect(connection);
+
+    struct Processor : QObject {
+        void process(const QAudioFormat &format, const QByteArray &bytes)
+        {
+            m_format = format;
+            m_allBytes += bytes;
+        }
+        void audioFormatKnown(const QAudioFormat &format)
+        {
+            m_format = format;
+        }
+        void reset()
+        {
+            m_format = {};
+            m_allBytes = {};
+        }
+        QAudioFormat m_format;
+        QByteArray m_allBytes;
+    } processor;
+
+    // Functor without context
+    tts.synthesize(text, [&processor](const QAudioFormat &format, const QByteArray &bytes){
+        processor.m_format = format;
+        processor.m_allBytes += bytes;
+    });
+    QTRY_COMPARE(processor.m_format, expectedFormat);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    QCOMPARE(processor.m_allBytes, expectedBytes);
+    processor.reset();
+    // Functor with context
+    tts.synthesize(text, &tts, [&processor](const QAudioFormat &format, const QByteArray &bytes){
+        processor.m_format = format;
+        processor.m_allBytes += bytes;
+    });
+    QTRY_COMPARE(processor.m_format, expectedFormat);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    QCOMPARE(processor.m_allBytes, expectedBytes);
+    processor.reset();
+    // PMF
+    tts.synthesize(text, &processor, &Processor::process);
+    QTRY_COMPARE(processor.m_format, expectedFormat);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    QCOMPARE(processor.m_allBytes, expectedBytes);
+    processor.reset();
+    // PMF with no QByteArray argument - not very useful, but Qt allows it
+    tts.synthesize(text, &processor, &Processor::audioFormatKnown);
+    QTRY_COMPARE(processor.m_format, expectedFormat);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    QCOMPARE(processor.m_allBytes, QByteArray());
+    processor.reset();
 }
 
 QTEST_MAIN(tst_QTextToSpeech)

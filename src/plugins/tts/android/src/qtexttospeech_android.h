@@ -26,6 +26,7 @@ public:
     QList<QLocale> availableLocales() const override;
     QList<QVoice> availableVoices() const override;
     void say(const QString &text) override;
+    void synthesize(const QString &text) override;
     void stop(QTextToSpeech::BoundaryHint boundaryHint) override;
     void pause(QTextToSpeech::BoundaryHint boundaryHint) override;
     void resume() override;
@@ -48,6 +49,8 @@ public Q_SLOTS:
     void processNotifyError(int reason);
     void processNotifySpeaking();
     void processNotifyRangeStart(int start, int end, int frame);
+    void processNotifyBeginSynthesis(const QAudioFormat &format);
+    void processNotifyAudioAvailable(const QByteArray &bytes);
 
 private:
     void setState(QTextToSpeech::State state);
@@ -59,6 +62,7 @@ private:
     QTextToSpeech::ErrorReason m_errorReason = QTextToSpeech::ErrorReason::Initialization;
     QString m_errorString;
     QString m_text;
+    QAudioFormat m_format;
 };
 
 Q_DECLARE_JNI_CLASS(QtTextToSpeech, "org/qtproject/qt/android/speech/QtTextToSpeech")

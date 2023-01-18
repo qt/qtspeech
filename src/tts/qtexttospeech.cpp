@@ -70,9 +70,13 @@ void QTextToSpeechPrivate::setEngineProvider(const QString &engine, const QVaria
 
     // Connect signals directly from the engine to the public API signals
     if (m_engine) {
-        QObject::connect(m_engine, &QTextToSpeechEngine::stateChanged, q, &QTextToSpeech::stateChanged);
+        QObject::connect(m_engine, &QTextToSpeechEngine::stateChanged,
+                         q, [this](QTextToSpeech::State newState){
+            updateState(newState);
+        });
         QObject::connect(m_engine, &QTextToSpeechEngine::errorOccurred, q, &QTextToSpeech::errorOccurred);
         QObject::connect(m_engine, &QTextToSpeechEngine::sayingWord, q, &QTextToSpeech::sayingWord);
+        QObject::connect(m_engine, &QTextToSpeechEngine::synthesized, q, &QTextToSpeech::synthesized);
     }
 }
 
@@ -137,6 +141,19 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
         obj.insert(QLatin1String("index"), i);
         list.insert(obj.value(QLatin1String("Provider")).toString(), obj);
     }
+}
+
+void QTextToSpeechPrivate::updateState(QTextToSpeech::State newState)
+{
+    Q_Q(QTextToSpeech);
+    if (newState == QTextToSpeech::Ready && m_slotObject) {
+        // If we are done synthesizing and the functor-overload was used,
+        // clear the temporary connection.
+        m_slotObject->destroyIfLastRef();
+        m_slotObject = nullptr;
+        m_engine->disconnect(m_synthesizeConnection);
+    }
+    emit q->stateChanged(newState);
 }
 
 /*!
@@ -209,11 +226,13 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
 
     \brief This enum describes the current state of the text-to-speech engine.
 
-    \value Ready      The synthesizer is ready to start a new text. This is
-                      also the state after a text was finished.
-    \value Speaking   Text is being spoken.
-    \value Paused     The synthesis was paused and can be resumed with \l resume().
-    \value Error      An error has occurred. Details are given by \l errorReason().
+    \value Ready        The synthesizer is ready to start a new text. This is
+                        also the state after a text was finished.
+    \value Speaking     Text is being spoken.
+    \value Synthesizing Text is being synthesized into PCM data. The synthesized()
+                        signal will be emitted with chunks of data.
+    \value Paused       The synthesis was paused and can be resumed with \l resume().
+    \value Error        An error has occurred. Details are given by \l errorReason().
 
     \sa QTextToSpeech::ErrorReason errorReason() errorString()
 */
@@ -382,6 +401,8 @@ QString QTextToSpeech::engine() const
     \value Speak                The engine can play audio output from text.
     \value WordByWordProgress   The engine emits the sayingWord() signal for
                                 each word that gets spoken.
+    \value Synthesize           The engine can \l{synthesize()}{synthesize} PCM
+                                audio data from text.
 
     \sa engineCapabilities()
 */
@@ -585,7 +606,7 @@ QString QTextToSpeech::errorString() const
 */
 
 /*!
-    Starts synthesizing the \a text.
+    Starts speaking the \a text.
 
     This function starts sythesizing the speech asynchronously, and reads the text to the
     default audio output device.
@@ -599,7 +620,7 @@ QString QTextToSpeech::errorString() const
     set to \l Speaking once the reading starts. When the reading is done,
     \l state will be set to \l Ready.
 
-    \sa stop(), pause(), resume()
+    \sa stop(), pause(), resume(), synthesize()
 */
 void QTextToSpeech::say(const QString &text)
 {
@@ -607,6 +628,114 @@ void QTextToSpeech::say(const QString &text)
     if (d->m_engine)
         d->m_engine->say(text);
 }
+
+/*!
+    Synthesizes the \a text into raw audio data.
+    \since 6.6
+
+    This function synthesizes the speech asynchronously into raw audio data.
+    When data is available, the \l synthesized() signal is emitted with the
+    bytes, and the \l {QAudioFormat}{format} that the data is in.
+
+    The \l state property is set to \l Synthesizing when the synthesis starts,
+    and to \l Ready once the synthesis is finished. While synthesizing, the
+    synthesized() signal might be emitted multiple times, possibly with
+    changing values for \c format.
+
+    \sa say(), stop()
+*/
+void QTextToSpeech::synthesize(const QString &text)
+{
+    Q_D(QTextToSpeech);
+    if (d->m_engine)
+        d->m_engine->synthesize(text);
+}
+
+/*!
+    \fn template<typename Functor> void QTextToSpeech::synthesize(
+            const QString &text, Functor functor)
+    \fn template<typename Functor> void QTextToSpeech::synthesize(
+            const QString &text, const QObject *context, Functor functor)
+    \since 6.6
+
+    Synthesizes the \a text into raw audio data.
+
+    This function synthesizes the speech asynchronously into raw audio data.
+    When data is available, the \a functor will be called as
+    \c {functor(const QAudioFormat &format, const QByteArray &bytes)}, with
+    \c format describing the \l {QAudioFormat}{format} of the data in \c bytes.
+
+    The \l state property is set to \l Synthesizing when the synthesis starts,
+    and to \l Ready once the synthesis is finished. While synthesizing, the
+    \a functor might be called multiple times, possibly with changing values
+    for \c format.
+
+    The \a functor can be a callable, like a lambda or free function, with an
+    optional \a context object:
+
+    \code
+    tts.synthesize("Hello world", [](const QAudioFormat &format, const QByteArray &bytes){
+        // process data according to format
+    });
+    \endcode
+
+    or a slot in the \a context object:
+
+    \code
+    struct PCMProcessor : QObject
+    {
+        void processData(const QAudioFormat &format, const QByteArray &bytes)
+        {
+            // process data according to format
+        }
+    } processor;
+    tts.synthesize("Hello world", &processor, &PCMProcessor::processData);
+    \endcode
+
+    If \a context is destroyed, then the \a functor will no longer get called.
+
+    \note This API requires that the engine has the
+    \l {QTextToSpeech::Capability::}{Synthesize} capability.
+
+    \sa say(), stop()
+*/
+
+/*!
+    \internal
+
+    Handles the engine's synthesized() signal to call \a slotObj on the \a context
+    object. The slot object and the temporary connection are stored and released
+    in updateState() when the state of the engine transitions back to Ready.
+*/
+void QTextToSpeech::synthesizeImpl(const QString &text,
+                                   QtPrivate::QSlotObjectBase *slotObj, const QObject *context)
+{
+    Q_D(QTextToSpeech);
+    Q_ASSERT(slotObj);
+    d->m_slotObject = slotObj;
+    const auto receive = [d, context](const QAudioFormat &format, const QByteArray &bytes){
+        Q_ASSERT(d->m_slotObject);
+        void *args[] = {nullptr,
+                        const_cast<QAudioFormat *>(&format),
+                        const_cast<QByteArray *>(&bytes)};
+        d->m_slotObject->call(const_cast<QObject *>(context), args);
+    };
+    d->m_synthesizeConnection = connect(d->m_engine, &QTextToSpeechEngine::synthesized,
+                                        context ? context : this, receive);
+    synthesize(text);
+}
+
+/*!
+    \fn void QTextToSpeech::synthesized(const QAudioFormat &format, const QByteArray &data)
+
+    This signal is emitted when pcm \a data is available. The data is encoded in \a format.
+    A single call to \l synthesize() might result in several emissions of this signal.
+
+    \note This signal requires that the engine has the
+    \l {QTextToSpeech::Capability::}{Synthesize} capability.
+
+    \sa synthesize()
+*/
 
 /*!
     \qmlmethod TextToSpeech::stop(BoundaryHint boundaryHint)

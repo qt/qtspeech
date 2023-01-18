@@ -173,7 +173,7 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
 bool AudioSource::atEnd() const
 {
     // not done as long as QIODevice's buffer is not empty
-    if (!QIODevice::atEnd())
+    if (!QIODevice::atEnd() && QIODevice::bytesAvailable())
         return false;
 
     // If we get here, bytesAvailable() has returned 0, so our buffers are
@@ -279,8 +279,8 @@ HRESULT AudioSource::Invoke(IAsyncOperation<SpeechSynthesisStream*> *operation, 
 
     // we are buffered, but we don't want QIODevice to buffer as well
     open(QIODevice::ReadOnly|QIODevice::Unbuffered);
-    fetchMore();
     emit streamReady(audioFormat);
+    fetchMore();
     return S_OK;
 }
 

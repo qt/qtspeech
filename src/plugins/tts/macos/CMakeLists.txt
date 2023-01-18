@@ -12,4 +12,5 @@ qt_internal_add_plugin(QTextToSpeechMacOSPlugin
         Qt::Core
         Qt::Gui
         Qt::TextToSpeech
+        Qt::Multimedia
 )

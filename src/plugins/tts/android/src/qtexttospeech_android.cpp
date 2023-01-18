@@ -67,6 +67,58 @@ static void notifyRangeStart(JNIEnv *env, jobject thiz, jlong id, jint start, ji
 }
 Q_DECLARE_JNI_NATIVE_METHOD(notifyRangeStart)
 
+static void notifyBeginSynthesis(JNIEnv *env, jobject thiz, jlong id, int sampleRateInHz, int audioFormat, int channelCount)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thiz);
+
+    QTextToSpeechEngineAndroid *const tts = (*textToSpeechMap)[id];
+    if (!tts)
+        return;
+
+    QAudioFormat format;
+    format.setSampleRate(sampleRateInHz);
+    format.setSampleFormat(QAudioFormat::SampleFormat(audioFormat));
+    format.setChannelCount(channelCount);
+
+    QMetaObject::invokeMethod(tts, "processNotifyBeginSynthesis", Qt::AutoConnection,
+        Q_ARG(QAudioFormat, format));
+}
+Q_DECLARE_JNI_NATIVE_METHOD(notifyBeginSynthesis)
+
+static void notifyAudioAvailable(JNIEnv *env, jobject thiz, jlong id, jbyteArray bytes)
+{
+    Q_UNUSED(thiz);
+
+    QTextToSpeechEngineAndroid *const tts = (*textToSpeechMap)[id];
+    if (!tts)
+        return;
+
+    const auto sz = env->GetArrayLength(bytes);
+    QByteArray byteArray(sz, Qt::Initialization::Uninitialized);
+    env->GetByteArrayRegion(bytes, 0, sz, reinterpret_cast<jbyte *>(byteArray.data()));
+
+    QMetaObject::invokeMethod(tts, "processNotifyAudioAvailable", Qt::AutoConnection,
+        Q_ARG(QByteArray, byteArray));
+}
+Q_DECLARE_JNI_NATIVE_METHOD(notifyAudioAvailable)
+
+static void notifyEndSynthesis(JNIEnv *env, jobject thiz, jlong id)
+{
+    Q_UNUSED(env);
+    Q_UNUSED(thiz);
+
+    QTextToSpeechEngineAndroid *const tts = (*textToSpeechMap)[id];
+    if (!tts)
+        return;
+
+    // Queued so that pending processNotifyAudioAvailable
+    // invocations get processed first.
+    QMetaObject::invokeMethod(tts, "processNotifyReady", Qt::QueuedConnection);
+}
+Q_DECLARE_JNI_NATIVE_METHOD(notifyEndSynthesis)
+
+
 Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
 {
     static bool initialized = false;
@@ -95,6 +147,9 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
             Q_JNI_NATIVE_METHOD(notifyReady),
             Q_JNI_NATIVE_METHOD(notifySpeaking),
             Q_JNI_NATIVE_METHOD(notifyRangeStart),
+            Q_JNI_NATIVE_METHOD(notifyBeginSynthesis),
+            Q_JNI_NATIVE_METHOD(notifyAudioAvailable),
+            Q_JNI_NATIVE_METHOD(notifyEndSynthesis),
         })) {
             return JNI_ERR;
         }
@@ -132,6 +187,28 @@ void QTextToSpeechEngineAndroid::say(const QString &text)
 
     m_text = text;
     m_speech.callMethod<void>("say", QJniObject::fromString(m_text).object<jstring>());
+}
+
+void QTextToSpeechEngineAndroid::synthesize(const QString &text)
+{
+    if (text.isEmpty())
+        return;
+
+    m_errorReason = QTextToSpeech::ErrorReason::NoError;
+    m_text = text;
+    m_speech.callMethod<int>("synthesize", QJniObject::fromString(m_text).object<jstring>());
+}
+
+void QTextToSpeechEngineAndroid::processNotifyBeginSynthesis(const QAudioFormat &format)
+{
+    m_format = format;
+    setState(QTextToSpeech::Synthesizing);
+}
+
+void QTextToSpeechEngineAndroid::processNotifyAudioAvailable(const QByteArray &bytes)
+{
+    Q_ASSERT(m_format.isValid());
+    emit synthesized(m_format, bytes);
 }
 
 QTextToSpeech::State QTextToSpeechEngineAndroid::state() const
@@ -179,6 +256,8 @@ void QTextToSpeechEngineAndroid::setError(QTextToSpeech::ErrorReason reason, con
 
 void QTextToSpeechEngineAndroid::processNotifyReady()
 {
+    if (m_state == QTextToSpeech::Synthesizing)
+        m_format = {};
     if (m_state != QTextToSpeech::Paused)
         setState(QTextToSpeech::Ready);
 }
@@ -232,6 +311,7 @@ void QTextToSpeechEngineAndroid::stop(QTextToSpeech::BoundaryHint boundaryHint)
 
     m_speech.callMethod<void>("stop");
     setState(QTextToSpeech::Ready);
+    m_format = {};
 }
 
 void QTextToSpeechEngineAndroid::pause(QTextToSpeech::BoundaryHint boundaryHint)

@@ -11,6 +11,7 @@ qt_internal_add_plugin(QTextToSpeechEngineAndroid
         Qt::Core
         Qt::CorePrivate
         Qt::TextToSpeech
+        Qt::Multimedia
 )
 
 add_dependencies(QTextToSpeechEngineAndroid QtAndroidTextToSpeech)

@@ -33,6 +33,8 @@ QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(const QVariantMap &parameters
             &QTextToSpeechEngineFlite::setError);
     connect(m_processor.get(), &QTextToSpeechProcessorFlite::sayingWord, this,
             &QTextToSpeechEngine::sayingWord);
+    connect(m_processor.get(), &QTextToSpeechProcessorFlite::synthesized, this,
+            &QTextToSpeechEngine::synthesized);
 
     // Read voices from processor before moving it to a separate thread
     const QList<QTextToSpeechProcessorFlite::VoiceInfo> voices = m_processor->voices();
@@ -79,6 +81,13 @@ QList<QVoice> QTextToSpeechEngineFlite::availableVoices() const
 void QTextToSpeechEngineFlite::say(const QString &text)
 {
     QMetaObject::invokeMethod(m_processor.get(), "say", Qt::QueuedConnection, Q_ARG(QString, text),
+                              Q_ARG(int, voiceData(voice()).toInt()), Q_ARG(double, pitch()),
+                              Q_ARG(double, rate()), Q_ARG(double, volume()));
+}
+
+void QTextToSpeechEngineFlite::synthesize(const QString &text)
+{
+    QMetaObject::invokeMethod(m_processor.get(), "synthesize", Qt::QueuedConnection, Q_ARG(QString, text),
                               Q_ARG(int, voiceData(voice()).toInt()), Q_ARG(double, pitch()),
                               Q_ARG(double, rate()), Q_ARG(double, volume()));
 }

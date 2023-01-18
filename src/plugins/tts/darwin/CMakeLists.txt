@@ -13,5 +13,6 @@ qt_internal_add_plugin(QTextToSpeechDarwinPlugin
         Qt::Core
         Qt::Gui
         Qt::TextToSpeech
+        Qt::Multimedia
         ${FWAVFoundation}
 )

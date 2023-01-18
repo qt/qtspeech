@@ -40,6 +40,7 @@ public:
 private:
     bool loadMeta();
     void loadPlugin();
+    void updateState(QTextToSpeech::State newState);
     static void loadPluginMetadata(QMultiHash<QString, QCborMap> &list);
     QTextToSpeech *q_ptr;
     QTextToSpeechPlugin *m_plugin = nullptr;
@@ -47,6 +48,8 @@ private:
     QString m_providerName;
     QCborMap m_metaData;
     static QMutex m_mutex;
+    QMetaObject::Connection m_synthesizeConnection;
+    QtPrivate::QSlotObjectBase *m_slotObject = nullptr;
 };
 
 QT_END_NAMESPACE

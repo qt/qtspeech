@@ -69,6 +69,19 @@ void QTextToSpeechEngineMock::say(const QString &text)
     emit stateChanged(m_state);
 }
 
+void QTextToSpeechEngineMock::synthesize(const QString &text)
+{
+    m_text = text;
+    m_currentIndex = 0;
+    m_timer.start(wordTime(), Qt::PreciseTimer, this);
+    m_state = QTextToSpeech::Synthesizing;
+    emit stateChanged(m_state);
+
+    m_format.setSampleRate(22050);
+    m_format.setChannelConfig(QAudioFormat::ChannelConfigMono);
+    m_format.setSampleFormat(QAudioFormat::Int16);
+}
+
 void QTextToSpeechEngineMock::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
     Q_UNUSED(boundaryHint);
@@ -112,7 +125,7 @@ void QTextToSpeechEngineMock::timerEvent(QTimerEvent *e)
         return;
     }
 
-    Q_ASSERT(m_state == QTextToSpeech::Speaking);
+    Q_ASSERT(m_state == QTextToSpeech::Speaking || m_state == QTextToSpeech::Synthesizing);
     Q_ASSERT(m_text.length());
 
     // Find start of next word, skipping punctuations. This is good enough for testing.
@@ -123,6 +136,8 @@ void QTextToSpeechEngineMock::timerEvent(QTimerEvent *e)
     const QString word = m_text.sliced(m_currentIndex, nextSpace - m_currentIndex);
     sayingWord(m_currentIndex, nextSpace - m_currentIndex);
     m_currentIndex = nextSpace + match.captured().length();
+
+    emit synthesized(m_format, QByteArray(m_format.bytesForDuration(wordTime() * 1000), 0));
 
     if (m_currentIndex >= m_text.length()) {
         // done speaking all words

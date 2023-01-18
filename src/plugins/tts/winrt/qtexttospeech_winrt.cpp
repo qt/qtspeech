@@ -472,6 +472,51 @@ void QTextToSpeechEngineWinRT::say(const QString &text)
     });
 }
 
+void QTextToSpeechEngineWinRT::synthesize(const QString &text)
+{
+    Q_D(QTextToSpeechEngineWinRT);
+
+    HRESULT hr = S_OK;
+
+    HStringReference nativeText(reinterpret_cast<LPCWSTR>(text.utf16()), text.length());
+
+    ComPtr<IAsyncOperation<SpeechSynthesisStream*>> synthOperation;
+    hr = d->synth->SynthesizeTextToStreamAsync(nativeText.Get(), &synthOperation);
+    if (!SUCCEEDED(hr)) {
+        d->setError(QTextToSpeech::ErrorReason::Input,
+                    QCoreApplication::translate("QTextToSpeech", "Speech synthesizing failure."));
+        return;
+    }
+
+    // The source will wait for the the data resulting out of the synthOperation, and emits
+    // streamReady when data is available. This starts a QAudioSink, which pulls the data.
+    d->audioSource.Attach(new AudioSource(synthOperation));
+
+    connect(d->audioSource.Get(), &AudioSource::streamReady, this, [d, this](const QAudioFormat &format){
+        if (d->state != QTextToSpeech::Synthesizing) {
+            d->state = QTextToSpeech::Synthesizing;
+            emit stateChanged(d->state);
+        }
+    });
+    connect(d->audioSource.Get(), &AudioSource::readyRead, this, [d, this](){
+        Q_ASSERT(d->state == QTextToSpeech::Synthesizing);
+        const QByteArray data = d->audioSource->read(d->audioSource->bytesAvailable());
+        emit synthesized(d->audioSource->format(), data);
+        if (d->audioSource->atEnd())
+            d->audioSource->close();
+    });
+    connect(d->audioSource.Get(), &AudioSource::aboutToClose, this, [d, this]{
+        if (d->state != QTextToSpeech::Ready) {
+            d->state = QTextToSpeech::Ready;
+            emit stateChanged(d->state);
+        }
+    });
+    connect(d->audioSource.Get(), &AudioSource::errorInStream, this, [d]{
+        d->setError(QTextToSpeech::ErrorReason::Input,
+                    QCoreApplication::translate("QTextToSpeech", "Error synthesizing audio stream."));
+    });
+}
+
 void QTextToSpeechEngineWinRT::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
     Q_UNUSED(boundaryHint);

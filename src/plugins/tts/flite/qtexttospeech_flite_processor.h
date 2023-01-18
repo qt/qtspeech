@@ -44,6 +44,7 @@ public:
     };
 
     Q_INVOKABLE void say(const QString &text, int voiceId, double pitch, double rate, double volume);
+    Q_INVOKABLE void synthesize(const QString &text, int voiceId, double pitch, double rate, double volume);
     Q_INVOKABLE void pause();
     Q_INVOKABLE void resume();
     Q_INVOKABLE void stop();
@@ -52,16 +53,18 @@ public:
     static constexpr QTextToSpeech::State audioStateToTts(QAudio::State audioState);
 
 private:
-    // Process a single text
-    void processText(const QString &text, int voiceId, double pitch, double rate);
-
     // Flite callbacks
-    static int fliteOutputCb(const cst_wave *w, int start, int size,
+    static int audioOutputCb(const cst_wave *w, int start, int size,
+                             int last, cst_audio_streaming_info *asi);
+    static int dataOutputCb(const cst_wave *w, int start, int size,
                             int last, cst_audio_streaming_info *asi);
-    int fliteOutput(const cst_wave *w, int start, int size,
-                    int last, cst_audio_streaming_info *asi);
 
-    bool audioOutput(const char *data, qint64 dataSize, QString &errorString);
+    using OutputHandler = decltype(QTextToSpeechProcessorFlite::audioOutputCb);
+    // Process a single text
+    void processText(const QString &text, int voiceId, double pitch, double rate, OutputHandler outputHandler);
+    int audioOutput(const cst_wave *w, int start, int size, int last, cst_audio_streaming_info *asi);
+    int dataOutput(const cst_wave *w, int start, int size, int last, cst_audio_streaming_info *asi);
+
     void setRateForVoice(cst_voice *voice, float rate);
     void setPitchForVoice(cst_voice *voice, float pitch);
 
@@ -85,6 +88,7 @@ Q_SIGNALS:
     void errorOccurred(QTextToSpeech::ErrorReason error, const QString &errorString);
     void stateChanged(QTextToSpeech::State);
     void sayingWord(qsizetype begin, qsizetype length);
+    void synthesized(const QAudioFormat &format, const QByteArray &array);
 
 protected:
     void timerEvent(QTimerEvent *event) override;
