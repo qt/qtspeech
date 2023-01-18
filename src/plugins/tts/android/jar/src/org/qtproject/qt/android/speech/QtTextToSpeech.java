@@ -15,7 +15,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import java.lang.Float;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.List;
 import java.util.ArrayList;
@@ -23,6 +22,8 @@ import java.util.Set;
 
 public class QtTextToSpeech
 {
+    private static final String UTTERANCE_ID = "UtteranceId";
+
     // Native callback functions
     native public void notifyError(long id, long reason);
     native public void notifyReady(long id);
@@ -35,7 +36,7 @@ public class QtTextToSpeech
     private float mRate = 1.0f;
     private float mVolume = 1.0f;
 
-    private String TAG = "QtTextToSpeech";
+    private static final String TAG = "QtTextToSpeech";
     // OnInitListener
     private final OnInitListener mTtsChangeListener = new OnInitListener() {
         @Override
@@ -58,23 +59,31 @@ public class QtTextToSpeech
         @Override
         public void onDone(String utteranceId) {
             Log.d(utteranceTAG, "onDone");
-            if (utteranceId.equals("UtteranceId")) {
+            if (utteranceId.equals(UTTERANCE_ID)) {
                 notifyReady(mId);
             }
         }
 
         @Override
         public void onError(String utteranceId) {
+            onError(utteranceId, TextToSpeech.ERROR);
+        }
+
+        @Override
+        public void onError(String utteranceId, int errorCode) {
             Log.w(utteranceTAG, "onError");
-            if (utteranceId.equals("UtteranceId")) {
-                notifyError(mId, 4);  // QTextToSpeech::ErrorReason::Playback
+            if (utteranceId.equals(UTTERANCE_ID)) {
+                switch (errorCode) {
+                default:
+                    notifyError(mId, 4);  // QTextToSpeech::ErrorReason::Playback
+                }
             }
         }
 
         @Override
         public void onStart(String utteranceId) {
             Log.d(utteranceTAG, "onStart");
-            if (utteranceId.equals("UtteranceId")) {
+            if (utteranceId.equals(UTTERANCE_ID)) {
                 notifySpeaking(mId);
             }
         }
@@ -112,10 +121,9 @@ public class QtTextToSpeech
         Log.d(TAG, "TTS say(): " + text);
         int result = -1;
 
-        HashMap<String, String> map = new HashMap<String, String>();
-        map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "UtteranceId");
-        map.put(TextToSpeech.Engine.KEY_PARAM_VOLUME, Float.toString(mVolume));
-        result = mTts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
+        Bundle params = new Bundle();
+        params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, mVolume);
+        result = mTts.speak(text, TextToSpeech.QUEUE_FLUSH, params, UTTERANCE_ID);
 
         Log.d(TAG, "TTS say() result: " + Integer.toString(result));
         if (result == TextToSpeech.ERROR)
