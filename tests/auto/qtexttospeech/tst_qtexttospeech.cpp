@@ -344,7 +344,7 @@ void tst_QTextToSpeech::pauseResume()
     if (engine != "mock" && !hasDefaultAudioOutput())
         QSKIP("No audio device present");
     if (engine == "macos" || engine == "speechd")
-        QSKIP("", "Native speech engine is faulty", Continue);
+        QSKIP("Native speech engine is faulty");
 
     const QString text = QStringLiteral("Hello. World.");
     QTextToSpeech tts(engine);
