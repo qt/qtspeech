@@ -71,7 +71,7 @@ void QTextToSpeechEngineMock::stop(QTextToSpeech::BoundaryHint boundaryHint)
     if (m_state == QTextToSpeech::Ready || m_state == QTextToSpeech::Error)
         return;
 
-    Q_ASSERT(m_timer.isActive());
+    Q_ASSERT(m_state == QTextToSpeech::Paused || m_timer.isActive());
     // finish immediately
     m_words.clear();
     m_timer.stop();
