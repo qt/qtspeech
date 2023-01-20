@@ -44,6 +44,7 @@ ApplicationWindow {
 
         TextArea {
             id: input
+            wrapMode: TextEdit.WordWrap
             text: qsTr("Hello, world!")
             Layout.fillWidth: true
             Layout.minimumHeight: implicitHeight
