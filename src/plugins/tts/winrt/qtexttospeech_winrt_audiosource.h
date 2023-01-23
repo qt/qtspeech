@@ -9,6 +9,7 @@
 
 #include <robuffer.h>
 #include <winrt/base.h>
+#include <QtCore/private/qfactorycacheregistration_p.h>
 #include <windows.foundation.h>
 #include <windows.media.speechsynthesis.h>
 #include <windows.storage.streams.h>

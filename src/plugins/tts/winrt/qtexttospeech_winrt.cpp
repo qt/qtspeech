@@ -12,6 +12,7 @@
 #include <QtCore/private/qfunctions_winrt_p.h>
 
 #include <winrt/base.h>
+#include <QtCore/private/qfactorycacheregistration_p.h>
 #include <windows.foundation.h>
 #include <windows.foundation.collections.h>
 #include <windows.media.speechsynthesis.h>
