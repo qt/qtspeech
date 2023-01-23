@@ -9,15 +9,6 @@
 #include <QtCore/private/qfunctions_winrt_p.h>
 #include <QtCore/private/qsystemerror_p.h>
 
-#include <robuffer.h>
-#include <winrt/base.h>
-#include <windows.foundation.h>
-#include <windows.media.speechsynthesis.h>
-#include <windows.storage.streams.h>
-
-#include <wrl.h>
-
-
 using namespace ABI::Windows::Foundation;
 using namespace ABI::Windows::Media::SpeechSynthesis;
 using namespace ABI::Windows::Storage::Streams;
