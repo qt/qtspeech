@@ -84,7 +84,7 @@ void MainWindow::engineSelected(int index)
     for (const QLocale &locale : locales) {
         QString name(QString("%1 (%2)")
                      .arg(QLocale::languageToString(locale.language()))
-                     .arg(QLocale::countryToString(locale.country())));
+                     .arg(QLocale::territoryToString(locale.territory())));
         QVariant localeVariant(locale);
         ui.language->addItem(name, localeVariant);
         if (locale.name() == current.name())
