@@ -29,6 +29,8 @@ private slots:
     void initTestCase_data();
     void init();
 
+    void capabilities();
+
     void availableVoices();
     void availableLocales();
 
@@ -110,6 +112,26 @@ void tst_QTextToSpeech::init()
         QTextToSpeech tts(engine);
         if (!tts.availableLocales().size())
             QSKIP("iOS engine is not functional on macOS <= 10.14");
+    }
+}
+
+void tst_QTextToSpeech::capabilities()
+{
+    QFETCH_GLOBAL(QString, engine);
+
+    QTextToSpeech tts(engine);
+    QVERIFY(tts.engineCapabilities() & QTextToSpeech::Capability::Speak);
+
+    // verify that the mock engine implements all capabilities
+    if (engine == "mock") {
+        const QMetaEnum capEnum = QMetaEnum::fromType<QTextToSpeech::Capabilities>();
+        QTextToSpeech::Capabilities mockCaps = QTextToSpeech::Capability::None;
+        for (int index = 0; index < capEnum.keyCount(); ++index) {
+            int value = capEnum.keyToValue(capEnum.key(index));
+            mockCaps |= QTextToSpeech::Capability(value);
+        }
+
+        QCOMPARE(tts.engineCapabilities(), mockCaps);
     }
 }
 

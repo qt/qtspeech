@@ -3,5 +3,7 @@
     "Provider": "mock",
     "Version": 100,
     "Priority": -1,
-    "Features": []
+    "Capabilities": [
+        "Speak"
+    ]
 }

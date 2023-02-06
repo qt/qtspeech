@@ -27,6 +27,7 @@ class Q_TEXTTOSPEECH_EXPORT QTextToSpeech : public QObject
     Q_PROPERTY(double pitch READ pitch WRITE setPitch NOTIFY pitchChanged)
     Q_PROPERTY(QLocale locale READ locale WRITE setLocale NOTIFY localeChanged)
     Q_PROPERTY(QVoice voice READ voice WRITE setVoice NOTIFY voiceChanged)
+    Q_PROPERTY(Capabilities engineCapabilities READ engineCapabilities NOTIFY engineChanged)
     Q_DECLARE_PRIVATE(QTextToSpeech)
 public:
     enum State {
@@ -54,6 +55,13 @@ public:
     };
     Q_ENUM(BoundaryHint)
 
+    enum class Capability {
+        None                = 0,
+        Speak               = 1 << 0,
+    };
+    Q_DECLARE_FLAGS(Capabilities, Capability)
+    Q_FLAG(Capabilities)
+
     explicit QTextToSpeech(QObject *parent = nullptr);
     explicit QTextToSpeech(const QString &engine, QObject *parent = nullptr);
     explicit QTextToSpeech(const QString &engine, const QVariantMap &params,
@@ -62,6 +70,7 @@ public:
 
     Q_INVOKABLE bool setEngine(const QString &engine, const QVariantMap &params = QVariantMap());
     QString engine() const;
+    QTextToSpeech::Capabilities engineCapabilities() const;
 
     QTextToSpeech::State state() const;
     Q_INVOKABLE QTextToSpeech::ErrorReason errorReason() const;
@@ -105,6 +114,7 @@ Q_SIGNALS:
 private:
     Q_DISABLE_COPY(QTextToSpeech)
 };
+Q_DECLARE_OPERATORS_FOR_FLAGS(QTextToSpeech::Capabilities)
 
 QT_END_NAMESPACE
 

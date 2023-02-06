@@ -3,5 +3,7 @@
     "Provider": "android",
     "Version": 100,
     "Priority": 100,
-    "Features": []
+    "Capabilities": [
+        "Speak"
+    ]
 }

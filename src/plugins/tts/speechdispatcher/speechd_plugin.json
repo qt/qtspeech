@@ -3,5 +3,7 @@
     "Provider": "speechd",
     "Version": 100,
     "Priority": 80,
-    "Features": []
+    "Capabilities": [
+        "Speak"
+    ]
 }

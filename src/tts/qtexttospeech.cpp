@@ -2,12 +2,11 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only
 
 
-
 #include "qtexttospeech.h"
 #include "qtexttospeech_p.h"
 
-#include <qdebug.h>
-
+#include <QtCore/qcborarray.h>
+#include <QtCore/qdebug.h>
 #include <QtCore/private/qfactoryloader_p.h>
 
 QT_BEGIN_NAMESPACE
@@ -346,6 +345,62 @@ QString QTextToSpeech::engine() const
 {
     Q_D(const QTextToSpeech);
     return d->m_providerName;
+}
+
+/*!
+    \enum QTextToSpeech::Capability
+
+    \brief This enum describes the capabilities of a text-to-speech engine.
+
+    \value None                 The engine implements none of the capabilities.
+    \value Speak                The engine can play audio output from text.
+
+    \sa engineCapabilities()
+*/
+
+/*!
+    \qmlproperty enumeration TextToSpeech::engineCapabilities
+    \brief This property holds the capabilities implemented by the current engine.
+
+    \sa engine, QTextToSpeech::Capability
+*/
+
+/*!
+    \property QTextToSpeech::engineCapabilities
+    \brief the capabilities implemented by the current engine
+
+    \sa engine
+*/
+QTextToSpeech::Capabilities QTextToSpeech::engineCapabilities() const
+{
+    Q_D(const QTextToSpeech);
+
+    QTextToSpeech::Capabilities caps = QTextToSpeech::Capability::None;
+    if (d->m_providerName.isEmpty()) {
+        qCritical() << "No engine set.";
+        return caps;
+    }
+
+    const QMetaEnum capEnum = QMetaEnum::fromType<QTextToSpeech::Capabilities>();
+    const auto plugin = QTextToSpeechPrivate::plugins().value(d->m_providerName);
+    const auto capNames = plugin.value(QStringLiteral("Capabilities")).toArray();
+
+    // compatibility: plugins that don't set Features can only speak
+    if (capNames.isEmpty())
+        caps |= QTextToSpeech::Capability::Speak;
+
+    for (const auto capName : capNames) {
+        const auto capString = capName.toString().toUtf8();
+        bool ok = false;
+        const QTextToSpeech::Capability capFlag = QTextToSpeech::Capability(capEnum.keyToValue(capString, &ok));
+        if (!ok) {
+            qWarning("Unknown capability: '%s' doesn't map to any QTextToSpeech::Capability value",
+                     capString.constData());
+        } else {
+            caps |= capFlag;
+        }
+    }
+    return caps;
 }
 
 /*!
