@@ -153,6 +153,9 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
     of available voices on most platforms. Then use one of the available voices in
     a call to \l setVoice().
 
+    Not every engine supports all features. Use the engineCapabilities() function to
+    test which features are available, and adjust the usage of the class accordingly.
+
     \note Which locales and voices the engine supports depends usually on the Operating
     System configuration. E.g. on macOS, end users can install voices through the
     \e Accessibility panel in \e{System Preferences}.
@@ -172,6 +175,9 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
     is in, and for the accent of the desired voice output. This will change the list
     of available voices on most platforms. Then use one of the available voices in
     the \l voice property.
+
+    Not every engine supports all features. Use the engineCapabilities() function to
+    test which features are available, and adjust the usage of the type accordingly.
 
     \note Which locales and voices the engine supports depends usually on the Operating
     System configuration. E.g. on macOS, end users can install voices through the
