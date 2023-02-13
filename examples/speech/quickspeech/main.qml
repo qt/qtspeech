@@ -13,12 +13,15 @@ ApplicationWindow {
     minimumWidth: inputForm.implicitWidth
     minimumHeight: inputForm.implicitHeight + footer.implicitHeight
 
+//! [initialize]
     TextToSpeech {
         id: tts
         volume: volumeSlider.value
         pitch: pitchSlider.value
         rate: rateSlider.value
+//! [initialize]
 
+//! [stateChanged]
         onStateChanged: (state) => {
             switch (state) {
                 case TextToSpeech.Ready:
@@ -35,6 +38,13 @@ ApplicationWindow {
                     break
             }
         }
+//! [stateChanged]
+
+//! [sayingWord]
+        onSayingWord: (start, length)=> {
+            input.select(start, start + length)
+        }
+//! [sayingWord]
     }
 
     ColumnLayout {
@@ -49,26 +59,34 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.minimumHeight: implicitHeight
         }
+//! [say0]
         RowLayout {
             Button {
                 text: qsTr("Speak")
                 enabled: [TextToSpeech.Paused, TextToSpeech.Ready].includes(tts.state)
                 onClicked: {
+//! [say0]
                     let voices = tts.availableVoices()
                     tts.voice = voices[voicesComboBox.currentIndex]
+//! [say1]
                     tts.say(input.text)
                 }
             }
+//! [say1]
+//! [pause]
             Button {
                 text: qsTr("Pause")
                 enabled: tts.state == TextToSpeech.Speaking
                 onClicked: tts.pause()
             }
+//! [pause]
+//! [resume]
             Button {
                 text: qsTr("Resume")
                 enabled: tts.state == TextToSpeech.Paused
                 onClicked: tts.resume()
             }
+//! [resume]
             Button {
                 text: qsTr("Stop")
                 enabled: [TextToSpeech.Speaking, TextToSpeech.Paused].includes(tts.state)

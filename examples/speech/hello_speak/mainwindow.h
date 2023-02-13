@@ -19,9 +19,6 @@ public:
     MainWindow(QWidget *parent = 0);
 
 public slots:
-    void speak();
-    void stop();
-
     void setRate(int);
     void setPitch(int);
     void setVolume(int volume);
