@@ -7,8 +7,7 @@
 #include <QLoggingCategory>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent),
-    m_speech(nullptr)
+    : QMainWindow(parent), m_speech(nullptr)
 {
     ui.setupUi(this);
     QLoggingCategory::setFilterRules(QStringLiteral("qt.speech.tts=true \n qt.speech.tts.*=true"));
@@ -21,20 +20,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui.engine->setCurrentIndex(0);
     engineSelected(0);
 
-    connect(ui.speakButton, &QPushButton::clicked, this, &MainWindow::speak);
     connect(ui.pitch, &QSlider::valueChanged, this, &MainWindow::setPitch);
     connect(ui.rate, &QSlider::valueChanged, this, &MainWindow::setRate);
     connect(ui.volume, &QSlider::valueChanged, this, &MainWindow::setVolume);
     connect(ui.engine, &QComboBox::currentIndexChanged, this, &MainWindow::engineSelected);
-}
-
-void MainWindow::speak()
-{
-    m_speech->say(ui.plainTextEdit->toPlainText());
-}
-void MainWindow::stop()
-{
-    m_speech->stop();
 }
 
 void MainWindow::setRate(int rate)
@@ -52,6 +41,7 @@ void MainWindow::setVolume(int volume)
     m_speech->setVolume(volume / 100.0);
 }
 
+//! [stateChanged]
 void MainWindow::stateChanged(QTextToSpeech::State state)
 {
     if (state == QTextToSpeech::Speaking) {
@@ -67,6 +57,7 @@ void MainWindow::stateChanged(QTextToSpeech::State state)
     ui.resumeButton->setEnabled(state == QTextToSpeech::Paused);
     ui.stopButton->setEnabled(state == QTextToSpeech::Speaking || state == QTextToSpeech::Paused);
 }
+//! [stateChanged]
 
 void MainWindow::engineSelected(int index)
 {
@@ -93,9 +84,24 @@ void MainWindow::engineSelected(int index)
     setRate(ui.rate->value());
     setPitch(ui.pitch->value());
     setVolume(ui.volume->value());
-    connect(ui.stopButton, &QPushButton::clicked, m_speech, [this]{ m_speech->stop(); });
-    connect(ui.pauseButton, &QPushButton::clicked, m_speech, [this]{ m_speech->pause(); });
+//! [say]
+    connect(ui.speakButton, &QPushButton::clicked, m_speech, [this]{
+        m_speech->say(ui.plainTextEdit->toPlainText());
+    });
+//! [say]
+//! [stop]
+    connect(ui.stopButton, &QPushButton::clicked, m_speech, [this]{
+        m_speech->stop();
+    });
+//! [stop]
+//! [pause]
+    connect(ui.pauseButton, &QPushButton::clicked, m_speech, [this]{
+        m_speech->pause();
+    });
+//! [pause]
+//! [resume]
     connect(ui.resumeButton, &QPushButton::clicked, m_speech, &QTextToSpeech::resume);
+//! [resume]
 
     connect(m_speech, &QTextToSpeech::stateChanged, this, &MainWindow::stateChanged);
     connect(m_speech, &QTextToSpeech::localeChanged, this, &MainWindow::localeChanged);

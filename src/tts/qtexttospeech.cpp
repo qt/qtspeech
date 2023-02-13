@@ -144,8 +144,15 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
     \brief The QTextToSpeech class provides a convenient access to text-to-speech engines.
     \inmodule QtTextToSpeech
 
-    Use \l say() to start synthesizing text, and \l stop(), \l pause(), and \l resume()
-    to control the reading of the text.
+    Use \l say() to start reading text to the default audio device, and
+    \l stop(), \l pause(), and \l resume() to control the reading of the text.
+
+    \snippet hello_speak/mainwindow.cpp say
+    \snippet hello_speak/mainwindow.cpp stop
+    \snippet hello_speak/mainwindow.cpp pause
+    \snippet hello_speak/mainwindow.cpp resume
+
+    To synthesize text into PCM data for further processing, use synthesize().
 
     The list of voices the engine supports for the current language is returned by
     \l availableVoices(). Change the language using \l setLocale(), using one of the
@@ -164,8 +171,20 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
     \inqmlmodule QtTextToSpeech
     \brief The TextToSpeech type provides access to text-to-speech engines.
 
-    Use \l say() to start synthesizing text, and \l stop(), \l pause(), and \l resume()
-    to control the reading of the text.
+    Use \l say() to start reading text to the default audio device, and
+    \l stop(), \l pause(), and \l resume() to control the reading of the text.
+
+    \snippet quickspeech/main.qml initialize
+    \codeline
+    \dots
+    \codeline
+    \snippet quickspeech/main.qml say0
+    \snippet quickspeech/main.qml say1
+    \snippet quickspeech/main.qml pause
+    \snippet quickspeech/main.qml resume
+    \dots
+
+    To synthesize text into PCM data for further processing, use synthesize().
 
     The list of voices the engine supports for the current language is returned by
     \l availableVoices(). Change the language using the \l locale property, using one
@@ -369,11 +388,15 @@ QStringList QTextToSpeech::availableEngines()
     \brief This property holds the current state of the speech synthesizer.
 
     \sa QTextToSpeech::State say() stop() pause()
+
+    \snippet quickspeech/main.qml stateChanged
 */
 
 /*!
     \property QTextToSpeech::state
     \brief the current state of the speech synthesizer.
+
+    \snippet hello_speak/mainwindow.cpp stateChanged
 
     Use \l say() to start synthesizing text with the current \l voice and \l locale.
 */
@@ -455,6 +478,9 @@ QString QTextToSpeech::errorString() const
     This function starts sythesizing the speech asynchronously, and reads the text to the
     default audio output device.
 
+    \snippet quickspeech/main.qml say0
+    \snippet quickspeech/main.qml say1
+
     \note All in-progress readings are stopped before beginning to read the recently
     synthesized text.
 
@@ -470,6 +496,8 @@ QString QTextToSpeech::errorString() const
 
     This function starts sythesizing the speech asynchronously, and reads the text to the
     default audio output device.
+
+    \snippet hello_speak/mainwindow.cpp say
 
     \note All in-progress readings are stopped before beginning to read the recently
     synthesized text.
