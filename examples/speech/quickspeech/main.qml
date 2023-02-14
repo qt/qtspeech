@@ -39,12 +39,6 @@ ApplicationWindow {
             }
         }
 //! [stateChanged]
-
-//! [sayingWord]
-        onSayingWord: (start, length)=> {
-            input.select(start, start + length)
-        }
-//! [sayingWord]
     }
 
     ColumnLayout {
