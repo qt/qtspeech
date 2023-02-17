@@ -15,6 +15,8 @@
 
 QT_BEGIN_NAMESPACE
 
+using namespace Qt::StringLiterals;
+
 #ifndef SPERR_NO_MORE_ITEMS
 # define SPERR_NO_MORE_ITEMS MAKE_SAPI_ERROR(0x039)
 #endif
@@ -90,7 +92,7 @@ void QTextToSpeechEngineSapi::say(const QString &text)
     if (m_state != QTextToSpeech::Ready)
         stop(QTextToSpeech::BoundaryHint::Default);
 
-    textString.prepend(QString::fromLatin1("<pitch absmiddle=\"%1\"/>").arg(m_pitch * 10));
+    textString.prepend(u"<pitch absmiddle=\"%1\"/>"_s.arg(m_pitch * 10));
 
     std::wstring wtext = textString.toStdWString();
     HRESULT hr = m_voice->Speak(wtext.data(), SPF_ASYNC, NULL);
@@ -267,13 +269,13 @@ void QTextToSpeechEngineSapi::updateVoices()
         const QMap<QString, QString> vAttr = voiceAttributes(cpVoiceToken);
 
         // Transform Windows LCID to QLocale
-        const QLocale vLocale = lcidToLocale(vAttr[u"Language"_qs]);
+        const QLocale vLocale = lcidToLocale(vAttr[u"Language"_s]);
 
         // Create voice
-        const QString name = vAttr[u"Name"_qs];
-        const QVoice::Age age = vAttr[u"Age"_qs] == u"Adult"_qs ?  QVoice::Adult : QVoice::Other;
-        const QVoice::Gender gender = vAttr[u"Gender"_qs] == u"Male"_qs ? QVoice::Male :
-                                      vAttr[u"Gender"_qs] == u"Female"_qs ? QVoice::Female :
+        const QString name = vAttr[u"Name"_s];
+        const QVoice::Age age = vAttr[u"Age"_s] == u"Adult"_s ?  QVoice::Adult : QVoice::Other;
+        const QVoice::Gender gender = vAttr[u"Gender"_s] == u"Male"_s ? QVoice::Male :
+                                      vAttr[u"Gender"_s] == u"Female"_s ? QVoice::Female :
                                       QVoice::Unknown;
         // Getting the ID of the voice to set the voice later
         const QVoice voice = createVoice(name, vLocale, gender, age, voiceId(cpVoiceToken));
@@ -315,7 +317,7 @@ QLocale QTextToSpeechEngineSapi::locale() const
     // read attributes
     const QMap<QString, QString> vAttr = voiceAttributes(cpVoiceToken);
     cpVoiceToken->Release();
-    return lcidToLocale(vAttr.value(u"Language"_qs));
+    return lcidToLocale(vAttr.value(u"Language"_s));
 }
 
 QList<QVoice> QTextToSpeechEngineSapi::availableVoices() const
