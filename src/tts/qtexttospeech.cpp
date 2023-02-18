@@ -70,6 +70,7 @@ void QTextToSpeechPrivate::setEngineProvider(const QString &engine, const QVaria
 
     // Connect signals directly from the engine to the public API signals
     if (m_engine) {
+        updateState(m_engine->state());
         QObject::connect(m_engine, &QTextToSpeechEngine::stateChanged,
                          q, [this](QTextToSpeech::State newState){
             updateState(newState);
@@ -146,8 +147,58 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
 void QTextToSpeechPrivate::updateState(QTextToSpeech::State newState)
 {
     Q_Q(QTextToSpeech);
-    if (newState == QTextToSpeech::Ready)
-        disconnectSynthesizeFunctor();
+    if (m_state == newState)
+        return;
+
+    if (newState == QTextToSpeech::Ready) {
+        // If we have more text to process, start the next request immediately,
+        // and ignore the transition to Ready (don't emit the signals).
+        if (!m_pendingTexts.isEmpty()) {
+            const QString nextText = m_pendingTexts.first();
+            // QTextToSpeech::pause prepends an empty entry to request a pause
+            if (nextText.isEmpty()) {
+                m_state = QTextToSpeech::Paused;
+                m_pendingTexts.takeFirst();
+            } else {
+                const auto nextFunction = [this]{
+                    switch (m_state) {
+                    case QTextToSpeech::Synthesizing:
+                        return &QTextToSpeechEngine::synthesize;
+                    case QTextToSpeech::Speaking:
+                    case QTextToSpeech::Paused:
+                        return &QTextToSpeechEngine::say;
+                    default:
+                        break;
+                    }
+                    return decltype(&QTextToSpeechEngine::synthesize)(nullptr);
+                }();
+                if (nextFunction) {
+                    const auto oldState = m_state;
+                    emit q->aboutToSynthesize(nextText);
+                    // connected slot could have called pause or stop, in which
+                    // case the state changed or the pendingTexts got reset.
+                    if (m_state == oldState && !m_pendingTexts.isEmpty()) {
+                        m_pendingTexts.takeFirst();
+                        (m_engine->*nextFunction)(nextText);
+                        return;
+                    } else if (m_state == QTextToSpeech::Paused) {
+                        // In case of pause(), empty strings got inserted.
+                        // We are already idle, so remove them again.
+                        while (!m_pendingTexts.isEmpty() && m_pendingTexts.first().isEmpty())
+                            m_pendingTexts.takeFirst();
+                        return;
+                    }
+                    // in case of stop(), disconnect and update the state
+                    disconnectSynthesizeFunctor();
+                }
+            }
+        } else {
+            // If we are done synthesizing and the functor-overload was used,
+            // clear the temporary connection.
+            disconnectSynthesizeFunctor();
+        }
+    }
+    m_state = newState;
     emit q->stateChanged(newState);
 }
 
@@ -271,6 +322,7 @@ void QTextToSpeechPrivate::disconnectSynthesizeFunctor()
     \value Immediate        The engine should stop playback immediately.
     \value Word             Stop speech when the current word is finished.
     \value Sentence         Stop speech when the current sentence is finished.
+    \value Utterance        Stop speech when the current utterance is finished.
 
     \note These are hints to the engine. The current engine might not support
     all options.
@@ -387,6 +439,8 @@ bool QTextToSpeech::setEngine(const QString &engine, const QVariantMap &params)
     d->setEngineProvider(engine, params);
 
     emit engineChanged(d->m_providerName);
+    d->updateState(d->m_engine ? d->m_engine->state()
+                               : QTextToSpeech::Error);
     return d->m_engine;
 }
 
@@ -496,13 +550,36 @@ QStringList QTextToSpeech::availableEngines()
 QTextToSpeech::State QTextToSpeech::state() const
 {
     Q_D(const QTextToSpeech);
-    if (d->m_engine)
-        return d->m_engine->state();
-    return QTextToSpeech::Error;
+    return d->m_state;
 }
 
 /*!
-    \qmlsignal void TextToSpeech::sayingWord(int start, int length)
+    \qmlsignal TextToSpeech::aboutToSynthesize(string text)
+
+    \since 6.6
+
+    This signal gets emitted just before the engine starts to synthesize the
+    speech audio for \a text. Applications can use this signal to make last-minute
+    changes to \l voice attributes, or to track the process of text enqueued
+    via sayNext().
+
+    \sa sayNext(), voice
+*/
+
+/*!
+    \fn void QTextToSpeech::aboutToSynthesize(const QString &text)
+    \since 6.6
+
+    This signal gets emitted just before the engine starts to synthesize the
+    speech audio for \a text. Applications can use this signal to make last-minute
+    changes to \l voice attributes, or to track the process of text enqueued
+    via sayNext().
+
+    \sa sayNext(), synthesize(), voice
+*/
+
+/*!
+    \qmlsignal TextToSpeech::sayingWord(int start, int length)
     \since 6.6
 
     This signal is emitted when the word indicated by \a start and \a length
@@ -628,13 +705,64 @@ QString QTextToSpeech::errorString() const
     set to \l Speaking once the reading starts. When the reading is done,
     \l state will be set to \l Ready.
 
-    \sa stop(), pause(), resume(), synthesize()
+    \sa sayNext(), stop(), pause(), resume(), synthesize()
 */
 void QTextToSpeech::say(const QString &text)
 {
     Q_D(QTextToSpeech);
-    if (d->m_engine)
+    d->m_pendingTexts = {};
+    if (d->m_engine) {
+        emit aboutToSynthesize(text);
         d->m_engine->say(text);
+    }
+}
+
+/*!
+    \qmlmethod TextToSpeech::sayNext(string text)
+
+    Adds \a text to the queue of text to be spoken, and starts speaking.
+
+    If the engine's \l state is currently \c Ready, \a text will be spoken
+    immediately. Otherwise, the engine will start to speak \a text once it
+    has finished speaking the current text.
+
+    Each time the engine proceeds to the next text entry in the queue, the
+    aboutToSynthesize() signal gets emitted. This allows applications to keep
+    track of the progress, and to make last-minute changes to voice attributes.
+
+    Calling stop() clears the queue.
+
+    \sa say(), stop(), aboutToSynthesize()
+*/
+
+/*!
+    Adds \a text to the queue of texts to be spoken, and starts speaking.
+
+    If the engine's \l state is currently \c Ready, \a text will be spoken
+    immediately. Otherwise, the engine will start to speak \a text once it
+    has finished speaking the current text.
+
+    Each time the engine proceeds to the next text entry in the queue, the
+    aboutToSynthesize() signal gets emitted. This allows applications to keep
+    track of the progress, and to make last-minute changes to voice attributes.
+
+    Calling stop() clears the queue. To pause the engine at the end of a text,
+    use the \l {QTextToSpeech::BoundaryHint::}{Utterance} boundary hint.
+
+    \sa say(), stop(), aboutToSynthesize(), synthesize()
+*/
+void QTextToSpeech::sayNext(const QString &text)
+{
+    Q_D(QTextToSpeech);
+    if (!d->m_engine || text.isEmpty())
+        return;
+
+    if (d->m_engine->state() == QTextToSpeech::Speaking) {
+        d->m_pendingTexts.append(text);
+    } else {
+        emit aboutToSynthesize(text);
+        d->m_engine->say(text);
+    }
 }
 
 /*!
@@ -650,12 +778,20 @@ void QTextToSpeech::say(const QString &text)
     synthesized() signal might be emitted multiple times, possibly with
     changing values for \c format.
 
+    If synthesizing is already in progress, the new text will be queued up
+    and synthesized after previously enqueued text has been processed.
+
     \sa say(), stop()
 */
 void QTextToSpeech::synthesize(const QString &text)
 {
     Q_D(QTextToSpeech);
-    if (d->m_engine)
+    if (!d->m_engine)
+        return;
+
+    if (d->m_engine->state() == QTextToSpeech::Synthesizing)
+        d->m_pendingTexts.append(text);
+    else
         d->m_engine->synthesize(text);
 }
 
@@ -748,25 +884,28 @@ void QTextToSpeech::synthesizeImpl(const QString &text,
 /*!
     \qmlmethod TextToSpeech::stop(BoundaryHint boundaryHint)
 
-    Stops the current reading at \a boundaryHint.
+    Stops the current reading at \a boundaryHint, and clears the
+    queue of pending texts.
 
     The reading cannot be resumed. Whether the \a boundaryHint is
     respected depends on the engine.
 
-    \sa say(), pause(), QTextToSpeech::BoundaryHint
+    \sa say(), sayNext(), pause(), QTextToSpeech::BoundaryHint
 */
 
 /*!
-    Stops the current reading at \a boundaryHint.
+    Stops the current reading at \a boundaryHint, and clears the
+    queue of pending texts.
 
     The reading cannot be resumed. Whether the \a boundaryHint is
     respected depends on the engine.
 
-    \sa say(), pause()
+    \sa say(), sayNext(), pause()
 */
 void QTextToSpeech::stop(BoundaryHint boundaryHint)
 {
     Q_D(QTextToSpeech);
+    d->m_pendingTexts = {};
     if (d->m_engine) {
         if (boundaryHint == QTextToSpeech::BoundaryHint::Immediate)
             d->disconnectSynthesizeFunctor();
@@ -794,8 +933,19 @@ void QTextToSpeech::stop(BoundaryHint boundaryHint)
 void QTextToSpeech::pause(BoundaryHint boundaryHint)
 {
     Q_D(QTextToSpeech);
-    if (d->m_engine)
+    if (!d->m_engine || d->m_state != QTextToSpeech::Speaking)
+        return;
+
+    if (boundaryHint == BoundaryHint::Utterance) {
+        if (d->m_pendingTexts.isEmpty() || !d->m_pendingTexts.first().isEmpty())
+            d->m_pendingTexts.prepend(QString());
+    }
+    // pause called in response to aboutToSynthesize
+    if (d->m_engine->state() == QTextToSpeech::Ready) {
+        d->updateState(QTextToSpeech::Paused);
+    } else {
         d->m_engine->pause(boundaryHint);
+    }
 }
 
 /*!
@@ -814,8 +964,17 @@ void QTextToSpeech::pause(BoundaryHint boundaryHint)
 void QTextToSpeech::resume()
 {
     Q_D(QTextToSpeech);
-    if (d->m_engine)
-        d->m_engine->resume();
+    if (d->m_state != QTextToSpeech::Paused)
+        return;
+
+    if (d->m_engine) {
+        // If we are pausing before proceeding with the next utterance,
+        // then continue with the next pending text.
+        if (d->m_engine->state() == QTextToSpeech::Ready)
+            d->updateState(QTextToSpeech::Ready);
+        else
+            d->m_engine->resume();
+    }
 }
 
 /*!

@@ -167,6 +167,9 @@ void QTextToSpeechEngineMacOS::stop(QTextToSpeech::BoundaryHint boundaryHint)
                 return NSSpeechWordBoundary;
             case QTextToSpeech::BoundaryHint::Sentence:
                 return NSSpeechSentenceBoundary;
+            case QTextToSpeech::BoundaryHint::Utterance:
+                // should never get here, but if we do, stop immediately
+                return NSSpeechImmediateBoundary;
             }
             Q_UNREACHABLE();
         }();
@@ -183,6 +186,8 @@ void QTextToSpeechEngineMacOS::pause(QTextToSpeech::BoundaryHint boundaryHint)
             switch (boundaryHint) {
             case QTextToSpeech::BoundaryHint::Immediate:
                 return NSSpeechImmediateBoundary;
+            case QTextToSpeech::BoundaryHint::Utterance:
+                // should never get here, but if we do, pause at word
             case QTextToSpeech::BoundaryHint::Default:
             case QTextToSpeech::BoundaryHint::Word:
                 return NSSpeechWordBoundary;

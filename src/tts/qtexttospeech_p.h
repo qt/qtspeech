@@ -49,6 +49,8 @@ private:
     QString m_providerName;
     QCborMap m_metaData;
     static QMutex m_mutex;
+    QStringList m_pendingTexts;
+    QTextToSpeech::State m_state = QTextToSpeech::Error;
     QMetaObject::Connection m_synthesizeConnection;
     QtPrivate::QSlotObjectBase *m_slotObject = nullptr;
 };

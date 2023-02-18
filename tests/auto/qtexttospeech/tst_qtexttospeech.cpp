@@ -48,6 +48,12 @@ private slots:
     void sayWithVoices();
     void sayWithRates();
 
+    void sayMultiple_data();
+    void sayMultiple();
+
+    void pauseAtUtterance_data();
+    void pauseAtUtterance();
+
     void sayingWord_data();
     void sayingWord();
 
@@ -488,6 +494,104 @@ void tst_QTextToSpeech::sayWithRates()
         lastTime = time;
     }
     logger.dismiss();
+}
+
+void tst_QTextToSpeech::sayMultiple_data()
+{
+    QTest::addColumn<QStringList>("textList");
+
+    QTest::addRow("one") << QStringList{"one"};
+    QTest::addRow("three") << QStringList{"one", "two", "three"};
+}
+
+void tst_QTextToSpeech::sayMultiple()
+{
+    QFETCH_GLOBAL(QString, engine);
+    if (engine != "mock" && !hasDefaultAudioOutput())
+        QSKIP("No audio device present");
+
+    QTextToSpeech tts(engine);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    selectWorkingVoice(&tts);
+    auto logger = qScopeGuard([&tts]{
+        qWarning() << "Failure with voice" << tts.voice();
+    });
+
+    int speakingCount = 0;
+    bool doneSpeaking = false;
+    connect(&tts, &QTextToSpeech::stateChanged, this, [&](QTextToSpeech::State state){
+        if (state == QTextToSpeech::Speaking)
+            ++speakingCount;
+        else if (state == QTextToSpeech::Ready)
+            doneSpeaking = true;
+    });
+    QSignalSpy aboutToSynthesizeSpy(&tts, &QTextToSpeech::aboutToSynthesize);
+
+    QFETCH(const QStringList, textList);
+    for (qsizetype i = 0; i < textList.count(); ++i) {
+        const QString &text = textList.at(i);
+        tts.sayNext(text);
+        if (!i) // wait for the engine to start speaking
+            QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
+    }
+
+    QTRY_VERIFY(doneSpeaking);
+    QCOMPARE(aboutToSynthesizeSpy.count(), textList.size());
+    QCOMPARE(speakingCount, 1);
+
+    logger.dismiss();
+}
+
+void tst_QTextToSpeech::pauseAtUtterance_data()
+{
+    sayMultiple_data();
+}
+
+void tst_QTextToSpeech::pauseAtUtterance()
+{
+    QFETCH_GLOBAL(QString, engine);
+    if (engine != "mock" && !hasDefaultAudioOutput())
+        QSKIP("No audio device present");
+
+    QFETCH(const QStringList, textList);
+
+    QTextToSpeech tts(engine);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    selectWorkingVoice(&tts);
+
+    int atIndex = -1;
+    bool paused = false;
+    connect(&tts, &QTextToSpeech::aboutToSynthesize, [&]{
+        ++atIndex;
+        if (atIndex == 1 && !paused) {
+            tts.pause(QTextToSpeech::BoundaryHint::Utterance);
+            paused = true;
+            --atIndex;
+        }
+    });
+    QStringList wordsSpoken;
+    connect(&tts, &QTextToSpeech::sayingWord, [&](int at, int length){
+        wordsSpoken += textList.at(atIndex).mid(at, length);
+    });
+
+    for (qsizetype i = 0; i < textList.count(); ++i) {
+        const QString &text = textList.at(i);
+        tts.sayNext(text);
+        if (!i)
+            QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
+    }
+    if (textList.count() == 1)
+        QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    else
+        QTRY_COMPARE(tts.state(), QTextToSpeech::Paused);
+    if (tts.engineCapabilities() & QTextToSpeech::Capability::WordByWordProgress)
+        QCOMPARE(wordsSpoken, QStringList{textList.first()});
+    tts.resume();
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    if (tts.engineCapabilities() & QTextToSpeech::Capability::WordByWordProgress)
+        QCOMPARE(wordsSpoken, textList);
+    else
+        qInfo("Skipping test of spoken words");
 }
 
 void tst_QTextToSpeech::sayingWord_data()

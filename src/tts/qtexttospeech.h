@@ -55,7 +55,8 @@ public:
         Default,
         Immediate,
         Word,
-        Sentence
+        Sentence,
+        Utterance
     };
     Q_ENUM(BoundaryHint)
 
@@ -162,6 +163,7 @@ public:
 
 public Q_SLOTS:
     void say(const QString &text);
+    void sayNext(const QString &text);
     void synthesize(const QString &text);
     void stop(QTextToSpeech::BoundaryHint boundaryHint = QTextToSpeech::BoundaryHint::Default);
     void pause(QTextToSpeech::BoundaryHint boundaryHint = QTextToSpeech::BoundaryHint::Default);
@@ -186,6 +188,7 @@ Q_SIGNALS:
 
     void sayingWord(qsizetype start, qsizetype length);
     void synthesized(const QAudioFormat &format, const QByteArray &data);
+    void aboutToSynthesize(const QString &text);
 
 private:
     void synthesizeImpl(const QString &text,
