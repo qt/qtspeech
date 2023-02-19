@@ -23,6 +23,10 @@ public:
     explicit QTextToSpeechEngine(QObject *parent = nullptr);
     ~QTextToSpeechEngine();
 
+    virtual QTextToSpeech::Capabilities capabilities() const
+    {
+        return QTextToSpeech::Capability::None;
+    }
     virtual QList<QLocale> availableLocales() const = 0;
     virtual QList<QVoice> availableVoices() const = 0;
 

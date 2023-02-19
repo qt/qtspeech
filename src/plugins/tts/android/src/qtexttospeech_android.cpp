@@ -3,6 +3,7 @@
 #include "qtexttospeech_android.h"
 
 #include <QtCore/qcoreapplication.h>
+#include <QtCore/qoperatingsystemversion.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -175,6 +176,14 @@ QTextToSpeechEngineAndroid::~QTextToSpeechEngineAndroid()
 {
     textToSpeechMap->remove(reinterpret_cast<jlong>(this));
     m_speech.callMethod<void>("shutdown");
+}
+
+QTextToSpeech::Capabilities QTextToSpeechEngineAndroid::capabilities() const
+{
+    if (QOperatingSystemVersion::current() < QOperatingSystemVersion::AndroidNougat)
+        return QTextToSpeech::Capability::Speak;
+    // the default uses the values from the plugin's meta data
+    return QTextToSpeechEngine::capabilities();
 }
 
 void QTextToSpeechEngineAndroid::say(const QString &text)

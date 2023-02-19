@@ -424,7 +424,11 @@ QTextToSpeech::Capabilities QTextToSpeech::engineCapabilities() const
 {
     Q_D(const QTextToSpeech);
 
-    QTextToSpeech::Capabilities caps = QTextToSpeech::Capability::None;
+    QTextToSpeech::Capabilities caps = d->m_engine
+                                     ? d->m_engine->capabilities()
+                                     : QTextToSpeech::Capability::None;
+    if (caps != QTextToSpeech::Capability::None)
+        return caps;
     if (d->m_providerName.isEmpty()) {
         qCritical() << "No engine set.";
         return caps;

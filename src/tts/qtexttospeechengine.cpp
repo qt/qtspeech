@@ -19,6 +19,13 @@ QT_BEGIN_NAMESPACE
 */
 
 /*!
+    \fn QTextToSpeech::Capabilities QTextToSpeechEngine::capabilities() const
+
+    Implementation of \l QTextToSpeech::engineCapabilities(). If this function is
+    not implemented, then the capabilities will be read from the plugin meta data.
+*/
+
+/*!
     \fn QList<QLocale> QTextToSpeechEngine::availableLocales() const
 
     Implementation of \l QTextToSpeech::availableLocales().

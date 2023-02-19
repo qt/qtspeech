@@ -23,6 +23,7 @@ public:
     virtual ~QTextToSpeechEngineAndroid();
 
     // Plug-in API:
+    QTextToSpeech::Capabilities capabilities() const override;
     QList<QLocale> availableLocales() const override;
     QList<QVoice> availableVoices() const override;
     void say(const QString &text) override;

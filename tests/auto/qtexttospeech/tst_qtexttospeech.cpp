@@ -505,8 +505,6 @@ void tst_QTextToSpeech::sayingWord()
     QFETCH_GLOBAL(QString, engine);
     if (engine != "mock" && !hasDefaultAudioOutput())
         QSKIP("No audio device present");
-    if (engine == "android" && QOperatingSystemVersion::current() < QOperatingSystemVersion::Android10)
-        QSKIP("Only testing on recent Android versions");
 
     QFETCH(QString, text);
 
@@ -566,8 +564,6 @@ void tst_QTextToSpeech::sayingWordWithPause()
         QSKIP("No audio device present");
     if (engine == "macos")
         QSKIP("macos engine's pause support is faulty");
-    if (engine == "android" && QOperatingSystemVersion::current() < QOperatingSystemVersion::Android10)
-        QSKIP("Only testing on recent Android versions");
 
     QFETCH(QStringList, words);
     QFETCH(int, pauseAt);
@@ -627,8 +623,6 @@ void tst_QTextToSpeech::synthesize()
     QFETCH_GLOBAL(QString, engine);
     if (engine != "mock" && !hasDefaultAudioOutput())
         QSKIP("No audio device present");
-    if (engine == "android" && QOperatingSystemVersion::current() < QOperatingSystemVersion::Android10)
-        QSKIP("Only testing on recent Android versions");
 
     QFETCH(QString, text);
 
