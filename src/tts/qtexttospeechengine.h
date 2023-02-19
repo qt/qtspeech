@@ -31,9 +31,7 @@ public:
     virtual QList<QVoice> availableVoices() const = 0;
 
     virtual void say(const QString &text) = 0;
-    virtual void synthesize(const QString &text) {
-        Q_UNUSED(text);
-    };
+    virtual void synthesize(const QString &text) = 0;
     virtual void stop(QTextToSpeech::BoundaryHint boundaryHint) = 0;
     virtual void pause(QTextToSpeech::BoundaryHint boundaryHint) = 0;
     virtual void resume() = 0;
