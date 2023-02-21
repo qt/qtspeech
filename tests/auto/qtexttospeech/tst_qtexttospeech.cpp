@@ -765,6 +765,13 @@ void tst_QTextToSpeech::synthesizeCallback()
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
     QCOMPARE(processor.m_allBytes, expectedBytes);
     processor.reset();
+    // Partial functor
+    tts.synthesize(text, [&processor](const QAudioFormat &format){
+        processor.m_format = format;
+    });
+    QTRY_COMPARE(processor.m_format, expectedFormat);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    processor.reset();
     // PMF
     tts.synthesize(text, &processor, &Processor::process);
     QTRY_COMPARE(processor.m_format, expectedFormat);

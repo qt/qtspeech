@@ -123,21 +123,25 @@ public:
         && !std::is_same<const char *, Func>::value, bool> = true>
     void synthesize(const QString &text, const QObject *context, Func func)
     {
-        using CallbackSignature = QtPrivate::FunctionPointer<void (*)(QAudioFormat, QByteArray)>;
-        constexpr int MatchingArgumentCount = QtPrivate::ComputeFunctorArgumentCount<
-            Func, CallbackSignature::Arguments>::Value;
+        using CallbackSignature2 = QtPrivate::FunctionPointer<void (*)(QAudioFormat, QByteArray)>;
+        using CallbackSignature1 = QtPrivate::FunctionPointer<void (*)(QAudioFormat)>;
+        constexpr int MatchingArgumentCount2 = QtPrivate::ComputeFunctorArgumentCount<
+            Func, CallbackSignature2::Arguments>::Value;
+        constexpr int MatchingArgumentCount1 = QtPrivate::ComputeFunctorArgumentCount<
+            Func, CallbackSignature1::Arguments>::Value;
 
-        static_assert(MatchingArgumentCount == 0
-            || MatchingArgumentCount == CallbackSignature::ArgumentCount,
+        static_assert(MatchingArgumentCount2 == 0
+            || MatchingArgumentCount1 == CallbackSignature1::ArgumentCount
+            || MatchingArgumentCount2 == CallbackSignature2::ArgumentCount,
            "Functor arguments are not compatible (must be QAudioFormat, QByteArray)");
 
         QtPrivate::QSlotObjectBase *slotObj = nullptr;
-        if constexpr (MatchingArgumentCount == CallbackSignature::ArgumentCount) {
+        if constexpr (MatchingArgumentCount2 == CallbackSignature2::ArgumentCount) {
             slotObj = new QtPrivate::QFunctorSlotObject<Func, 2,
-                typename CallbackSignature::Arguments, void>(std::move(func));
-        } else if constexpr (MatchingArgumentCount == 1) {
+                typename CallbackSignature2::Arguments, void>(std::move(func));
+        } else if constexpr (MatchingArgumentCount1 == CallbackSignature1::ArgumentCount) {
             slotObj = new QtPrivate::QFunctorSlotObject<Func, 1,
-                typename CallbackSignature::Arguments, void>(std::move(func));
+                typename CallbackSignature1::Arguments, void>(std::move(func));
         } else {
             slotObj = new QtPrivate::QFunctorSlotObject<Func, 0,
                 typename QtPrivate::List_Left<void, 0>::Value, void>(std::move(func));
