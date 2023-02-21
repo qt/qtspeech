@@ -146,14 +146,18 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
 void QTextToSpeechPrivate::updateState(QTextToSpeech::State newState)
 {
     Q_Q(QTextToSpeech);
-    if (newState == QTextToSpeech::Ready && m_slotObject) {
-        // If we are done synthesizing and the functor-overload was used,
-        // clear the temporary connection.
+    if (newState == QTextToSpeech::Ready)
+        disconnectSynthesizeFunctor();
+    emit q->stateChanged(newState);
+}
+
+void QTextToSpeechPrivate::disconnectSynthesizeFunctor()
+{
+    if (m_slotObject) {
         m_slotObject->destroyIfLastRef();
         m_slotObject = nullptr;
         m_engine->disconnect(m_synthesizeConnection);
     }
-    emit q->stateChanged(newState);
 }
 
 /*!
@@ -763,8 +767,11 @@ void QTextToSpeech::synthesizeImpl(const QString &text,
 void QTextToSpeech::stop(BoundaryHint boundaryHint)
 {
     Q_D(QTextToSpeech);
-    if (d->m_engine)
+    if (d->m_engine) {
+        if (boundaryHint == QTextToSpeech::BoundaryHint::Immediate)
+            d->disconnectSynthesizeFunctor();
         d->m_engine->stop(boundaryHint);
+    }
 }
 
 /*!

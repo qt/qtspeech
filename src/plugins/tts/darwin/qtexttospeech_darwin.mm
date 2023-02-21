@@ -6,6 +6,7 @@
 #include "qtexttospeech_darwin.h"
 
 #include <QtCore/QCoreApplication>
+#include <QtCore/QPointer>
 #include <QtMultimedia/QAudioFormat>
 
 @interface QDarwinSpeechSynthesizerDelegate : NSObject <AVSpeechSynthesizerDelegate>
@@ -173,7 +174,14 @@ void QTextToSpeechEngineDarwin::synthesize(const QString &text)
     AVSpeechUtterance *utterance = prepareUtterance(text);
     m_format = {};
 
+    // The QPointer will be captured by the block, and allows us to detect
+    // whether the engine has already been deleted while a synthesis was
+    // still running. We shouldn't get a call here as we explicitly stop
+    // the synthesis in the destructor via stop(), but we do.
+    QPointer<QTextToSpeechEngineDarwin> that = this;
     const auto bufferCallback = ^(AVAudioBuffer *buffer){
+        if (!that)
+            return;
         setState(QTextToSpeech::Synthesizing);
 
         if (!m_format.isValid()) {

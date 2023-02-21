@@ -41,6 +41,7 @@ private:
     bool loadMeta();
     void loadPlugin();
     void updateState(QTextToSpeech::State newState);
+    void disconnectSynthesizeFunctor();
     static void loadPluginMetadata(QMultiHash<QString, QCborMap> &list);
     QTextToSpeech *q_ptr;
     QTextToSpeechPlugin *m_plugin = nullptr;
