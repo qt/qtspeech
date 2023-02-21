@@ -82,7 +82,7 @@
     }
     // the Darwin engine doesn't strip all punctuation characters
     auto length = characterRange.length;
-    if (text.at(characterRange.location + length - 1).isPunct())
+    if (length && text.at(characterRange.location + length - 1).isPunct())
         --length;
     if (length)
         _engine->sayingWord(characterRange.location, length);
