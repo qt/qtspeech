@@ -62,22 +62,22 @@ public:
     }
 
     // IUnknown
-    ULONG AddRef() { return ++ref; }
-    ULONG Release() {
+    ULONG STDMETHODCALLTYPE AddRef() { return ++ref; }
+    ULONG STDMETHODCALLTYPE Release() {
         if (!--ref) {
             delete this;
             return 0;
         }
         return ref;
     }
-    HRESULT QueryInterface(REFIID riid, VOID **ppvInterface);
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface);
 
     // completion handler for synthesising the stream
-    HRESULT Invoke(IAsyncOperation<SpeechSynthesisStream*> *operation,
-                   AsyncStatus status) override;
+    HRESULT STDMETHODCALLTYPE Invoke(IAsyncOperation<SpeechSynthesisStream*> *operation,
+                                     AsyncStatus status) override;
     // completion handler for reading from the stream
-    HRESULT Invoke(IAsyncOperationWithProgress<IBuffer*, unsigned int> *read,
-                   AsyncStatus status) override;
+    HRESULT STDMETHODCALLTYPE Invoke(IAsyncOperationWithProgress<IBuffer*, unsigned int> *read,
+                                     AsyncStatus status) override;
 
 Q_SIGNALS:
     void streamReady(const QAudioFormat &format);
