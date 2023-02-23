@@ -140,8 +140,8 @@ void QTextToSpeechEngineSapi::synthesize(const QString &text)
         virtual ~OutputStream() = default;
 
         // IUnknown
-        ULONG AddRef() override { return ++m_ref; }
-        ULONG Release() override {
+        ULONG STDMETHODCALLTYPE AddRef() override { return ++m_ref; }
+        ULONG STDMETHODCALLTYPE Release() override {
             if (!--m_ref) {
                 delete this;
                 return 0;
@@ -149,7 +149,7 @@ void QTextToSpeechEngineSapi::synthesize(const QString &text)
             return m_ref;
         }
 
-        HRESULT QueryInterface(REFIID riid, VOID **ppvInterface) override
+        HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface) override
         {
             if (!ppvInterface)
                 return E_POINTER;
@@ -169,14 +169,14 @@ void QTextToSpeechEngineSapi::synthesize(const QString &text)
         }
 
         // IStream
-        HRESULT Read(void *,ULONG,ULONG *) override { return E_NOTIMPL; }
-        HRESULT Write(const void *pv,ULONG cb,ULONG *pcbWritten) override
+        HRESULT STDMETHODCALLTYPE Read(void *,ULONG,ULONG *) override { return E_NOTIMPL; }
+        HRESULT STDMETHODCALLTYPE Write(const void *pv,ULONG cb,ULONG *pcbWritten) override
         {
             emit m_engine->synthesized(m_format, QByteArray(static_cast<const char *>(pv), cb));
             *pcbWritten = cb;
             return S_OK;
         }
-        HRESULT Seek(LARGE_INTEGER dlibMove, DWORD dwOrigin, ULARGE_INTEGER *plibNewPosition) override
+        HRESULT STDMETHODCALLTYPE Seek(LARGE_INTEGER dlibMove, DWORD dwOrigin, ULARGE_INTEGER *plibNewPosition) override
         {
             qint64 move = dlibMove.QuadPart;
             switch (dwOrigin) {
@@ -193,17 +193,17 @@ void QTextToSpeechEngineSapi::synthesize(const QString &text)
             (*plibNewPosition).QuadPart = m_pos;
             return S_OK;
         }
-        HRESULT SetSize(ULARGE_INTEGER) override { return E_NOTIMPL; }
-        HRESULT CopyTo(IStream *,ULARGE_INTEGER,ULARGE_INTEGER *,ULARGE_INTEGER *) override { return E_NOTIMPL; }
-        HRESULT Commit(DWORD) override { return E_NOTIMPL; }
-        HRESULT Revert(void) override { return E_NOTIMPL; }
-        HRESULT LockRegion(ULARGE_INTEGER,ULARGE_INTEGER,DWORD) override { return E_NOTIMPL; }
-        HRESULT UnlockRegion(ULARGE_INTEGER,ULARGE_INTEGER,DWORD) override { return E_NOTIMPL; }
-        HRESULT Stat(STATSTG *,DWORD) override { return E_NOTIMPL; }
-        HRESULT Clone(IStream **) override { return E_NOTIMPL; }
+        HRESULT STDMETHODCALLTYPE SetSize(ULARGE_INTEGER) override { return E_NOTIMPL; }
+        HRESULT STDMETHODCALLTYPE CopyTo(IStream *,ULARGE_INTEGER,ULARGE_INTEGER *,ULARGE_INTEGER *) override { return E_NOTIMPL; }
+        HRESULT STDMETHODCALLTYPE Commit(DWORD) override { return E_NOTIMPL; }
+        HRESULT STDMETHODCALLTYPE Revert(void) override { return E_NOTIMPL; }
+        HRESULT STDMETHODCALLTYPE LockRegion(ULARGE_INTEGER,ULARGE_INTEGER,DWORD) override { return E_NOTIMPL; }
+        HRESULT STDMETHODCALLTYPE UnlockRegion(ULARGE_INTEGER,ULARGE_INTEGER,DWORD) override { return E_NOTIMPL; }
+        HRESULT STDMETHODCALLTYPE Stat(STATSTG *,DWORD) override { return E_NOTIMPL; }
+        HRESULT STDMETHODCALLTYPE Clone(IStream **) override { return E_NOTIMPL; }
 
         // ISpStreamFormat
-        HRESULT GetFormat(GUID *pguidFormatId,WAVEFORMATEX **ppCoMemWaveFormatEx) override
+        HRESULT STDMETHODCALLTYPE GetFormat(GUID *pguidFormatId,WAVEFORMATEX **ppCoMemWaveFormatEx) override
         {
             *pguidFormatId = SPDFID_WaveFormatEx;
             WAVEFORMATEX *format = static_cast<WAVEFORMATEX *>(CoTaskMemAlloc(sizeof(WAVEFORMATEX)));
