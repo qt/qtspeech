@@ -5,6 +5,7 @@
     \example hello_speak
     \title Hello Speak Example
     \ingroup qttexttospeech_examples
+    \meta tags {widgets}
 
     \brief The Hello Speak example reads out user-provided text.
 
