@@ -6,6 +6,7 @@
     \title Quick Speech Example
     \ingroup qttexttospeech_examples
     \brief The Quick Speech example reads out user-provided text.
+    \meta tags {quick}
 
     The \e{Quick Speech} example demonstrates how the \l[QML]{TextToSpeech} type can be used
     in a \l{Qt Quick} application to read out text, and to control the speech.
