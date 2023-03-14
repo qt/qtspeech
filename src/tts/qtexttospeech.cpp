@@ -68,13 +68,12 @@ void QTextToSpeechPrivate::setEngineProvider(const QString &engine, const QVaria
         qCritical() << "Error loading text-to-speech plug-in" << m_providerName;
     }
 
-    // Connect signals directly from the engine to the public API signals
     if (m_engine) {
+        // We have to maintain the public state separately from the engine's actual
+        // state, as we use it to manage queued texts
         updateState(m_engine->state());
-        QObject::connect(m_engine, &QTextToSpeechEngine::stateChanged,
-                         q, [this](QTextToSpeech::State newState){
-            updateState(newState);
-        });
+        QObjectPrivate::connect(m_engine, &QTextToSpeechEngine::stateChanged, this, &QTextToSpeechPrivate::updateState);
+        // The other engine signals are directly forwarded to public API signals
         QObject::connect(m_engine, &QTextToSpeechEngine::errorOccurred, q, &QTextToSpeech::errorOccurred);
         QObject::connect(m_engine, &QTextToSpeechEngine::sayingWord, q, &QTextToSpeech::sayingWord);
         QObject::connect(m_engine, &QTextToSpeechEngine::synthesized, q, &QTextToSpeech::synthesized);
