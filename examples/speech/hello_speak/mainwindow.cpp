@@ -25,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui.rate, &QSlider::valueChanged, this, &MainWindow::setRate);
     connect(ui.volume, &QSlider::valueChanged, this, &MainWindow::setVolume);
     connect(ui.engine, &QComboBox::currentIndexChanged, this, &MainWindow::engineSelected);
+    connect(ui.language, &QComboBox::currentIndexChanged, this, &MainWindow::languageSelected);
+    connect(ui.voice, &QComboBox::currentIndexChanged, this, &MainWindow::voiceSelected);
 }
 
 void MainWindow::setRate(int rate)
@@ -73,9 +75,11 @@ void MainWindow::engineSelected(int index)
     m_speech = engineName == u"default"
                ? new QTextToSpeech(this)
                : new QTextToSpeech(engineName, this);
-    disconnect(ui.language, &QComboBox::currentIndexChanged, this, &MainWindow::languageSelected);
+
+    // Block signals of the languages combobox while populating
+    QSignalBlocker blocker(ui.language);
+
     ui.language->clear();
-    // Populate the languages combobox before connecting its signal.
     const QList<QLocale> locales = m_speech->availableLocales();
     QLocale current = m_speech->locale();
     for (const QLocale &locale : locales) {
@@ -112,7 +116,8 @@ void MainWindow::engineSelected(int index)
     connect(m_speech, &QTextToSpeech::stateChanged, this, &MainWindow::stateChanged);
     connect(m_speech, &QTextToSpeech::localeChanged, this, &MainWindow::localeChanged);
 
-    connect(ui.language, &QComboBox::currentIndexChanged, this, &MainWindow::languageSelected);
+    blocker.unblock();
+
     localeChanged(current);
 }
 
@@ -132,7 +137,8 @@ void MainWindow::localeChanged(const QLocale &locale)
     QVariant localeVariant(locale);
     ui.language->setCurrentIndex(ui.language->findData(localeVariant));
 
-    disconnect(ui.voice, &QComboBox::currentIndexChanged, this, &MainWindow::voiceSelected);
+    QSignalBlocker blocker(ui.voice);
+
     ui.voice->clear();
 
     m_voices = m_speech->availableVoices();
@@ -144,5 +150,4 @@ void MainWindow::localeChanged(const QLocale &locale)
         if (voice.name() == currentVoice.name())
             ui.voice->setCurrentIndex(ui.voice->count() - 1);
     }
-    connect(ui.voice, &QComboBox::currentIndexChanged, this, &MainWindow::voiceSelected);
 }
