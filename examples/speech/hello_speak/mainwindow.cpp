@@ -103,8 +103,11 @@ void MainWindow::stateChanged(QTextToSpeech::State state)
 {
     if (state == QTextToSpeech::Speaking) {
         ui.statusbar->showMessage("Speech started...");
-    } else if (state == QTextToSpeech::Ready)
+    } else if (state == QTextToSpeech::Ready) {
         ui.statusbar->showMessage("Speech stopped...", 2000);
+        if (!m_localesQueried)
+            queryLocales();
+    }
     else if (state == QTextToSpeech::Paused)
         ui.statusbar->showMessage("Speech paused...");
     else
@@ -117,12 +120,19 @@ void MainWindow::stateChanged(QTextToSpeech::State state)
 
 void MainWindow::engineSelected(int index)
 {
+    m_localesQueried = false;
     QString engineName = ui.engine->itemData(index).toString();
     delete m_speech;
     if (engineName == "default")
         m_speech = new QTextToSpeech(this);
     else
         m_speech = new QTextToSpeech(engineName, this);
+
+    connect(m_speech, &QTextToSpeech::stateChanged, this, &MainWindow::stateChanged);
+}
+
+void MainWindow::queryLocales()
+{
     disconnect(ui.language, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::languageSelected);
     ui.language->clear();
     // Populate the languages combobox before connecting its signal.
@@ -144,11 +154,11 @@ void MainWindow::engineSelected(int index)
     connect(ui.pauseButton, &QPushButton::clicked, m_speech, &QTextToSpeech::pause);
     connect(ui.resumeButton, &QPushButton::clicked, m_speech, &QTextToSpeech::resume);
 
-    connect(m_speech, &QTextToSpeech::stateChanged, this, &MainWindow::stateChanged);
     connect(m_speech, &QTextToSpeech::localeChanged, this, &MainWindow::localeChanged);
 
     connect(ui.language, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::languageSelected);
     localeChanged(current);
+    m_localesQueried = true;
 }
 
 void MainWindow::languageSelected(int language)

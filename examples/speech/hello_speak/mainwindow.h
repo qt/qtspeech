@@ -65,6 +65,8 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = 0);
 
+    void queryLocales();
+
 public slots:
     void speak();
     void stop();
@@ -84,6 +86,7 @@ private:
     Ui::MainWindow ui;
     QTextToSpeech *m_speech;
     QVector<QVoice> m_voices;
+    bool m_localesQueried;
 };
 
 #endif
