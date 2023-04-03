@@ -95,71 +95,25 @@ public:
 
     Q_INVOKABLE static QStringList availableEngines();
 
-# ifdef Q_QDOC
     template <typename Functor>
-    void synthesize(const QString &text, Functor functor);
-    template <typename Functor>
-    void synthesize(const QString &text, const QObject *context, Functor functor);
-# else
-    template <typename Slot> // synthesize to a QObject member function
     void synthesize(const QString &text,
-        const typename QtPrivate::FunctionPointer<Slot>::Object *receiver, Slot slot)
+#ifdef Q_QDOC
+                    const QObject *receiver,
+#else
+                    const typename QtPrivate::ContextTypeForFunctor<Functor>::ContextType *receiver,
+# endif // Q_QDOC
+                    Functor &&func)
     {
-        using CallbackSignature = QtPrivate::FunctionPointer<void (*)(QAudioFormat, QByteArray)>;
-        using SlotSignature = QtPrivate::FunctionPointer<Slot>;
-
-        static_assert(int(SlotSignature::ArgumentCount) <= int(CallbackSignature::ArgumentCount),
-            "Slot requires more arguments than what can be provided.");
-        static_assert((QtPrivate::CheckCompatibleArguments<typename CallbackSignature::Arguments,
-                      typename SlotSignature::Arguments>::value),
-            "Slot arguments are not compatible (must be QAudioFormat, QByteArray)");
-
-        auto slotObj = new QtPrivate::QSlotObject<Slot, typename SlotSignature::Arguments, void>(slot);
-        synthesizeImpl(text, slotObj, receiver);
-    }
-
-    // synthesize to a functor or function pointer (with context)
-    template <typename Func, std::enable_if_t<
-        !QtPrivate::FunctionPointer<Func>::IsPointerToMemberFunction
-        && !std::is_same<const char *, Func>::value, bool> = true>
-    void synthesize(const QString &text, const QObject *context, Func func)
-    {
-        using CallbackSignature2 = QtPrivate::FunctionPointer<void (*)(QAudioFormat, QByteArray)>;
-        using CallbackSignature1 = QtPrivate::FunctionPointer<void (*)(QAudioFormat)>;
-        constexpr int MatchingArgumentCount2 = QtPrivate::ComputeFunctorArgumentCount<
-            Func, CallbackSignature2::Arguments>::Value;
-        constexpr int MatchingArgumentCount1 = QtPrivate::ComputeFunctorArgumentCount<
-            Func, CallbackSignature1::Arguments>::Value;
-
-        static_assert(MatchingArgumentCount2 == 0
-            || MatchingArgumentCount1 == CallbackSignature1::ArgumentCount
-            || MatchingArgumentCount2 == CallbackSignature2::ArgumentCount,
-           "Functor arguments are not compatible (must be QAudioFormat, QByteArray)");
-
-        QtPrivate::QSlotObjectBase *slotObj = nullptr;
-        if constexpr (MatchingArgumentCount2 == CallbackSignature2::ArgumentCount) {
-            slotObj = new QtPrivate::QFunctorSlotObject<Func, 2,
-                typename CallbackSignature2::Arguments, void>(std::move(func));
-        } else if constexpr (MatchingArgumentCount1 == CallbackSignature1::ArgumentCount) {
-            slotObj = new QtPrivate::QFunctorSlotObject<Func, 1,
-                typename CallbackSignature1::Arguments, void>(std::move(func));
-        } else {
-            slotObj = new QtPrivate::QFunctorSlotObject<Func, 0,
-                typename QtPrivate::List_Left<void, 0>::Value, void>(std::move(func));
-        }
-
-        synthesizeImpl(text, slotObj, context);
+        using Prototype = void(*)(QAudioFormat, QByteArray);
+        synthesizeImpl(text, QtPrivate::makeSlotObject<Prototype>(std::forward<Functor>(func)), receiver);
     }
 
     // synthesize to a functor or function pointer (without context)
-    template <typename Func, std::enable_if_t<
-        !QtPrivate::FunctionPointer<Func>::IsPointerToMemberFunction
-        && !std::is_same<const char *, Func>::value, bool> = true>
-    void synthesize(const QString &text, Func func)
+    template <typename Functor>
+    void synthesize(const QString &text, Functor &&func)
     {
-        synthesize(text, nullptr, std::move(func));
+        synthesize(text, nullptr, std::forward<Functor>(func));
     }
-# endif // Q_QDOC
 
     template<typename ...Args>
     inline QList<QVoice> findVoices(Args &&...args) const
@@ -213,7 +167,7 @@ protected:
 
 private:
     void synthesizeImpl(const QString &text,
-        QtPrivate::QSlotObjectBase *slotObj, const QObject *context);
+                        QtPrivate::QSlotObjectBase *slotObj, const QObject *context);
 
     // Helper type to find the index of a type in a tuple, which allows
     // us to generate a compile-time error if there are multiple criteria

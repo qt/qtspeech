@@ -852,9 +852,9 @@ void QTextToSpeech::synthesize(const QString &text)
 
 /*!
     \fn template<typename Functor> void QTextToSpeech::synthesize(
-            const QString &text, Functor functor)
+            const QString &text, Functor &&functor)
     \fn template<typename Functor> void QTextToSpeech::synthesize(
-            const QString &text, const QObject *context, Functor functor)
+            const QString &text, const QObject *context, Functor &&functor)
     \since 6.6
 
     Synthesizes the \a text into raw audio data.
@@ -878,7 +878,7 @@ void QTextToSpeech::synthesize(const QString &text)
     });
     \endcode
 
-    or a slot in the \a context object:
+    or a member function of the \a context object:
 
     \code
     struct PCMProcessor : QObject
