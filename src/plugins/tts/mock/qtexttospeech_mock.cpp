@@ -27,9 +27,20 @@ QList<QLocale> QTextToSpeechEngineMock::availableLocales() const
 {
     QList<QLocale> locales;
 
-    locales << QLocale(QLocale::English, QLocale::UnitedKingdom)
-            << QLocale(QLocale::NorwegianBokmal, QLocale::Norway)
-            << QLocale(QLocale::Finnish, QLocale::Finland);
+    if (const auto it = m_parameters.find("voices"); it != m_parameters.constEnd()) {
+        using VoiceData = QList<std::tuple<QString, QLocale, QVoice::Gender, QVoice::Age>>;
+        const auto voicesData = it->value<VoiceData>();
+        QSet<QLocale> localeSet;
+        for (const auto &voiceData : voicesData)
+            localeSet.insert(std::get<1>(voiceData));
+        locales = localeSet.values();
+    } else {
+        locales << QLocale(QLocale::English, QLocale::UnitedKingdom)
+                << QLocale(QLocale::English, QLocale::UnitedStates)
+                << QLocale(QLocale::NorwegianBokmal, QLocale::Norway)
+                << QLocale(QLocale::NorwegianNynorsk, QLocale::Norway)
+                << QLocale(QLocale::Finnish, QLocale::Finland);
+    }
 
     return locales;
 }
@@ -38,24 +49,51 @@ QList<QVoice> QTextToSpeechEngineMock::availableVoices() const
 {
     QList<QVoice> voices;
 
-    const QString voiceData = m_locale.bcp47Name();
-    switch (m_locale.language()) {
-    case QLocale::English: {
-        voices << createVoice("Bob", m_locale, QVoice::Male, QVoice::Adult, voiceData + QLatin1String("-1"))
-               << createVoice("Anne", m_locale, QVoice::Female, QVoice::Adult, voiceData + QLatin1String("-2"));
-        break;
-    }
-    case QLocale::NorwegianBokmal:
-        voices << createVoice("Eivind", m_locale, QVoice::Male, QVoice::Adult, voiceData + QLatin1String("-1"))
-               << createVoice("Kjersti", m_locale, QVoice::Female, QVoice::Adult, voiceData + QLatin1String("-2"));
-        break;
-    case QLocale::Finnish:
-        voices << createVoice("Kari", m_locale, QVoice::Male, QVoice::Adult, voiceData + QLatin1String("-1"))
-               << createVoice("Anneli", m_locale, QVoice::Female, QVoice::Adult, voiceData + QLatin1String("-2"));
-        break;
-    default:
-        Q_ASSERT_X(false, "availableVoices", "Unsupported locale!");
-        break;
+    if (const auto it = m_parameters.find("voices"); it != m_parameters.constEnd()) {
+        const auto voicesData = it->value<QList<std::tuple<QString, QLocale, QVoice::Gender, QVoice::Age>>>();
+        for (const auto &voiceData : voicesData) {
+            const QLocale &voiceLocale = std::get<1>(voiceData);
+            if (voiceLocale == m_locale) {
+                voices << createVoice(std::get<0>(voiceData),
+                                      voiceLocale,
+                                      std::get<2>(voiceData),
+                                      std::get<3>(voiceData),
+                                      u"%1-%2"_s.arg(m_locale.bcp47Name()).arg(voices.count() + 1));
+            }
+        }
+    } else {
+        const QString voiceData = m_locale.bcp47Name();
+        const auto newVoice = [=](const QString &name, QVoice::Gender gender,
+                                  QVoice::Age age, const char *suffix) {
+            return createVoice(name, m_locale, gender, age, voiceData + suffix);
+        };
+        switch (m_locale.language()) {
+        case QLocale::English: {
+            if (m_locale.territory() == QLocale::UnitedKingdom) {
+                voices << newVoice("Bob", QVoice::Male, QVoice::Adult, "-1")
+                       << newVoice("Anne", QVoice::Female, QVoice::Adult, "-2");
+            } else {
+                voices << newVoice("Charly", QVoice::Male, QVoice::Senior, "-1")
+                       << newVoice("Mary", QVoice::Female, QVoice::Teenager, "-2");
+            }
+            break;
+        }
+        case QLocale::NorwegianBokmal:
+            voices << newVoice("Eivind", QVoice::Male, QVoice::Adult, "-1")
+                   << newVoice("Kjersti", QVoice::Female, QVoice::Adult, "-2");
+            break;
+        case QLocale::NorwegianNynorsk:
+            voices << newVoice("Anders", QVoice::Male, QVoice::Teenager, "-1")
+                   << newVoice("Ingvild", QVoice::Female, QVoice::Child, "-2");
+            break;
+        case QLocale::Finnish:
+            voices << newVoice("Kari", QVoice::Male, QVoice::Adult, "-1")
+                   << newVoice("Anneli", QVoice::Female, QVoice::Adult, "-2");
+            break;
+        default:
+            Q_ASSERT_X(false, "availableVoices", "Unsupported locale!");
+            break;
+        }
     }
     return voices;
 }

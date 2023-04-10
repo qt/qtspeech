@@ -35,6 +35,8 @@ private slots:
 
     void availableVoices();
     void availableLocales();
+    void findVoices_data();
+    void findVoices();
 
     void locale();
     void voice();
@@ -66,6 +68,10 @@ private slots:
     void synthesizeCallback_data();
     void synthesizeCallback();
 
+public:
+    using Selector = QList<QVoice>(*)(const QTextToSpeech *);
+    using VoiceData = typename std::tuple<QString, QLocale, QVoice::Gender, QVoice::Age>;
+
 private:
     static bool hasDefaultAudioOutput()
     {
@@ -95,6 +101,37 @@ private:
 
     QTextToSpeech::ErrorReason errorReason = QTextToSpeech::ErrorReason::NoError;
 };
+
+// enable QCOMPARE and debug output in case of failure
+QT_BEGIN_NAMESPACE
+bool operator==(const QList<QVoice> &lhs, const QList<tst_QTextToSpeech::VoiceData> &rhs)
+{
+    if (lhs.size() != rhs.size())
+        return false;
+    // we can't assume any stable sorting, so we have to check that all
+    // entries from lhs are also in rhs.
+    for (const auto &voice : lhs) {
+        const tst_QTextToSpeech::VoiceData data{voice.name(), voice.locale(),
+                                                voice.gender(), voice.age()};
+        if (!rhs.contains(data))
+            return false;
+    }
+    return true;
+}
+
+QDebug &operator<<(QDebug &dbg, const tst_QTextToSpeech::VoiceData &data)
+{
+    QDebugStateSaver rollback(dbg);
+    const auto [name, locale, gender, age] = data;
+    dbg.nospace().noquote();
+    dbg << "VoiceData(name: " << name
+                << ", locale: " << locale
+                << ", gender: " << QVoice::genderName(gender)
+                << ", age: " << QVoice::ageName(age)
+        << ")";
+    return dbg;
+}
+QT_END_NAMESPACE
 
 void tst_QTextToSpeech::initTestCase_data()
 {
@@ -184,6 +221,129 @@ void tst_QTextToSpeech::availableLocales()
     qInfo("Available locales:");
     for (const auto &locale : availableLocales)
         qInfo().noquote() << "-" << locale;
+}
+
+void tst_QTextToSpeech::findVoices_data()
+{
+#define SELECTOR(...) Selector([](const QTextToSpeech *tts) -> QList<QVoice> \
+                               { return tts->findVoices(__VA_ARGS__); })
+
+    QTest::addColumn<QList<VoiceData>>("voicesData");
+    QTest::addColumn<Selector>("selector");
+    QTest::addColumn<QList<VoiceData>>("expectedVoices");
+
+    const VoiceData bob =           {u"Bob"_s, QLocale(QLocale::English, QLocale::UnitedKingdom),
+                                     QVoice::Male, QVoice::Senior};
+    const VoiceData alice =         {u"Alice"_s, QLocale(QLocale::English, QLocale::UnitedStates),
+                                     QVoice::Female, QVoice::Senior};
+    const VoiceData maleSenior =    {u"Bob"_s, QLocale(QLocale::English),
+                                     QVoice::Male, QVoice::Senior};
+    const VoiceData maleChild =     {u"Thomas"_s, QLocale(QLocale::German),
+                                     QVoice::Male, QVoice::Child};
+    const VoiceData femaleTeen =    {u"Anne"_s, QLocale(QLocale::English, QLocale::Australia),
+                                     QVoice::Female, QVoice::Teenager};
+    const VoiceData femaleAdult =   {u"Mary"_s, QLocale(QLocale::English),
+                                     QVoice::Female, QVoice::Adult};
+    const VoiceData diverseTeen =   {u"Charly"_s, QLocale(QLocale::French),
+                                     QVoice::Unknown, QVoice::Teenager};
+    const VoiceData diverseAgeless = {u"Sam"_s, QLocale(QLocale::Chinese),
+                                     QVoice::Unknown, QVoice::Other};
+    const VoiceData fromOslo =      {u"Julia"_s, QLocale(QLocale::NorwegianBokmal, QLocale::Norway),
+                                     QVoice::Female, QVoice::Adult};
+    const VoiceData fromWestcoast = {u"Morten"_s, QLocale(QLocale::NorwegianNynorsk, QLocale::Norway),
+                                     QVoice::Male, QVoice::Teenager};
+
+    const QList<VoiceData> allVoices{bob, alice,
+                                     maleSenior, maleChild,
+                                     femaleTeen, femaleAdult,
+                                     diverseTeen, diverseAgeless,
+                                     fromOslo, fromWestcoast};
+
+    QTest::addRow("one-of-one") << QList<VoiceData>{bob}
+        << SELECTOR(u"Bob"_s)
+        << QList<VoiceData>{bob};
+    QTest::addRow("none") << allVoices
+        << SELECTOR(u"Francis"_s)
+        << QList<VoiceData>{};
+    QTest::addRow("all") << QList<VoiceData>{bob, alice}
+        << SELECTOR()
+        << QList<VoiceData>{bob, alice};
+    QTest::addRow("bobs") << allVoices
+        << SELECTOR(u"Bob"_s)
+        << QList<VoiceData>{bob, maleSenior};
+    QTest::addRow("male") << allVoices
+        << SELECTOR(QVoice::Male)
+        << QList<VoiceData>{fromWestcoast, bob, maleSenior, maleChild};
+    QTest::addRow("senior") << allVoices
+        << SELECTOR(QVoice::Senior)
+        << QList<VoiceData>{bob, alice, maleSenior};
+    QTest::addRow("Chinese") << allVoices
+        << SELECTOR(QLocale::Chinese)
+        << QList<VoiceData>{diverseAgeless};
+    QTest::addRow("from Norway") << allVoices
+        << SELECTOR(QLocale::Norway)
+        << QList<VoiceData>{fromOslo, fromWestcoast};
+
+    // multiple of same type - not supported as it would always yield an empty result,
+    // so we generate a compile-time error. Ideally we could logically OR those criteria,
+    // but this is not a SQL database.
+/*
+    QTest::addRow("impossible") << allVoices
+        << SELECTOR(QLocale::Norway, QLocale::Sweden)
+        << QList<VoiceData>{};
+*/
+
+    // mostly compile tests
+    QTest::addRow("QLatin1String") << allVoices
+        << SELECTOR(QLatin1String("Alice"))
+        << QList<VoiceData>{alice};
+    QTest::addRow("QLatin1StringView") << allVoices
+        << SELECTOR(QLatin1StringView("Alice"))
+        << QList<VoiceData>{alice};
+    QTest::addRow("QStringView") << allVoices
+        << SELECTOR(QStringView(u"Alice"))
+        << QList<VoiceData>{alice};
+    QTest::addRow("QRegularExpression") << allVoices
+        << SELECTOR(QRegularExpression("A(.*)"))
+        << QList<VoiceData>{alice, femaleTeen};
+
+#ifndef QT_NO_CAST_FROM_ASCII
+    // compile tests for types that are implicitly convertible to QString
+    QTest::addRow("const char*") << allVoices
+        << SELECTOR("Alice")
+        << QList<VoiceData>{alice};
+    QTest::addRow("QByteArray") << allVoices
+        << SELECTOR(QByteArray("Alice"))
+        << QList<VoiceData>{alice};
+#endif
+
+#undef SELECTOR
+}
+
+void tst_QTextToSpeech::findVoices()
+{
+    QFETCH_GLOBAL(const QString, engine);
+    // Testing once with mock engine is enough, no need to generate QSKIP noise
+    if (engine != "mock")
+        return;
+
+    QFETCH(const QList<VoiceData>, voicesData);
+    QFETCH(const Selector, selector);
+    QFETCH(const QList<VoiceData>, expectedVoices);
+    QVariantMap parameters;
+    parameters["voices"] = QVariant::fromValue(voicesData);
+    QTextToSpeech tts(engine, parameters);
+    QSignalSpy localeChangedSpy(&tts, &QTextToSpeech::localeChanged);
+    QSignalSpy voiceChangedSpy(&tts, &QTextToSpeech::voiceChanged);
+
+    const QList<QVoice> result = selector(&tts);
+
+    QCOMPARE(result, expectedVoices);
+    QCOMPARE(localeChangedSpy.count(), 0);
+    QCOMPARE(voiceChangedSpy.count(), 0);
+
+    // compile test
+    QCOMPARE(tts.findVoices(tts.locale()), tts.availableVoices());
 }
 
 /*

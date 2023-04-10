@@ -17,7 +17,7 @@ QT_DEFINE_QESDP_SPECIALIZATION_DTOR(QVoicePrivate)
     \inmodule QtTextToSpeech
 
     To get a voice that is supported by the current text-to-speech engine,
-    use \l QTextToSpeech::availableVoices().
+    use \l QTextToSpeech::availableVoices() or \l QTextToSpeech::findVoices().
 */
 
 /*!
@@ -53,6 +53,10 @@ QT_DEFINE_QESDP_SPECIALIZATION_DTOR(QVoicePrivate)
 
 /*!
     Constructs an empty QVoice.
+
+    Application code cannot construct arbitrary voice instances.
+    Use \l{QTextToSpeech::availableVoices()} or \l{QTextToSpeech::findVoices()}
+    instead to select a supported voice.
 */
 QVoice::QVoice()
     : d(nullptr)
@@ -174,11 +178,29 @@ QString QVoice::name() const
 }
 
 /*!
+    \qmlproperty enumerator voice::language
+    \brief This property holds the language of the voice.
+    \since 6.6
+
+    This is the \l{QLocale::}{language} attribute of the voice's \l locale.
+*/
+
+/*!
+    \property QVoice::language
+    \brief the language of the voice
+    \since 6.6
+
+    This is the \l{QLocale::}{language} attribute of the voice's \l locale.
+*/
+
+/*!
     \qmlproperty locale voice::locale
     \brief This property holds the locale of the voice.
 
     The locale includes the language and the territory (i.e. accent or dialect)
     of the voice.
+
+    \a language
 */
 
 /*!
@@ -314,10 +336,12 @@ QDebug operator<<(QDebug dbg, const QVoice &voice)
 {
     QDebugStateSaver state(dbg);
     dbg.noquote().nospace();
-    dbg << voice.name() << ", " << voice.locale().language()
-                        << ", " << QVoice::genderName(voice.gender())
-                        << ", " << QVoice::ageName(voice.age())
-                        << "; data: " << voice.data();
+    dbg << "QVoice(name: " << voice.name()
+             << ", locale: " << voice.locale()
+             << ", gender: " << QVoice::genderName(voice.gender())
+             << ", age: " << QVoice::ageName(voice.age())
+             << "; data: " << voice.data()
+        << ")";
     return dbg;
 }
 #endif

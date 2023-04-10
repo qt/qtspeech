@@ -160,6 +160,29 @@ public:
         synthesize(text, nullptr, std::move(func));
     }
 # endif // Q_QDOC
+    template<typename ...Args
+#ifndef Q_QDOC // we need to avoid conflicts with the invokable overload
+    , typename Enable = std::enable_if_t<(... && !std::is_same_v<std::decay_t<Args>, QVariantMap>)>
+#endif
+    >
+    inline QList<QVoice> findVoices(Args &&...args) const
+    {
+        // if any of the arguments is a locale, then we can avoid iterating through all
+        // and only have to search through the voices for that locale.
+        QLocale locale;
+        QLocale *plocale = nullptr;
+        if constexpr (std::disjunction_v<std::is_same<std::decay_t<Args>, QLocale>...>) {
+            locale = std::get<QLocale>(std::make_tuple(args...));
+            plocale = &locale;
+        }
+
+        auto voices(allVoices(plocale));
+        if constexpr (sizeof...(args) > 0)
+            findVoicesImpl(voices, std::forward<Args>(args)...);
+        return voices;
+    }
+
+    Q_INVOKABLE QList<QVoice> findVoices(const QVariantMap &criteria) const;
 
 public Q_SLOTS:
     void say(const QString &text);
@@ -193,6 +216,53 @@ Q_SIGNALS:
 private:
     void synthesizeImpl(const QString &text,
         QtPrivate::QSlotObjectBase *slotObj, const QObject *context);
+    QList<QVoice> allVoices(const QLocale *locale) const;
+
+    // Helper type to find the index of a type in a tuple, which allows
+    // us to generate a compile-time error if there are multiple criteria
+    // of the same type.
+    template <typename T, typename Tuple> struct LastIndexOf;
+    template <typename T, typename ...Ts>
+    struct LastIndexOf<T, std::tuple<Ts...>> {
+        template <qsizetype... Is>
+        static constexpr qsizetype lastIndexOf(std::integer_sequence<qsizetype, Is...>) {
+            return std::max({(std::is_same_v<T, Ts> ? Is : -1)...});
+        }
+        static constexpr qsizetype value =
+            lastIndexOf(std::make_integer_sequence<qsizetype, sizeof...(Ts)>{});
+    };
+    template<typename Arg0, typename ...Args>
+    inline void findVoicesImpl(QList<QVoice> &voices, Arg0 &&arg0, Args &&...args) const
+    {
+        using ArgType = std::decay_t<Arg0>;
+        voices.removeIf([=](const auto &voice){
+            if constexpr (std::is_same_v<ArgType, QLocale>) {
+                return (voice.locale() != arg0);
+            } else if constexpr (std::is_same_v<ArgType, QLocale::Language>) {
+                return (voice.locale().language() != arg0);
+            } else if constexpr (std::is_same_v<ArgType, QLocale::Territory>) {
+                return (voice.locale().territory() != arg0);
+            } else if constexpr (std::is_same_v<ArgType, QVoice::Gender>) {
+                return (voice.gender() != arg0);
+            } else if constexpr (std::is_same_v<ArgType, QVoice::Age>) {
+                return (voice.age() != arg0);
+            } else if constexpr (std::disjunction_v<std::is_convertible<ArgType, QString>,
+                                                    std::is_convertible<ArgType, QStringView>>) {
+                return (voice.name() != arg0);
+            } else if constexpr (std::is_same_v<ArgType, QRegularExpression>) {
+                return !arg0.match(voice.name()).hasMatch();
+            } else {
+                static_assert(QtPrivate::type_dependent_false<Arg0>(),
+                              "Type cannot be matched to a QVoice property!");
+                return true;
+            }
+        });
+        if constexpr (sizeof...(args) > 0) {
+            static_assert(LastIndexOf<ArgType, std::tuple<std::decay_t<Args>...>>::value == -1,
+                          "Using multiple criteria of the same type is not supported");
+            findVoicesImpl(voices, std::forward<Args>(args)...);
+        }
+    }
 
     Q_DISABLE_COPY(QTextToSpeech)
 };

@@ -1102,7 +1102,7 @@ double QTextToSpeech::volume() const
     \l{availableVoices()}{available voices}, and if the current voice is not
     available with the new locale, a new voice will be set.
 
-    \sa voice
+    \sa voice, findVoices()
 */
 void QTextToSpeech::setLocale(const QLocale &locale)
 {
@@ -1137,6 +1137,8 @@ QLocale QTextToSpeech::locale() const
 
 /*!
     \return the list of locales that are supported by the active \l engine.
+
+    \sa availableVoices(), findVoices()
 */
 QList<QLocale> QTextToSpeech::availableLocales() const
 {
@@ -1169,6 +1171,8 @@ QList<QLocale> QTextToSpeech::availableLocales() const
     On some platforms, setting the voice changes other voice attributes such
     as \l locale, \l pitch, and so on. These changes trigger the emission of
     signals.
+
+    \sa findVoices()
 */
 void QTextToSpeech::setVoice(const QVoice &voice)
 {
@@ -1205,6 +1209,8 @@ QVoice QTextToSpeech::voice() const
     \return the list of voices available for the current \l locale.
 
     \note If no locale has been set, the system locale is used.
+
+    \sa availableLocales(), findVoices()
 */
 QList<QVoice> QTextToSpeech::availableVoices() const
 {
@@ -1212,6 +1218,124 @@ QList<QVoice> QTextToSpeech::availableVoices() const
     if (d->m_engine)
         return d->m_engine->availableVoices();
     return QList<QVoice>();
+}
+
+/*!
+    \fn template<typename ...Args> QList<QVoice> QTextToSpeech::findVoices(Args &&...args) const
+
+    \return the list of voices that match the criteria in \a args.
+
+    The arguments in \a args are processed in order to assemble the list of voices that
+    match all of them. An argument of type QString is matched against the \l{QVoice::}{name},
+    of the voice, an argument of type QLocale is matched agains the voice's
+    \l {QVoice::}{locale}, etc. It is possible to specify only the \l {QLocale::}{Language} or
+    \l {QLocale::}{Territory} of the desired voices, and the name can be matched against a
+    \l {QRegularExpression}{regular expression}.
+
+    This function returns all voices if the list of criteria is empty. Multiple criteria
+    of the same type are not possible and will result in a compile-time error.
+
+    \note Unless \a args includes the current \l {QTextToSpeech::}{locale}, this function
+    might need to change the locale of the engine to get the list of all voices. This is
+    engine specific, but might impact ongoing speech synthesis. It is therefore advisable
+    to not call this function unless the \l {QTextToSpeech::}{state} is
+    \l {QTextToSpeech::State}{Ready}.
+
+    \sa availableVoices()
+*/
+
+/*!
+    \qmlmethod list<voice> TextToSpeech::findVoices(map criteria)
+
+    Returns the list of voices that match all the specified \a criteria.
+
+    \a criteria is a map from voice property name to property value, supporting
+    combinations of search criteria such as:
+
+    \code
+    let daniel = tts.findVoices({
+        "name": "Daniel"
+    })
+    let maleEnglish = tts.findVoices({
+        "gender": Voice.Male,
+        "language": Qt.locale('en')
+    })
+    \endcode
+*/
+
+/*!
+    \internal
+    \overload
+
+    This overload exists to provide the findVoices API functionality to QML. C++
+    clients should use the variadic template overload.
+
+    We cannot do any compile-time verification, so we ignore duplicate criteria, and
+    emit a runtime warning if a variant has a type we cannot compare anything with.
+*/
+QList<QVoice> QTextToSpeech::findVoices(const QVariantMap &criteria) const
+{
+    const QLocale *plocale = nullptr;
+    // if we limit by locale, then limit the search to the voices for that
+    if (const auto &it = criteria.find(QLatin1String("locale")); it != criteria.end()) {
+        if (it->metaType() == QMetaType::fromType<QLocale>())
+            plocale = static_cast<const QLocale *>(it->constData());
+    }
+    QList<QVoice> voices = allVoices(plocale);
+
+    voices.removeIf([criteria](const QVoice &voice){
+        const QMetaObject &mo = QVoice::staticMetaObject;
+        for (const auto &[key, value] : criteria.asKeyValueRange()) {
+            const int propertyIndex = mo.indexOfProperty(key.toUtf8().constData());
+            if (propertyIndex < 0) {
+                qWarning("QVoice doesn't have a property %s!", qPrintable(key));
+            } else {
+                const QMetaProperty prop = mo.property(propertyIndex);
+                const QVariant voiceValue = prop.readOnGadget(&voice);
+                if (voiceValue.metaType() == QMetaType::fromType<QLocale::Language>()) {
+                    if (voiceValue.value<QLocale::Language>() != value.toLocale().language())
+                        return true;
+                } else if (voiceValue != value) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    });
+
+    return voices;
+}
+
+/*!
+    \internal
+
+    Returns the list of all voices. This requires iterating through all locales,
+    unless \a locale is set, in which case we can just go through the voices for
+    that locale.
+*/
+QList<QVoice> QTextToSpeech::allVoices(const QLocale *locale) const
+{
+    Q_D(const QTextToSpeech);
+    if (!d->m_engine)
+        return {};
+
+    const QVoice oldVoice = d->m_engine->voice();
+
+    QList<QVoice> voices;
+    QSignalBlocker blockSignals(const_cast<QTextToSpeech *>(this));
+    const QList<QLocale> allLocales = locale ? QList<QLocale>{*locale} : availableLocales();
+    for (const auto &l : allLocales) {
+        if (d->m_engine->locale() != l)
+            d->m_engine->setLocale(l);
+        voices << d->m_engine->availableVoices();
+    }
+
+    // reset back to old voice, which will have changed when we changed the
+    // engine's locale.
+    if (d->m_engine->voice() != oldVoice)
+        d->m_engine->setVoice(oldVoice);
+
+    return voices;
 }
 
 QT_END_NAMESPACE

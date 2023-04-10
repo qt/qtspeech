@@ -5,6 +5,7 @@
 #define QVOICE_H
 
 #include <QtTextToSpeech/qtexttospeech_global.h>
+#include <QtCore/qlocale.h>
 #include <QtCore/qshareddata.h>
 #include <QtCore/qmetatype.h>
 #include <QtCore/qvariant.h>
@@ -22,6 +23,7 @@ class Q_TEXTTOSPEECH_EXPORT QVoice
     Q_PROPERTY(Gender gender READ gender CONSTANT)
     Q_PROPERTY(Age age READ age CONSTANT)
     Q_PROPERTY(QLocale locale READ locale CONSTANT)
+    Q_PROPERTY(QLocale::Language language READ language STORED false)
 
 public:
     enum Gender {
@@ -66,6 +68,8 @@ public:
     QLocale locale() const;
     Gender gender() const;
     Age age() const;
+
+    inline QLocale::Language language() const { return locale().language(); }
 
     static QString genderName(QVoice::Gender gender);
     static QString ageName(QVoice::Age age);
