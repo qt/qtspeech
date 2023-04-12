@@ -15,5 +15,6 @@ project(QtSpeech
 
 find_package(Qt6 ${PROJECT_VERSION} CONFIG REQUIRED COMPONENTS BuildInternals Core Multimedia)
 find_package(Qt6 ${PROJECT_VERSION} CONFIG OPTIONAL_COMPONENTS Gui Widgets Test QuickTest Qml)
+qt_internal_project_setup()
 
 qt_build_repo()
