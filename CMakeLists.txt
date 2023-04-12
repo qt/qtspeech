@@ -20,5 +20,6 @@ if(NOT TARGET Qt::QmlIntegration)
     message(NOTICE "Skipping the build as the condition \"TARGET Qt::QmlIntegration\" is not met.")
     return()
 endif()
+qt_internal_project_setup()
 
 qt_build_repo()
