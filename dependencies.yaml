@@ -7,4 +7,4 @@ dependencies:
     required: false
   ../qtmultimedia:
     ref: 50286c028e46658977d5cd080331bdca591ccc59
-    required: false
+    required: true
