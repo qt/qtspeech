@@ -31,7 +31,7 @@ struct QVoiceForeign
 {
     Q_GADGET
     QML_FOREIGN(QVoice)
-    QML_NAMED_ELEMENT(voice)
+    QML_VALUE_TYPE(voice)
 };
 
 namespace QVoiceForeignNamespace
