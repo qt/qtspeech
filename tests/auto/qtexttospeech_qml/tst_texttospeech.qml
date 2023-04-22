@@ -109,6 +109,10 @@ TestCase {
         id: name_selector
         TextToSpeech {
             engine: "mock"
+            engineParameters: {
+                "delayedInitialization": true
+            }
+
             VoiceSelector.name: "Ingvild"
         }
     }
@@ -117,6 +121,10 @@ TestCase {
         id: genderLanguage_selector
         TextToSpeech {
             engine: "mock"
+            engineParameters: {
+                "delayedInitialization": true
+            }
+
             VoiceSelector.gender: Voice.Female
             VoiceSelector.language: Qt.locale("en")
         }
@@ -124,12 +132,16 @@ TestCase {
 
     function test_voiceSelector() {
         var selector = createTemporaryObject(name_selector, testCase)
+        tryCompare(selector, "state", TextToSpeech.Ready)
+
         compare(selector.voice.name, "Ingvild")
 
         // there is no way to get to QLocale::English from QML
         let EnglishID = 75
 
         selector = createTemporaryObject(genderLanguage_selector, testCase)
+        tryCompare(selector, "state", TextToSpeech.Ready)
+
         verify(["Anne", "Mary"].includes(selector.voice.name))
         let oldName = selector.voice.name
         compare(selector.voice.gender, Voice.Female)
@@ -148,6 +160,7 @@ TestCase {
 
     function test_delayedSelection() {
         var selector = createTemporaryObject(name_selector, testCase)
+        tryCompare(selector, "state", TextToSpeech.Ready)
 
         selector.VoiceSelector.gender = Voice.Female
         selector.VoiceSelector.name = "Kjersti"
@@ -158,6 +171,7 @@ TestCase {
 
     function test_regularExpressionName() {
         var selector = createTemporaryObject(name_selector, testCase)
+        tryCompare(selector, "state", TextToSpeech.Ready)
 
         selector.VoiceSelector.name = /K.*/
         selector.VoiceSelector.select()

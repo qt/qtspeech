@@ -38,8 +38,31 @@ void QDeclarativeTextToSpeech::setEngine(const QString &engine)
 
     m_engine = engine;
     if (m_complete)
-        QTextToSpeech::setEngine(m_engine);
+        QTextToSpeech::setEngine(m_engine, m_engineParameters);
     emit engineChanged(m_engine);
+}
+
+/*!
+    \qmlproperty map TextToSpeech::engineParameters
+    \brief This property holds engine-specific parameters.
+
+    \sa engine
+*/
+QVariantMap QDeclarativeTextToSpeech::engineParameters() const
+{
+    return m_engineParameters;
+}
+
+void QDeclarativeTextToSpeech::setEngineParameters(const QVariantMap &parameters)
+{
+    if (m_engineParameters == parameters)
+        return;
+
+    m_engineParameters = parameters;
+    // if changed after initialization, then we need to recreate the engine
+    if (m_complete)
+        QTextToSpeech::setEngine(QTextToSpeech::engine(), m_engineParameters);
+    emit engineParametersChanged();
 }
 
 void QDeclarativeTextToSpeech::classBegin()
@@ -49,7 +72,7 @@ void QDeclarativeTextToSpeech::classBegin()
 void QDeclarativeTextToSpeech::componentComplete()
 {
     m_complete = true;
-    QTextToSpeech::setEngine(m_engine);
+    QTextToSpeech::setEngine(m_engine, m_engineParameters);
     selectVoice();
 }
 

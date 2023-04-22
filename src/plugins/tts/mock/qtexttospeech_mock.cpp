@@ -4,6 +4,7 @@
 
 #include "qtexttospeech_mock.h"
 #include <QtCore/QTimerEvent>
+#include <QtCore/QTimer>
 #include <QtCore/qregularexpression.h>
 
 QT_BEGIN_NAMESPACE
@@ -15,7 +16,14 @@ QTextToSpeechEngineMock::QTextToSpeechEngineMock(const QVariantMap &parameters, 
 {
     m_locale = availableLocales().first();
     m_voice = availableVoices().first();
-    m_state = QTextToSpeech::Ready;
+    if (m_parameters[u"delayedInitialization"_s].toBool()) {
+        QTimer::singleShot(50, this, [this]{
+            m_state = QTextToSpeech::Ready;
+            emit stateChanged(m_state);
+        });
+    } else {
+        m_state = QTextToSpeech::Ready;
+    }
     m_errorReason = QTextToSpeech::ErrorReason::NoError;
 }
 

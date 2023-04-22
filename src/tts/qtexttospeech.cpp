@@ -459,7 +459,7 @@ QTextToSpeech::~QTextToSpeech()
 bool QTextToSpeech::setEngine(const QString &engine, const QVariantMap &params)
 {
     Q_D(QTextToSpeech);
-    if (d->m_providerName == engine)
+    if (d->m_providerName == engine && params.isEmpty())
         return true;
 
     // read values from the old engine

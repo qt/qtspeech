@@ -28,6 +28,8 @@ class QDeclarativeTextToSpeech : public QTextToSpeech, public QQmlParserStatus
 {
     Q_OBJECT
     Q_PROPERTY(QString engine READ engine WRITE setEngine NOTIFY engineChanged FINAL)
+    Q_PROPERTY(QVariantMap engineParameters READ engineParameters WRITE setEngineParameters NOTIFY engineParametersChanged FINAL)
+
     Q_INTERFACES(QQmlParserStatus)
     QML_NAMED_ELEMENT(TextToSpeech)
 
@@ -43,8 +45,12 @@ public:
     QString engine() const;
     void setEngine(const QString &engine);
 
+    QVariantMap engineParameters() const;
+    void setEngineParameters(const QVariantMap &parameters);
+
 Q_SIGNALS:
     void engineChanged(const QString &);
+    void engineParametersChanged();
 
 protected:
     void classBegin() override;
@@ -53,6 +59,7 @@ protected:
 private:
     bool m_complete = false;
     QString m_engine;
+    QVariantMap m_engineParameters;
 };
 
 QT_END_NAMESPACE
