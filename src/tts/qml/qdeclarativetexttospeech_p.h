@@ -27,6 +27,7 @@ class QVoiceSelectorAttached;
 class QDeclarativeTextToSpeech : public QTextToSpeech, public QQmlParserStatus
 {
     Q_OBJECT
+    Q_PROPERTY(QString engine READ engine WRITE setEngine NOTIFY engineChanged FINAL)
     Q_INTERFACES(QQmlParserStatus)
     QML_NAMED_ELEMENT(TextToSpeech)
 
@@ -39,12 +40,19 @@ public:
 
     void selectVoice();
 
+    QString engine() const;
+    void setEngine(const QString &engine);
+
+Q_SIGNALS:
+    void engineChanged(const QString &);
+
 protected:
     void classBegin() override;
     void componentComplete() override;
 
 private:
     bool m_complete = false;
+    QString m_engine;
 };
 
 QT_END_NAMESPACE

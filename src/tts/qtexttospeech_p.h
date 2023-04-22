@@ -22,6 +22,7 @@
 #include <QMutex>
 #include <QCborMap>
 #include <QtCore/qhash.h>
+#include <QtCore/qnumeric.h>
 #include <QtCore/private/qobject_p.h>
 
 QT_BEGIN_NAMESPACE
@@ -45,7 +46,7 @@ private:
     static void loadPluginMetadata(QMultiHash<QString, QCborMap> &list);
     QTextToSpeech *q_ptr;
     QTextToSpeechPlugin *m_plugin = nullptr;
-    QTextToSpeechEngine *m_engine = nullptr;
+    std::unique_ptr<QTextToSpeechEngine> m_engine = nullptr;
     QString m_providerName;
     QCborMap m_metaData;
     static QMutex m_mutex;
@@ -53,6 +54,10 @@ private:
     QTextToSpeech::State m_state = QTextToSpeech::Error;
     QMetaObject::Connection m_synthesizeConnection;
     QtPrivate::QSlotObjectBase *m_slotObject = nullptr;
+
+    double m_storedPitch = qQNaN();
+    double m_storedVolume = qQNaN();
+    double m_storedRate = qQNaN();
 };
 
 QT_END_NAMESPACE

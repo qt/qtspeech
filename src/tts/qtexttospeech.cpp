@@ -11,6 +11,8 @@
 
 QT_BEGIN_NAMESPACE
 
+using namespace Qt::StringLiterals;
+
 Q_GLOBAL_STATIC_WITH_ARGS(QFactoryLoader, loader,
         ("org.qt-project.qt.speech.tts.plugin/6.0",
          QLatin1String("/texttospeech")))
@@ -26,7 +28,6 @@ QTextToSpeechPrivate::QTextToSpeechPrivate(QTextToSpeech *speech)
 
 QTextToSpeechPrivate::~QTextToSpeechPrivate()
 {
-    delete m_engine;
 }
 
 void QTextToSpeechPrivate::setEngineProvider(const QString &engine, const QVariantMap &params)
@@ -34,7 +35,7 @@ void QTextToSpeechPrivate::setEngineProvider(const QString &engine, const QVaria
     Q_Q(QTextToSpeech);
 
     q->stop(QTextToSpeech::BoundaryHint::Immediate);
-    delete m_engine;
+    m_engine.reset();
 
     m_providerName = engine;
     if (m_providerName.isEmpty()) {
@@ -59,7 +60,7 @@ void QTextToSpeechPrivate::setEngineProvider(const QString &engine, const QVaria
     loadPlugin();
     if (m_plugin) {
         QString errorString;
-        m_engine = m_plugin->createTextToSpeechEngine(params, nullptr, &errorString);
+        m_engine.reset(m_plugin->createTextToSpeechEngine(params, nullptr, &errorString));
         if (!m_engine) {
             qCritical() << "Error creating text-to-speech engine" << m_providerName
                         << (errorString.isEmpty() ? QStringLiteral("") : (QStringLiteral(": ") + errorString));
@@ -72,11 +73,17 @@ void QTextToSpeechPrivate::setEngineProvider(const QString &engine, const QVaria
         // We have to maintain the public state separately from the engine's actual
         // state, as we use it to manage queued texts
         updateState(m_engine->state());
-        QObjectPrivate::connect(m_engine, &QTextToSpeechEngine::stateChanged, this, &QTextToSpeechPrivate::updateState);
+        QObjectPrivate::connect(m_engine.get(), &QTextToSpeechEngine::stateChanged,
+                                this, &QTextToSpeechPrivate::updateState);
         // The other engine signals are directly forwarded to public API signals
-        QObject::connect(m_engine, &QTextToSpeechEngine::errorOccurred, q, &QTextToSpeech::errorOccurred);
-        QObject::connect(m_engine, &QTextToSpeechEngine::sayingWord, q, &QTextToSpeech::sayingWord);
-        QObject::connect(m_engine, &QTextToSpeechEngine::synthesized, q, &QTextToSpeech::synthesized);
+        QObject::connect(m_engine.get(), &QTextToSpeechEngine::errorOccurred,
+                         q, &QTextToSpeech::errorOccurred);
+        QObject::connect(m_engine.get(), &QTextToSpeechEngine::sayingWord,
+                         q, &QTextToSpeech::sayingWord);
+        QObject::connect(m_engine.get(), &QTextToSpeechEngine::synthesized,
+                         q, &QTextToSpeech::synthesized);
+    } else {
+        m_providerName.clear();
     }
 }
 
@@ -178,7 +185,7 @@ void QTextToSpeechPrivate::updateState(QTextToSpeech::State newState)
                     // case the state changed or the pendingTexts got reset.
                     if (m_state == oldState && !m_pendingTexts.isEmpty()) {
                         m_pendingTexts.takeFirst();
-                        (m_engine->*nextFunction)(nextText);
+                        (m_engine.get()->*nextFunction)(nextText);
                         return;
                     } else if (m_state == QTextToSpeech::Paused) {
                         // In case of pause(), empty strings got inserted.
@@ -400,7 +407,12 @@ QTextToSpeech::QTextToSpeech(const QString &engine, const QVariantMap &params, Q
     : QObject(*new QTextToSpeechPrivate(this), parent)
 {
     Q_D(QTextToSpeech);
-    d->setEngineProvider(engine, params);
+    // allow QDeclarativeTextToSpeech to skip initialization until the component
+    // is complete
+    if (engine != u"none"_s)
+        d->setEngineProvider(engine, params);
+    else
+        d->m_providerName = engine;
 }
 
 /*!
@@ -450,12 +462,41 @@ bool QTextToSpeech::setEngine(const QString &engine, const QVariantMap &params)
     if (d->m_providerName == engine)
         return true;
 
+    // read values from the old engine
+    if (d->m_engine) {
+        d->m_storedPitch = d->m_engine->pitch();
+        d->m_storedRate = d->m_engine->rate();
+        d->m_storedVolume = d->m_engine->volume();
+    }
+
     d->setEngineProvider(engine, params);
 
     emit engineChanged(d->m_providerName);
     d->updateState(d->m_engine ? d->m_engine->state()
                                : QTextToSpeech::Error);
-    return d->m_engine;
+
+    // Restore values from the previous engine, or from
+    // property setters before the engine was initialized.
+    if (d->m_engine) {
+        if (!qIsNaN(d->m_storedPitch))
+            d->m_engine->setPitch(d->m_storedPitch);
+        if (!qIsNaN(d->m_storedRate))
+            d->m_engine->setRate(d->m_storedRate);
+        if (!qIsNaN(d->m_storedVolume))
+            d->m_engine->setVolume(d->m_storedVolume);
+
+        // setting the engine might have changed these values
+        if (double realPitch = pitch(); d->m_storedPitch != realPitch)
+            emit pitchChanged(realPitch);
+        if (double realRate = rate(); d->m_storedRate != realRate)
+            emit rateChanged(realRate);
+        if (double realVolume = volume(); d->m_storedVolume != realVolume)
+            emit volumeChanged(realVolume);
+
+        emit localeChanged(locale());
+        emit voiceChanged(voice());
+    }
+    return d->m_engine.get();
 }
 
 QString QTextToSpeech::engine() const
@@ -878,7 +919,7 @@ void QTextToSpeech::synthesizeImpl(const QString &text,
                         const_cast<QByteArray *>(&bytes)};
         d->m_slotObject->call(const_cast<QObject *>(context), args);
     };
-    d->m_synthesizeConnection = connect(d->m_engine, &QTextToSpeechEngine::synthesized,
+    d->m_synthesizeConnection = connect(d->m_engine.get(), &QTextToSpeechEngine::synthesized,
                                         context ? context : this, receive);
     synthesize(text);
 }
@@ -1009,10 +1050,15 @@ void QTextToSpeech::resume()
 void QTextToSpeech::setPitch(double pitch)
 {
     Q_D(QTextToSpeech);
-    if (!d->m_engine)
-        return;
-
     pitch = qBound(-1.0, pitch, 1.0);
+
+    if (!d->m_engine) {
+        if (d->m_storedPitch != pitch) {
+            d->m_storedPitch = pitch;
+            emit pitchChanged(pitch);
+        }
+        return;
+    }
     if (d->m_engine->pitch() == pitch)
         return;
     if (d->m_engine && d->m_engine->setPitch(pitch))
@@ -1024,7 +1070,7 @@ double QTextToSpeech::pitch() const
     Q_D(const QTextToSpeech);
     if (d->m_engine)
         return d->m_engine->pitch();
-    return 0.0;
+    return qIsNaN(d->m_storedPitch) ? 0.0 : d->m_storedPitch;
 }
 
 /*!
@@ -1044,9 +1090,15 @@ double QTextToSpeech::pitch() const
 void QTextToSpeech::setRate(double rate)
 {
     Q_D(QTextToSpeech);
-    if (!d->m_engine)
-        return;
     rate = qBound(-1.0, rate, 1.0);
+
+    if (!d->m_engine) {
+        if (d->m_storedRate != rate) {
+            d->m_storedRate = rate;
+            emit rateChanged(rate);
+        }
+        return;
+    }
     if (d->m_engine->rate() == rate)
         return;
     if (d->m_engine && d->m_engine->setRate(rate))
@@ -1058,7 +1110,7 @@ double QTextToSpeech::rate() const
     Q_D(const QTextToSpeech);
     if (d->m_engine)
         return d->m_engine->rate();
-    return 0.0;
+    return qIsNaN(d->m_storedRate) ? 0.0 : d->m_storedRate;
 }
 
 /*!
@@ -1078,13 +1130,17 @@ double QTextToSpeech::rate() const
 void QTextToSpeech::setVolume(double volume)
 {
     Q_D(QTextToSpeech);
-    if (!d->m_engine)
-        return;
-
     volume = qBound(0.0, volume, 1.0);
+
+    if (!d->m_engine) {
+        if (d->m_storedVolume != volume) {
+            d->m_storedVolume = volume;
+            emit volumeChanged(volume);
+        }
+        return;
+    }
     if (d->m_engine->volume() == volume)
         return;
-
     if (d->m_engine->setVolume(volume))
         emit volumeChanged(volume);
 }
@@ -1094,7 +1150,7 @@ double QTextToSpeech::volume() const
     Q_D(const QTextToSpeech);
     if (d->m_engine)
         return d->m_engine->volume();
-    return 0.0;
+    return qIsNaN(d->m_storedVolume) ? 0.0 : d->m_storedVolume;
 }
 
 /*!

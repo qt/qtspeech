@@ -17,8 +17,30 @@ using namespace Qt::StringLiterals;
     engine until the QML engine sets the engine.
 */
 QDeclarativeTextToSpeech::QDeclarativeTextToSpeech(QObject *parent)
-    : QTextToSpeech(parent)
+    : QTextToSpeech(u"none"_s, parent)
 {}
+
+/*!
+    Intercept the calls to QTextToSpeech::engine/setEngine so that we can
+    delay the setting of the engine until the component is completely parsed.
+*/
+QString QDeclarativeTextToSpeech::engine() const
+{
+    if (!m_engine.isEmpty())
+        return m_engine;
+    return QTextToSpeech::engine();
+}
+
+void QDeclarativeTextToSpeech::setEngine(const QString &engine)
+{
+    if (m_engine == engine)
+        return;
+
+    m_engine = engine;
+    if (m_complete)
+        QTextToSpeech::setEngine(m_engine);
+    emit engineChanged(m_engine);
+}
 
 void QDeclarativeTextToSpeech::classBegin()
 {
@@ -27,6 +49,7 @@ void QDeclarativeTextToSpeech::classBegin()
 void QDeclarativeTextToSpeech::componentComplete()
 {
     m_complete = true;
+    QTextToSpeech::setEngine(m_engine);
     selectVoice();
 }
 

@@ -15,9 +15,32 @@ TestCase {
         engine: "mock"
     }
 
-    // verifies that the mock engine is synchronous
+    // verifies that the mock engine is synchronous by default
     function initTestCase() {
         compare(tts.state, TextToSpeech.Ready)
+    }
+
+    Component {
+        id: defaultEngine
+        TextToSpeech {
+            rate: 0.5
+            volume: 0.8
+            pitch: 0.1
+        }
+    }
+
+    function test_defaultEngine() {
+        let def = createTemporaryObject(defaultEngine, testCase)
+        if (!def.engine)
+            skip("No default engine available on this platform")
+        else if (def.engine == "speechd")
+            skip("Older libspeechd versions don't implement attribute getters")
+        else
+            console.log("The default tts engine is " + def.engine)
+
+        compare(def.rate, 0.5)
+        compare(def.volume, 0.8)
+        compare(def.pitch, 0.1)
     }
 
     function test_availableLocales() {
@@ -49,6 +72,37 @@ TestCase {
             "age": Voice.Adult
         });
         compare(englishWomen.length, 1)
+    }
+
+    Component {
+        id: lateEngine
+        TextToSpeech {
+            rate: 0.5
+            volume: 0.8
+            pitch: 0.1
+            engine: "mock"
+        }
+    }
+
+    function test_lateEngine() {
+        let tts = createTemporaryObject(lateEngine, testCase)
+        tryCompare(tts, "state", TextToSpeech.Ready)
+
+        compare(tts.rate, 0.5)
+        compare(tts.volume, 0.8)
+        compare(tts.pitch, 0.1)
+        compare(tts.engine, "mock")
+
+        tts.engine = ""
+        // If there is no default engine, then we use mock
+        if (!tts.engine)
+            tts.engine = "mock";
+        else if (tts.engine == "speechd")
+            skip("Older libspeechd versions don't implement attribute getters")
+
+        compare(tts.rate, 0.5)
+        compare(tts.volume, 0.8)
+        compare(tts.pitch, 0.1)
     }
 
     Component {
