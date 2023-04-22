@@ -160,11 +160,8 @@ public:
         synthesize(text, nullptr, std::move(func));
     }
 # endif // Q_QDOC
-    template<typename ...Args
-#ifndef Q_QDOC // we need to avoid conflicts with the invokable overload
-    , typename Enable = std::enable_if_t<(... && !std::is_same_v<std::decay_t<Args>, QVariantMap>)>
-#endif
-    >
+
+    template<typename ...Args>
     inline QList<QVoice> findVoices(Args &&...args) const
     {
         // if any of the arguments is a locale, then we can avoid iterating through all
@@ -181,8 +178,6 @@ public:
             findVoicesImpl(voices, std::forward<Args>(args)...);
         return voices;
     }
-
-    Q_INVOKABLE QList<QVoice> findVoices(const QVariantMap &criteria) const;
 
 public Q_SLOTS:
     void say(const QString &text);
@@ -213,10 +208,12 @@ Q_SIGNALS:
     void synthesized(const QAudioFormat &format, const QByteArray &data);
     void aboutToSynthesize(const QString &text);
 
+protected:
+    QList<QVoice> allVoices(const QLocale *locale) const;
+
 private:
     void synthesizeImpl(const QString &text,
         QtPrivate::QSlotObjectBase *slotObj, const QObject *context);
-    QList<QVoice> allVoices(const QLocale *locale) const;
 
     // Helper type to find the index of a type in a tuple, which allows
     // us to generate a compile-time error if there are multiple criteria

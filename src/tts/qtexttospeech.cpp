@@ -225,11 +225,12 @@ void QTextToSpeechPrivate::disconnectSynthesizeFunctor()
 
     To synthesize text into PCM data for further processing, use synthesize().
 
-    The list of voices the engine supports for the current language is returned by
-    \l availableVoices(). Change the language using \l setLocale(), using one of the
-    \l availableLocales() that is a good match for the language that the input text
-    is in, and for the accent of the desired voice output. This will change the list
-    of available voices on most platforms. Then use one of the available voices in
+    Use \l findVoices() to get a list of matching voices, or use \l
+    availableVoices() to get the list of voices that support the current
+    locale. Change the \l locale property, using one of the \l availableLocales()
+    that is a good match for the language that the input text is in, and for
+    the accent of the desired voice output. This will change the list of
+    available voices on most platforms. Then use one of the available voices in
     a call to \l setVoice().
 
     Not every engine supports all features. Use the engineCapabilities() function to
@@ -260,15 +261,29 @@ void QTextToSpeechPrivate::disconnectSynthesizeFunctor()
 
     To synthesize text into PCM data for further processing, use synthesize().
 
-    The list of voices the engine supports for the current language is returned by
-    \l availableVoices(). Change the language using the \l locale property, using one
-    of the \l availableLocales() that is a good match for the language that the input text
-    is in, and for the accent of the desired voice output. This will change the list
-    of available voices on most platforms. Then use one of the available voices in
+    To set a voice, use the VoiceSelector attached property like this:
+
+    \code
+    TextToSpeech {
+        VoiceSelector.locale: Qt.locale("en_UK")
+        VoiceSelector.gender: Voice.Male
+    }
+    \endcode
+
+    The first voice that matches all specified criteria will be used. If no voice
+    matches all criteria, then the voice will not change.
+
+    Alternatively, use \l findVoices() to get a list of matching voices, or use
+    \l availableVoices() to get the list of voices that support the current
+    locale. Change the \l locale property, using one of the \l availableLocales()
+    that is a good match for the language that the input text is in, and for
+    the accent of the desired voice output. This will change the list of
+    available voices on most platforms. Then use one of the available voices in
     the \l voice property.
 
-    Not every engine supports all features. Use the engineCapabilities() function to
-    test which features are available, and adjust the usage of the type accordingly.
+    Not every engine supports all features. Use the engineCapabilities()
+    function to test which features are available, and adjust the usage of the
+    type accordingly.
 
     \note Which locales and voices the engine supports depends usually on the Operating
     System configuration. E.g. on macOS, end users can install voices through the
@@ -1261,50 +1276,9 @@ QList<QVoice> QTextToSpeech::availableVoices() const
         "language": Qt.locale('en')
     })
     \endcode
+
+    \sa VoiceSelector
 */
-
-/*!
-    \internal
-    \overload
-
-    This overload exists to provide the findVoices API functionality to QML. C++
-    clients should use the variadic template overload.
-
-    We cannot do any compile-time verification, so we ignore duplicate criteria, and
-    emit a runtime warning if a variant has a type we cannot compare anything with.
-*/
-QList<QVoice> QTextToSpeech::findVoices(const QVariantMap &criteria) const
-{
-    const QLocale *plocale = nullptr;
-    // if we limit by locale, then limit the search to the voices for that
-    if (const auto &it = criteria.find(QLatin1String("locale")); it != criteria.end()) {
-        if (it->metaType() == QMetaType::fromType<QLocale>())
-            plocale = static_cast<const QLocale *>(it->constData());
-    }
-    QList<QVoice> voices = allVoices(plocale);
-
-    voices.removeIf([criteria](const QVoice &voice){
-        const QMetaObject &mo = QVoice::staticMetaObject;
-        for (const auto &[key, value] : criteria.asKeyValueRange()) {
-            const int propertyIndex = mo.indexOfProperty(key.toUtf8().constData());
-            if (propertyIndex < 0) {
-                qWarning("QVoice doesn't have a property %s!", qPrintable(key));
-            } else {
-                const QMetaProperty prop = mo.property(propertyIndex);
-                const QVariant voiceValue = prop.readOnGadget(&voice);
-                if (voiceValue.metaType() == QMetaType::fromType<QLocale::Language>()) {
-                    if (voiceValue.value<QLocale::Language>() != value.toLocale().language())
-                        return true;
-                } else if (voiceValue != value) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    });
-
-    return voices;
-}
 
 /*!
     \internal

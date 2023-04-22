@@ -20,13 +20,6 @@
 
 QT_BEGIN_NAMESPACE
 
-struct QTextToSpeechForeign
-{
-    Q_GADGET
-    QML_FOREIGN(QTextToSpeech)
-    QML_NAMED_ELEMENT(TextToSpeech)
-};
-
 struct QVoiceForeign
 {
     Q_GADGET

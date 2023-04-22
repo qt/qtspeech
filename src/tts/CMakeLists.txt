@@ -22,15 +22,7 @@ qt_internal_add_module(TextToSpeech
 
 
 if(TARGET Qt::Qml)
-    qt_internal_add_qml_module(TextToSpeechQml
-        URI "QtTextToSpeech"
-        VERSION "${PROJECT_VERSION}"
-        PLUGIN_TARGET TextToSpeechQml
-        SOURCES
-            qtexttospeech_qmltypes_p.h
-        LIBRARIES
-            Qt::TextToSpeech
-    )
+    add_subdirectory(qml)
 endif()
 
 if(ANDROID)
