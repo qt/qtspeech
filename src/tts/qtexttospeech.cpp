@@ -911,6 +911,8 @@ void QTextToSpeech::synthesizeImpl(const QString &text,
 {
     Q_D(QTextToSpeech);
     Q_ASSERT(slotObj);
+    if (d->m_slotObject)
+        d->m_slotObject->destroyIfLastRef();
     d->m_slotObject = slotObj;
     const auto receive = [d, context](const QAudioFormat &format, const QByteArray &bytes){
         Q_ASSERT(d->m_slotObject);
