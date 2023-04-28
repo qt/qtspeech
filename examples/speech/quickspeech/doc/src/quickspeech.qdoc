@@ -102,9 +102,10 @@
     updating the available engines.
 
 
-    \printuntil updateVoices()
+    \printuntil id: voicesComboBox
+    \printto Text
 
-    \section2 Selecting voice, volume, and pitch
+    \section2 Selecting volume, pitch, and rate
 
     These controls are implemented with \l{Slider}{Sliders} as follows:
 
