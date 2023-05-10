@@ -690,7 +690,7 @@ void tst_QTextToSpeech::sayMultiple()
     QFETCH(const QStringList, textList);
     for (qsizetype i = 0; i < textList.count(); ++i) {
         const QString &text = textList.at(i);
-        tts.sayNext(text);
+        tts.enqueue(text);
         if (!i) // wait for the engine to start speaking
             QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
     }
@@ -736,7 +736,7 @@ void tst_QTextToSpeech::pauseAtUtterance()
 
     for (qsizetype i = 0; i < textList.count(); ++i) {
         const QString &text = textList.at(i);
-        tts.sayNext(text);
+        tts.enqueue(text);
         if (!i)
             QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
     }

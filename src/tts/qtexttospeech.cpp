@@ -616,9 +616,9 @@ QTextToSpeech::State QTextToSpeech::state() const
     This signal gets emitted just before the engine starts to synthesize the
     speech audio for \a text. Applications can use this signal to make last-minute
     changes to \l voice attributes, or to track the process of text enqueued
-    via sayNext().
+    via enqueue().
 
-    \sa sayNext(), voice
+    \sa enqueue(), voice
 */
 
 /*!
@@ -628,9 +628,9 @@ QTextToSpeech::State QTextToSpeech::state() const
     This signal gets emitted just before the engine starts to synthesize the
     speech audio for \a text. Applications can use this signal to make last-minute
     changes to \l voice attributes, or to track the process of text enqueued
-    via sayNext().
+    via enqueue().
 
-    \sa sayNext(), synthesize(), voice
+    \sa enqueue(), synthesize(), voice
 */
 
 /*!
@@ -760,7 +760,7 @@ QString QTextToSpeech::errorString() const
     set to \l Speaking once the reading starts. When the reading is done,
     \l state will be set to \l Ready.
 
-    \sa sayNext(), stop(), pause(), resume(), synthesize()
+    \sa enqueue(), stop(), pause(), resume(), synthesize()
 */
 void QTextToSpeech::say(const QString &text)
 {
@@ -773,7 +773,7 @@ void QTextToSpeech::say(const QString &text)
 }
 
 /*!
-    \qmlmethod TextToSpeech::sayNext(string text)
+    \qmlmethod TextToSpeech::enqueue(string text)
 
     Adds \a text to the queue of text to be spoken, and starts speaking.
 
@@ -806,7 +806,7 @@ void QTextToSpeech::say(const QString &text)
 
     \sa say(), stop(), aboutToSynthesize(), synthesize()
 */
-void QTextToSpeech::sayNext(const QString &text)
+void QTextToSpeech::enqueue(const QString &text)
 {
     Q_D(QTextToSpeech);
     if (!d->m_engine || text.isEmpty())
@@ -947,7 +947,7 @@ void QTextToSpeech::synthesizeImpl(const QString &text,
     The reading cannot be resumed. Whether the \a boundaryHint is
     respected depends on the engine.
 
-    \sa say(), sayNext(), pause(), QTextToSpeech::BoundaryHint
+    \sa say(), enqueue(), pause(), QTextToSpeech::BoundaryHint
 */
 
 /*!
@@ -957,7 +957,7 @@ void QTextToSpeech::synthesizeImpl(const QString &text,
     The reading cannot be resumed. Whether the \a boundaryHint is
     respected depends on the engine.
 
-    \sa say(), sayNext(), pause()
+    \sa say(), enqueue(), pause()
 */
 void QTextToSpeech::stop(BoundaryHint boundaryHint)
 {
