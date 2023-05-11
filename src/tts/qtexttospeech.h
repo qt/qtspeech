@@ -105,7 +105,7 @@ public:
                     Functor &&func)
     {
         using Prototype = void(*)(QAudioFormat, QByteArray);
-        synthesizeImpl(text, QtPrivate::makeSlotObject<Prototype>(std::forward<Functor>(func)), receiver);
+        synthesizeImpl(text, QtPrivate::makeCallableObject<Prototype>(std::forward<Functor>(func)), receiver);
     }
 
     // synthesize to a functor or function pointer (without context)
