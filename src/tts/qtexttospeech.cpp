@@ -507,7 +507,7 @@ QString QTextToSpeech::engine() const
 
 /*!
     \enum QTextToSpeech::Capability
-
+    \since 6.6
     \brief This enum describes the capabilities of a text-to-speech engine.
 
     \value None                 The engine implements none of the capabilities.
@@ -523,6 +523,7 @@ QString QTextToSpeech::engine() const
 /*!
     \qmlproperty enumeration TextToSpeech::engineCapabilities
     \brief This property holds the capabilities implemented by the current engine.
+    \since 6.6
 
     \sa engine, QTextToSpeech::Capability
 */
@@ -530,6 +531,7 @@ QString QTextToSpeech::engine() const
 /*!
     \property QTextToSpeech::engineCapabilities
     \brief the capabilities implemented by the current engine
+    \since 6.6
 
     \sa engine
 */
@@ -774,6 +776,7 @@ void QTextToSpeech::say(const QString &text)
 
 /*!
     \qmlmethod TextToSpeech::enqueue(string text)
+    \since 6.6
 
     Adds \a text to the queue of text to be spoken, and starts speaking.
 
@@ -791,6 +794,8 @@ void QTextToSpeech::say(const QString &text)
 */
 
 /*!
+    \since 6.6
+
     Adds \a text to the queue of texts to be spoken, and starts speaking.
 
     If the engine's \l state is currently \c Ready, \a text will be spoken
@@ -928,6 +933,7 @@ void QTextToSpeech::synthesizeImpl(const QString &text,
 
 /*!
     \fn void QTextToSpeech::synthesized(const QAudioFormat &format, const QByteArray &data)
+    \since 6.6
 
     This signal is emitted when pcm \a data is available. The data is encoded in \a format.
     A single call to \l synthesize() might result in several emissions of this signal.
@@ -1295,6 +1301,7 @@ QList<QVoice> QTextToSpeech::availableVoices() const
 
 /*!
     \fn template<typename ...Args> QList<QVoice> QTextToSpeech::findVoices(Args &&...args) const
+    \since 6.6
 
     \return the list of voices that match the criteria in \a args.
 
@@ -1319,6 +1326,7 @@ QList<QVoice> QTextToSpeech::availableVoices() const
 
 /*!
     \qmlmethod list<voice> TextToSpeech::findVoices(map criteria)
+    \since 6.6
 
     Returns the list of voices that match all the specified \a criteria.
 

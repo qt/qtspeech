@@ -35,9 +35,9 @@
 
     \section1 Highlighting words as they are spoken
 
-    The TextArea \c input is used to get the text to input and the \l onSayingWord
-    signal as the trigger and also to know the position to highlight words as they
-    are spoken.
+    The TextArea \c input is used to get the text to input and the
+    \l{TextToSpeech::sayingWord}{onSayingWord} signal as the trigger and also to know
+    the position to highlight words as they are spoken.
 
     \skipto onSayingWord:
     \printuntil input.select(start, start + length)
@@ -55,7 +55,7 @@
     \section2 The speak button
 
     A \l Button is created labeled "Speak". It is enabled if \c tts's state
-    property is either \l TextToSpeech.paused or \l{TextToSpeech.ready}.
+    property is either \l{QTextToSpeech::}{Paused} or \l{QTextToSpeech::}{Ready}.
 
     \skipto RowLayout
     \printto onClicked: {
@@ -87,8 +87,8 @@
     For the engine selection ComboBox, \c tts.availableEngines() is used as the
     model.
 
-    The \l onActivated triggers assigning tts.engine the current text at the
-    ComboBoxes current index.
+    The \l{ComboBox::activated}{onActivated} triggers assigning tts.engine the
+    current text at the ComboBoxes current index.
 
     \skipto Text {
     \printuntil updateVoices()
