@@ -13,6 +13,7 @@ using namespace Qt::StringLiterals;
 /*!
     \qmltype VoiceSelector
     \inqmlmodule QtTextToSpeech
+    \since 6.6
     \brief Provides attached properties for selecting the voice of a TextToSpeech
     element.
 
