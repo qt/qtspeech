@@ -59,7 +59,7 @@ Q_SIGNALS:
     void stateChanged(QTextToSpeech::State state);
     void errorOccurred(QTextToSpeech::ErrorReason error, const QString &errorString);
 
-    void sayingWord(qsizetype start, qsizetype length);
+    void sayingWord(const QString &word, qsizetype start, qsizetype length);
     void synthesized(const QAudioFormat &format, const QByteArray &data);
 };
 

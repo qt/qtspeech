@@ -84,8 +84,10 @@
     auto length = characterRange.length;
     if (length && text.at(characterRange.location + length - 1).isPunct())
         --length;
-    if (length)
-        _engine->sayingWord(characterRange.location, length);
+    if (length) {
+        _engine->sayingWord(text.sliced(characterRange.location, length),
+                            characterRange.location, length);
+    }
 }
 
 @end

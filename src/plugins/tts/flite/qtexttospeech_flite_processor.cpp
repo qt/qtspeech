@@ -152,7 +152,7 @@ void QTextToSpeechProcessorFlite::timerEvent(QTimerEvent *event)
     qCDebug(lcSpeechTtsFlite) << "Moving current token" << m_currentToken << m_tokens.size();
     auto currentToken = m_tokens.at(m_currentToken);
     m_index = m_text.indexOf(currentToken.text, m_index);
-    emit sayingWord(m_index, currentToken.text.length());
+    emit sayingWord(currentToken.text, m_index, currentToken.text.length());
     m_index += currentToken.text.length();
     ++m_currentToken;
     if (m_currentToken == m_tokens.size())

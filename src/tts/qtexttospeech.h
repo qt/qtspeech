@@ -158,7 +158,7 @@ Q_SIGNALS:
     void volumeChanged(double volume);
     void voiceChanged(const QVoice &voice);
 
-    void sayingWord(qsizetype start, qsizetype length);
+    void sayingWord(const QString &word, qsizetype id, qsizetype start, qsizetype length);
     void synthesized(const QAudioFormat &format, const QByteArray &data);
     void aboutToSynthesize(qsizetype id);
 

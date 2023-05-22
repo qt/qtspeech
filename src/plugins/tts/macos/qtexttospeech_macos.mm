@@ -38,8 +38,10 @@ using namespace Qt::StringLiterals;
     auto length = characterRange.length;
     if (text.at(characterRange.location + length - 1).isPunct())
         --length;
-    if (length)
-        emit speechPrivate->sayingWord(characterRange.location, length);
+    if (length) {
+        emit speechPrivate->sayingWord(text.sliced(characterRange.location, length),
+                                       characterRange.location, length);
+    }
     speechPrivate->speaking();
 }
 

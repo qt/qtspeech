@@ -79,7 +79,9 @@ void QTextToSpeechPrivate::setEngineProvider(const QString &engine, const QVaria
         QObject::connect(m_engine.get(), &QTextToSpeechEngine::errorOccurred,
                          q, &QTextToSpeech::errorOccurred);
         QObject::connect(m_engine.get(), &QTextToSpeechEngine::sayingWord,
-                         q, &QTextToSpeech::sayingWord);
+                         q, [this, q](const QString &word, qsizetype start, qsizetype length){
+            emit q->sayingWord(word, m_currentUtterance, start, length);
+        });
         QObject::connect(m_engine.get(), &QTextToSpeechEngine::synthesized,
                          q, &QTextToSpeech::synthesized);
     } else {
@@ -640,11 +642,11 @@ QTextToSpeech::State QTextToSpeech::state() const
 */
 
 /*!
-    \qmlsignal TextToSpeech::sayingWord(int start, int length)
+    \qmlsignal TextToSpeech::sayingWord(string word, int id, int start, int length)
     \since 6.6
 
-    This signal is emitted when the word indicated by \a start and \a length
-    in the currently spoken text gets played to the audio device.
+    This signal is emitted when the \a word, which is the slice of text indicated
+    by \a start and \a length in the utterance \a id, gets played to the audio device.
 
     \note This signal requires that the engine has the
     \l {QTextToSpeech::Capability::}{WordByWordProgress} capability.
@@ -656,11 +658,11 @@ QTextToSpeech::State QTextToSpeech::state() const
 */
 
 /*!
-    \fn void QTextToSpeech::sayingWord(qsizetype start, qsizetype length)
+    \fn void QTextToSpeech::sayingWord(const QString &word, qsizetype id, qsizetype start, qsizetype length)
     \since 6.6
 
-    This signal is emitted when the word indicated by \a start and \a length
-    in the currently spoken text gets played to the audio device.
+    This signal is emitted when the \a word, which is the slice of text indicated
+    by \a start and \a length in the utterance \a id, gets played to the audio device.
 
     \note This signal requires that the engine has the
     \l {QTextToSpeech::Capability::}{WordByWordProgress} capability.

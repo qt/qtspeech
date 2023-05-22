@@ -87,7 +87,7 @@ private slots:
 Q_SIGNALS:
     void errorOccurred(QTextToSpeech::ErrorReason error, const QString &errorString);
     void stateChanged(QTextToSpeech::State);
-    void sayingWord(qsizetype begin, qsizetype length);
+    void sayingWord(const QString &word, qsizetype begin, qsizetype length);
     void synthesized(const QAudioFormat &format, const QByteArray &array);
 
 protected:

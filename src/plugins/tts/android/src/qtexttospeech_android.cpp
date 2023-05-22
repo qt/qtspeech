@@ -309,7 +309,8 @@ void QTextToSpeechEngineAndroid::processNotifySpeaking()
 void QTextToSpeechEngineAndroid::processNotifyRangeStart(int start, int end, int frame)
 {
     Q_UNUSED(frame);
-    emit sayingWord(start, end - start);
+    const int length = end - start;
+    emit sayingWord(m_text.sliced(start, length), start,length);
 }
 
 void QTextToSpeechEngineAndroid::stop(QTextToSpeech::BoundaryHint boundaryHint)

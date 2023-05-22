@@ -344,7 +344,8 @@ void QTextToSpeechEngineWinRT::timerEvent(QTimerEvent *e)
         const qint64 expected = d->currentBoundary->startTime;
         const qint64 elapsed = d->elapsedTimer.nsecsElapsed() / 1000 + d->playedTime;
         if (d->currentBoundary->type == AudioSource::Boundary::Word)
-            emit sayingWord(d->currentBoundary->beginIndex, d->currentBoundary->endIndex - d->currentBoundary->beginIndex + 1);
+            emit sayingWord(d->currentBoundary->text, d->currentBoundary->beginIndex,
+                            d->currentBoundary->endIndex - d->currentBoundary->beginIndex + 1);
         ++d->currentBoundary;
         const qint64 msecsToNext = qMax((d->currentBoundary->startTime - elapsed) / 1000, 0);
         if (d->audioSource && d->currentBoundary != d->boundaries.constEnd()) {

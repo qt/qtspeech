@@ -180,7 +180,7 @@ void QTextToSpeechEngineMock::timerEvent(QTimerEvent *e)
     if (nextSpace == -1)
         nextSpace = m_text.length();
     const QString word = m_text.sliced(m_currentIndex, nextSpace - m_currentIndex);
-    sayingWord(m_currentIndex, nextSpace - m_currentIndex);
+    sayingWord(word, m_currentIndex, nextSpace - m_currentIndex);
     m_currentIndex = nextSpace + match.captured().length();
 
     emit synthesized(m_format, QByteArray(m_format.bytesForDuration(wordTime() * 1000), 0));

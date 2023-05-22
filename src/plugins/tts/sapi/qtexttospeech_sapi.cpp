@@ -549,7 +549,8 @@ HRESULT QTextToSpeechEngineSapi::NotifyCallback(WPARAM /*wParam*/, LPARAM /*lPar
                 m_state = QTextToSpeech::Ready;
                 break;
             case SPEI_WORD_BOUNDARY:
-                emit sayingWord(event.lParam - textOffset, event.wParam);
+                emit sayingWord(currentText.sliced(event.lParam - textOffset, event.wParam),
+                                event.lParam - textOffset, event.wParam);
                 break;
             // these are the other TTS events which might be interesting for us at some point
             case SPEI_SENTENCE_BOUNDARY:

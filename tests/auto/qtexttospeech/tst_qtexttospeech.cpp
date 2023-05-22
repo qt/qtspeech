@@ -730,13 +730,17 @@ void tst_QTextToSpeech::pauseAtUtterance()
         }
     });
     QStringList wordsSpoken;
-    connect(&tts, &QTextToSpeech::sayingWord, [&](int at, int length){
-        wordsSpoken += textList.at(atIndex).mid(at, length);
+    connect(&tts, &QTextToSpeech::sayingWord,
+            [&](const QString &word, qsizetype id, qsizetype at, qsizetype length){
+        const QString text = textList.at(atIndex).mid(at, length);
+        QCOMPARE(id, atIndex);
+        QCOMPARE(text, word);
+        wordsSpoken += text;
     });
 
     for (qsizetype i = 0; i < textList.count(); ++i) {
         const QString &text = textList.at(i);
-        tts.enqueue(text);
+        QCOMPARE(tts.enqueue(text), i);
         if (!i)
             QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
     }
@@ -784,7 +788,11 @@ void tst_QTextToSpeech::sayingWord()
     QElapsedTimer timer;
     QStringList words;
     QList<qint64> times;
-    connect(&tts, &QTextToSpeech::sayingWord, [&words, &times, &timer, text](qsizetype start, qsizetype length) {
+    connect(&tts, &QTextToSpeech::sayingWord,
+        [&words, &times, &timer, text](const QString &word, qsizetype id, qsizetype start, qsizetype length) {
+        const QString &slice = text.sliced(start, length);
+        QCOMPARE(word, slice);
+        QCOMPARE(id, 0);
         words << text.sliced(start, length);
         times << timer.elapsed();
     });
@@ -843,7 +851,10 @@ void tst_QTextToSpeech::sayingWordWithPause()
     selectWorkingVoice(&tts);
 
     QStringList spokenWords;
-    connect(&tts, &QTextToSpeech::sayingWord, [&](qsizetype start, qsizetype length) {
+    connect(&tts, &QTextToSpeech::sayingWord,
+            [&](const QString &word, qsizetype id, qsizetype start, qsizetype length) {
+        QCOMPARE(word, text.sliced(start, length));
+        QCOMPARE(id, 0);
         spokenWords << text.sliced(start, length);
         if (spokenWords.size() == pauseAt)
             tts.pause(QTextToSpeech::BoundaryHint::Word);

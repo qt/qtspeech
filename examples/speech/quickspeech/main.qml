@@ -41,7 +41,7 @@ ApplicationWindow {
 //! [stateChanged]
 
 //! [sayingWord]
-        onSayingWord: (start, length)=> {
+        onSayingWord: (word, id, start, length)=> {
             input.select(start, start + length)
         }
 //! [sayingWord]
