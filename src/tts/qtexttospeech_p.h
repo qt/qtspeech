@@ -22,6 +22,7 @@
 #include <QMutex>
 #include <QCborMap>
 #include <QtCore/qhash.h>
+#include <QtCore/qqueue.h>
 #include <QtCore/qnumeric.h>
 #include <QtCore/private/qobject_p.h>
 
@@ -50,11 +51,13 @@ private:
     QString m_providerName;
     QCborMap m_metaData;
     static QMutex m_mutex;
-    QStringList m_pendingTexts;
+    QQueue<QString> m_pendingUtterances;
     QTextToSpeech::State m_state = QTextToSpeech::Error;
     QMetaObject::Connection m_synthesizeConnection;
     QtPrivate::QSlotObjectBase *m_slotObject = nullptr;
 
+    qsizetype m_utteranceCounter = 0;
+    qsizetype m_currentUtterance = 0;
     double m_storedPitch = qQNaN();
     double m_storedVolume = qQNaN();
     double m_storedRate = qQNaN();
