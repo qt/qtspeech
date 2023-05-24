@@ -52,24 +52,24 @@ TestCase {
     }
 
     function test_findVoices() {
-        let bob = tts.findVoices({"name":"Bob"})
+        let bob = tts.findVoices({name: "Bob"})
         compare(bob.length, 1)
-        let women = tts.findVoices({"gender":Voice.Female})
+        let women = tts.findVoices({gender: Voice.Female})
         compare(women.length, 5)
-        let children = tts.findVoices({"age":Voice.Child})
+        let children = tts.findVoices({age: Voice.Child})
         compare(children.length, 1)
         // includes all english speakers, no matter where they're from
-        let english = tts.findVoices({"language":Qt.locale("en")})
+        let english = tts.findVoices({language: Qt.locale("en")})
         compare(english.length, 4)
-        let bokmalers = tts.findVoices({"locale":Qt.locale("NO")})
+        let bokmalers = tts.findVoices({locale: Qt.locale("NO")})
         compare(bokmalers.length, 2)
-        let nynorskers = tts.findVoices({"locale":Qt.locale("nn-NO")})
+        let nynorskers = tts.findVoices({locale: Qt.locale("nn-NO")})
         compare(nynorskers.length, 2)
 
         let englishWomen = tts.findVoices({
-            "language": Qt.locale("en"),
-            "gender": Voice.Female,
-            "age": Voice.Adult
+            language: Qt.locale("en"),
+            gender: Voice.Female,
+            age: Voice.Adult
         });
         compare(englishWomen.length, 1)
     }
