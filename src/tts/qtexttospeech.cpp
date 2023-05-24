@@ -84,8 +84,6 @@ void QTextToSpeechPrivate::setEngineProvider(const QString &engine, const QVaria
                          q, [this, q](const QString &word, qsizetype start, qsizetype length){
             emit q->sayingWord(word, m_currentUtterance, start, length);
         });
-        QObject::connect(m_engine.get(), &QTextToSpeechEngine::synthesized,
-                         q, &QTextToSpeech::synthesized);
     } else {
         m_providerName.clear();
     }
@@ -839,36 +837,6 @@ qsizetype QTextToSpeech::enqueue(const QString &utterance)
 }
 
 /*!
-    Synthesizes the \a text into raw audio data.
-    \since 6.6
-
-    This function synthesizes the speech asynchronously into raw audio data.
-    When data is available, the \l synthesized() signal is emitted with the
-    bytes, and the \l {QAudioFormat}{format} that the data is in.
-
-    The \l state property is set to \l Synthesizing when the synthesis starts,
-    and to \l Ready once the synthesis is finished. While synthesizing, the
-    synthesized() signal might be emitted multiple times, possibly with
-    changing values for \c format.
-
-    If synthesizing is already in progress, the new text will be queued up
-    and synthesized after previously enqueued text has been processed.
-
-    \sa say(), stop()
-*/
-void QTextToSpeech::synthesize(const QString &text)
-{
-    Q_D(QTextToSpeech);
-    if (!d->m_engine)
-        return;
-
-    if (d->m_engine->state() == QTextToSpeech::Synthesizing)
-        d->m_pendingUtterances.enqueue(text);
-    else
-        d->m_engine->synthesize(text);
-}
-
-/*!
     \fn template<typename Functor> void QTextToSpeech::synthesize(
             const QString &text, Functor &&functor)
     \fn template<typename Functor> void QTextToSpeech::synthesize(
@@ -949,21 +917,15 @@ void QTextToSpeech::synthesizeImpl(const QString &text,
     };
     d->m_synthesizeConnection = connect(d->m_engine.get(), &QTextToSpeechEngine::synthesized,
                                         context ? context : this, receive);
-    synthesize(text);
+
+    if (!d->m_engine)
+        return;
+
+    if (d->m_engine->state() == QTextToSpeech::Synthesizing)
+        d->m_pendingUtterances.enqueue(text);
+    else
+        d->m_engine->synthesize(text);
 }
-
-/*!
-    \fn void QTextToSpeech::synthesized(const QAudioFormat &format, const QByteArray &data)
-    \since 6.6
-
-    This signal is emitted when pcm \a data is available. The data is encoded in \a format.
-    A single call to \l synthesize() might result in several emissions of this signal.
-
-    \note This signal requires that the engine has the
-    \l {QTextToSpeech::Capability::}{Synthesize} capability.
-
-    \sa synthesize()
-*/
 
 /*!
     \qmlmethod TextToSpeech::stop(BoundaryHint boundaryHint)

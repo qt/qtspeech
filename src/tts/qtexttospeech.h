@@ -149,7 +149,6 @@ public:
 public Q_SLOTS:
     void say(const QString &text);
     qsizetype enqueue(const QString &text);
-    void synthesize(const QString &text);
     void stop(QTextToSpeech::BoundaryHint boundaryHint = QTextToSpeech::BoundaryHint::Default);
     void pause(QTextToSpeech::BoundaryHint boundaryHint = QTextToSpeech::BoundaryHint::Default);
     void resume();
@@ -172,7 +171,6 @@ Q_SIGNALS:
     void voiceChanged(const QVoice &voice);
 
     void sayingWord(const QString &word, qsizetype id, qsizetype start, qsizetype length);
-    void synthesized(const QAudioFormat &format, const QByteArray &data);
     void aboutToSynthesize(qsizetype id);
 
 protected:

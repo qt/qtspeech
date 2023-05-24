@@ -944,15 +944,12 @@ void tst_QTextToSpeech::synthesize()
     QAudioFormat pcmFormat;
     QByteArray pcmData;
 
-    connect(&tts, &QTextToSpeech::synthesized,
-            this, [&pcmFormat, &pcmData](const QAudioFormat &format, const QByteArray &bytes) {
+    QElapsedTimer notBlockingTimer;
+    notBlockingTimer.start();
+    tts.synthesize(text, [&pcmFormat, &pcmData](const QAudioFormat &format, const QByteArray &bytes) {
         pcmFormat = format;
         pcmData += bytes;
     });
-
-    QElapsedTimer notBlockingTimer;
-    notBlockingTimer.start();
-    tts.synthesize(text);
     QCOMPARE_LT(notBlockingTimer.elapsed(), 250);
     QTRY_VERIFY(running);
     QTRY_VERIFY(finished);
@@ -997,16 +994,14 @@ void tst_QTextToSpeech::synthesizeCallback()
     QAudioFormat expectedFormat;
     QByteArray expectedBytes;
 
-    // record a reference using the already tested synthesized() signal
-    auto connection = connect(&tts, &QTextToSpeech::synthesized,
-            [&expectedFormat, &expectedBytes](const QAudioFormat &format, const QByteArray &bytes){
+    // record a reference using the already tested version
+    tts.synthesize(text,[&expectedFormat, &expectedBytes]
+                        (const QAudioFormat &format, const QByteArray &bytes) {
         expectedFormat = format;
         expectedBytes += bytes;
     });
-    tts.synthesize(text);
     QTRY_VERIFY(expectedFormat.isValid());
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
-    tts.disconnect(connection);
 
     struct Processor : QObject {
         void process(const QAudioFormat &format, const QByteArray &bytes)
