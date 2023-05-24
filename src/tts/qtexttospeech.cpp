@@ -9,6 +9,8 @@
 #include <QtCore/qdebug.h>
 #include <QtCore/private/qfactoryloader_p.h>
 
+#include <QtMultimedia/qaudiobuffer.h>
+
 QT_BEGIN_NAMESPACE
 
 using namespace Qt::StringLiterals;
@@ -877,8 +879,9 @@ void QTextToSpeech::synthesize(const QString &text)
 
     This function synthesizes the speech asynchronously into raw audio data.
     When data is available, the \a functor will be called as
-    \c {functor(const QAudioFormat &format, const QByteArray &bytes)}, with
-    \c format describing the \l {QAudioFormat}{format} of the data in \c bytes.
+    \c {functor(QAudioFormat format, QByteArray bytes)}, with \c format
+    describing the \l {QAudioFormat}{format} of the data in \c bytes;
+    or as \c {functor(QAudioBuffer &buffer)}.
 
     The \l state property is set to \l Synthesizing when the synthesis starts,
     and to \l Ready once the synthesis is finished. While synthesizing, the
@@ -923,19 +926,26 @@ void QTextToSpeech::synthesize(const QString &text)
     in updateState() when the state of the engine transitions back to Ready.
 */
 void QTextToSpeech::synthesizeImpl(const QString &text,
-                                   QtPrivate::QSlotObjectBase *slotObj, const QObject *context)
+                                   QtPrivate::QSlotObjectBase *slotObj, const QObject *context,
+                                   SynthesizeOverload overload)
 {
     Q_D(QTextToSpeech);
     Q_ASSERT(slotObj);
     if (d->m_slotObject)
         d->m_slotObject->destroyIfLastRef();
     d->m_slotObject = slotObj;
-    const auto receive = [d, context](const QAudioFormat &format, const QByteArray &bytes){
+    const auto receive = [d, context, overload](const QAudioFormat &format, const QByteArray &bytes){
         Q_ASSERT(d->m_slotObject);
-        void *args[] = {nullptr,
-                        const_cast<QAudioFormat *>(&format),
-                        const_cast<QByteArray *>(&bytes)};
-        d->m_slotObject->call(const_cast<QObject *>(context), args);
+        if (overload == SynthesizeOverload::AudioBuffer) {
+            const QAudioBuffer buffer(bytes, format);
+            void *args[] = {nullptr, const_cast<QAudioBuffer *>(&buffer)};
+            d->m_slotObject->call(const_cast<QObject *>(context), args);
+        } else {
+            void *args[] = {nullptr,
+                            const_cast<QAudioFormat *>(&format),
+                            const_cast<QByteArray *>(&bytes)};
+            d->m_slotObject->call(const_cast<QObject *>(context), args);
+        }
     };
     d->m_synthesizeConnection = connect(d->m_engine.get(), &QTextToSpeechEngine::synthesized,
                                         context ? context : this, receive);

@@ -17,6 +17,7 @@
 QT_BEGIN_NAMESPACE
 
 class QAudioFormat;
+class QAudioBuffer;
 
 class QTextToSpeechPrivate;
 class Q_TEXTTOSPEECH_EXPORT QTextToSpeech : public QObject
@@ -105,8 +106,19 @@ public:
 # endif // Q_QDOC
                     Functor &&func)
     {
-        using Prototype = void(*)(QAudioFormat, QByteArray);
-        synthesizeImpl(text, QtPrivate::makeCallableObject<Prototype>(std::forward<Functor>(func)), receiver);
+        using Prototype2 = void(*)(QAudioFormat, QByteArray);
+        using Prototype1 = void(*)(QAudioBuffer);
+        if constexpr (qxp::is_detected_v<CompatibleCallbackTest2, Functor>) {
+            synthesizeImpl(text, QtPrivate::makeCallableObject<Prototype2>(std::forward<Functor>(func)),
+                           receiver, SynthesizeOverload::AudioFormatByteArray);
+        } else if constexpr (qxp::is_detected_v<CompatibleCallbackTest1, Functor>) {
+            synthesizeImpl(text, QtPrivate::makeCallableObject<Prototype1>(std::forward<Functor>(func)),
+                           receiver, SynthesizeOverload::AudioBuffer);
+        } else {
+            static_assert(QtPrivate::type_dependent_false<Functor>(),
+                          "Incompatible functor signature, must be either "
+                          "(QAudioFormat, QByteArray) or (QAudioBuffer)!");
+        }
     }
 
     // synthesize to a functor or function pointer (without context)
@@ -167,8 +179,19 @@ protected:
     QList<QVoice> allVoices(const QLocale *locale) const;
 
 private:
+    template <typename Functor>
+    using CompatibleCallbackTest2 = decltype(QtPrivate::makeCallableObject<void(*)(QAudioFormat, QByteArray)>(std::declval<Functor>()));
+    template <typename Functor>
+    using CompatibleCallbackTest1 = decltype(QtPrivate::makeCallableObject<void(*)(QAudioBuffer)>(std::declval<Functor>()));
+
+    enum class SynthesizeOverload {
+        AudioFormatByteArray,
+        AudioBuffer
+    };
+
     void synthesizeImpl(const QString &text,
-                        QtPrivate::QSlotObjectBase *slotObj, const QObject *context);
+                        QtPrivate::QSlotObjectBase *slotObj, const QObject *context,
+                        SynthesizeOverload overload);
 
     // Helper type to find the index of a type in a tuple, which allows
     // us to generate a compile-time error if there are multiple criteria

@@ -8,6 +8,7 @@
 #include <QMediaDevices>
 #include <QAudioFormat>
 #include <QAudioDevice>
+#include <QAudioBuffer>
 #include <QOperatingSystemVersion>
 #include <QRegularExpression>
 #include <qttexttospeech-config.h>
@@ -1062,6 +1063,16 @@ void tst_QTextToSpeech::synthesizeCallback()
     QTRY_COMPARE(processor.m_format, expectedFormat);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
     QCOMPARE(processor.m_allBytes, QByteArray());
+    processor.reset();
+
+    // Taking QAudioBuffer
+    tts.synthesize(text, [&processor](const QAudioBuffer &buffer) {
+        processor.m_format = buffer.format();
+        processor.m_allBytes += QByteArrayView(buffer.data<uchar>(), buffer.byteCount());
+    });
+    QTRY_COMPARE(processor.m_format, expectedFormat);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    QCOMPARE(processor.m_allBytes, expectedBytes);
     processor.reset();
 }
 
