@@ -69,7 +69,9 @@
     The macOS engine does not support any engine specific parameters.
 
     \note The "macos" engine does not have the \l{QTextToSpeech::Capabilities}{Synthesize}
-    capability.
+    capability. The "darwin" engine is the default and preferred engine on all macOS and
+    iOS systems supported by Qt. The macOS engine should not be used anymore and will be
+    removed in Qt 6.8.
 
     \section1 Android
 
