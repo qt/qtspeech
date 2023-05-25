@@ -557,6 +557,10 @@ void tst_QTextToSpeech::pauseResume()
 
     const QString text = QStringLiteral("Hello. World.");
     QTextToSpeech tts(engine);
+
+    if (!(tts.engineCapabilities() & QTextToSpeech::Capability::PauseResume))
+        QSKIP("This engine doesn't support PauseResume");
+
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
     selectWorkingVoice(&tts);
 

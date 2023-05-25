@@ -76,6 +76,11 @@ void MainWindow::engineSelected(int index)
                ? new QTextToSpeech(this)
                : new QTextToSpeech(engineName, this);
 
+    const bool hasPauseResume = m_speech->engineCapabilities()
+                              & QTextToSpeech::Capability::PauseResume;
+    ui.pauseButton->setVisible(hasPauseResume);
+    ui.resumeButton->setVisible(hasPauseResume);
+
     // Block signals of the languages combobox while populating
     QSignalBlocker blocker(ui.language);
 

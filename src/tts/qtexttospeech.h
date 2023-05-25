@@ -63,8 +63,9 @@ public:
     enum class Capability {
         None                = 0,
         Speak               = 1 << 0,
-        WordByWordProgress  = 1 << 1,
-        Synthesize          = 1 << 2,
+        PauseResume         = 1 << 1,
+        WordByWordProgress  = 1 << 2,
+        Synthesize          = 1 << 3,
     };
     Q_DECLARE_FLAGS(Capabilities, Capability)
     Q_FLAG(Capabilities)

@@ -5,6 +5,7 @@
     "Priority": -1,
     "Capabilities": [
         "Speak",
+        "PauseResume",
         "Synthesize",
         "WordByWordProgress"
     ]

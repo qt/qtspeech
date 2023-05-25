@@ -68,11 +68,17 @@
 
     The macOS engine does not support any engine specific parameters.
 
+    \note The "macos" engine does not have the \l{QTextToSpeech::Capabilities}{Synthesize}
+    capability.
+
     \section1 Android
 
     The "android" engine is the only engine available on the Android platform. It uses the
     \l{https://developer.android.com/reference/android/speech/tts/TextToSpeech}{TextToSpeech}
     package, which in turn supports multiple engine backends.
+
+    \note The "android" engine does not have the \l{QTextToSpeech::Capabilities}
+    {PauseResume} capability.
 
     \table
         \header
@@ -117,6 +123,9 @@
     The "speechd" engine communicates with the
     \l{https://htmlpreview.github.io/?https://github.com/brailcom/speechd/blob/master/doc/speech-dispatcher.html#Top}
     {speech-dispatcher} daemon, and requires at least libspeechd 0.9.
+
+    \note The speech-dispatcher engine does not have the \l {QTextToSpeech::Capabilities}
+    {WordByWordProgress} or \l {QTextToSpeech::Capabilities}{Synthesize} capabilities.
 
     The speech-dispatcher engine does not support any engine specific parameters.
 */

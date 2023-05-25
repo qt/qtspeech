@@ -518,6 +518,7 @@ QString QTextToSpeech::engine() const
 
     \value None                 The engine implements none of the capabilities.
     \value Speak                The engine can play audio output from text.
+    \value PauseResume          The engine can pause and then resume the audo output.
     \value WordByWordProgress   The engine emits the sayingWord() signal for
                                 each word that gets spoken.
     \value Synthesize           The engine can \l{synthesize()}{synthesize} PCM
@@ -994,7 +995,8 @@ void QTextToSpeech::stop(BoundaryHint boundaryHint)
 
     Whether the \a boundaryHint is respected depends on the  \l engine.
 
-    \sa resume(), QTextToSpeech::BoundaryHint
+    \sa resume(), QTextToSpeech::BoundaryHint,
+        {QTextToSpeech::Capabilities}{PauseResume}
 */
 
 /*!
@@ -1002,7 +1004,7 @@ void QTextToSpeech::stop(BoundaryHint boundaryHint)
 
     Whether the \a boundaryHint is respected depends on the  \l engine.
 
-    \sa resume()
+    \sa resume(), {QTextToSpeech::Capabilities}{PauseResume}
 */
 void QTextToSpeech::pause(BoundaryHint boundaryHint)
 {
@@ -1032,6 +1034,9 @@ void QTextToSpeech::pause(BoundaryHint boundaryHint)
 
 /*!
     Resume speaking after \l pause() has been called.
+
+    \note On Android, resuming paused speech will restart from the beginning.
+    This is a limitation of the underlying text-to-speech engine.
 
     \sa pause()
 */

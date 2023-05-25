@@ -79,6 +79,7 @@ ApplicationWindow {
                 text: qsTr("Pause")
                 enabled: tts.state == TextToSpeech.Speaking
                 onClicked: tts.pause()
+                visible: tts.engineCapabilities & TextToSpeech.Capabilities.PauseResume
             }
 //! [pause]
 //! [resume]
@@ -86,6 +87,7 @@ ApplicationWindow {
                 text: qsTr("Resume")
                 enabled: tts.state == TextToSpeech.Paused
                 onClicked: tts.resume()
+                visible: tts.engineCapabilities & TextToSpeech.Capabilities.PauseResume
             }
 //! [resume]
             Button {
