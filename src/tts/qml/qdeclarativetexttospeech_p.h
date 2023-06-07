@@ -28,7 +28,7 @@ class QDeclarativeTextToSpeech : public QTextToSpeech, public QQmlParserStatus
 {
     Q_OBJECT
     Q_PROPERTY(QString engine READ engine WRITE setEngine NOTIFY engineChanged FINAL)
-    Q_PROPERTY(QVariantMap engineParameters READ engineParameters WRITE setEngineParameters NOTIFY engineParametersChanged FINAL)
+    Q_PROPERTY(QVariantMap engineParameters READ engineParameters WRITE setEngineParameters NOTIFY engineParametersChanged REVISION(6, 6) FINAL)
 
     Q_INTERFACES(QQmlParserStatus)
     QML_NAMED_ELEMENT(TextToSpeech)
@@ -36,7 +36,7 @@ class QDeclarativeTextToSpeech : public QTextToSpeech, public QQmlParserStatus
 public:
     explicit QDeclarativeTextToSpeech(QObject *parent = nullptr);
 
-    Q_INVOKABLE QList<QVoice> findVoices(const QVariantMap &criteria) const;
+    Q_REVISION(6, 6) Q_INVOKABLE QList<QVoice> findVoices(const QVariantMap &criteria) const;
 
     QVoiceSelectorAttached *m_voiceSelector = nullptr;
 
@@ -50,7 +50,7 @@ public:
 
 Q_SIGNALS:
     void engineChanged(const QString &);
-    void engineParametersChanged();
+    Q_REVISION(6, 6) void engineParametersChanged();
 
 protected:
     void classBegin() override;

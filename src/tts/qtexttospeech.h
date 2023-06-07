@@ -24,13 +24,13 @@ class Q_TEXTTOSPEECH_EXPORT QTextToSpeech : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString engine READ engine WRITE setEngine NOTIFY engineChanged)
-    Q_PROPERTY(State state READ state NOTIFY stateChanged)
-    Q_PROPERTY(double volume READ volume WRITE setVolume NOTIFY volumeChanged)
-    Q_PROPERTY(double rate READ rate WRITE setRate NOTIFY rateChanged)
-    Q_PROPERTY(double pitch READ pitch WRITE setPitch NOTIFY pitchChanged)
-    Q_PROPERTY(QLocale locale READ locale WRITE setLocale NOTIFY localeChanged)
-    Q_PROPERTY(QVoice voice READ voice WRITE setVoice NOTIFY voiceChanged)
-    Q_PROPERTY(Capabilities engineCapabilities READ engineCapabilities NOTIFY engineChanged)
+    Q_PROPERTY(State state READ state NOTIFY stateChanged FINAL)
+    Q_PROPERTY(double volume READ volume WRITE setVolume NOTIFY volumeChanged FINAL)
+    Q_PROPERTY(double rate READ rate WRITE setRate NOTIFY rateChanged FINAL)
+    Q_PROPERTY(double pitch READ pitch WRITE setPitch NOTIFY pitchChanged FINAL)
+    Q_PROPERTY(QLocale locale READ locale WRITE setLocale NOTIFY localeChanged FINAL)
+    Q_PROPERTY(QVoice voice READ voice WRITE setVoice NOTIFY voiceChanged FINAL)
+    Q_PROPERTY(Capabilities engineCapabilities READ engineCapabilities NOTIFY engineChanged REVISION(6, 6) FINAL)
     Q_DECLARE_PRIVATE(QTextToSpeech)
 
 public:
