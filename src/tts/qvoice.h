@@ -23,7 +23,7 @@ class Q_TEXTTOSPEECH_EXPORT QVoice
     Q_PROPERTY(Gender gender READ gender CONSTANT)
     Q_PROPERTY(Age age READ age CONSTANT)
     Q_PROPERTY(QLocale locale READ locale CONSTANT)
-    Q_PROPERTY(QLocale::Language language READ language STORED false)
+    Q_PROPERTY(QLocale::Language language READ language STORED false REVISION(6, 6))
 
 public:
     enum Gender {
