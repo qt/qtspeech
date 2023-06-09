@@ -623,7 +623,7 @@ QTextToSpeech::State QTextToSpeech::state() const
     \since 6.6
 
     This signal gets emitted just before the engine starts to synthesize the
-    speech audio for \a text. Applications can use this signal to make last-minute
+    speech audio for \a id. Applications can use this signal to make last-minute
     changes to \l voice attributes, or to track the process of text enqueued
     via enqueue().
 
