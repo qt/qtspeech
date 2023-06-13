@@ -4,6 +4,16 @@
 #ifndef QTEXTTOSPEECHENGINE_H
 #define QTEXTTOSPEECHENGINE_H
 
+//
+//  W A R N I N G
+//  -------------
+//
+// This file is part of the Qt TextToSpeech plugin API, with limited compatibility
+// guarantees.
+// Usage of this API may make your code source and binary incompatible with
+// future versions of Qt.
+//
+
 #include <QtTextToSpeech/qtexttospeech.h>
 
 #include <QtCore/QObject>

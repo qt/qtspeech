@@ -8,11 +8,12 @@
 #define QTEXTTOSPEECH_H
 
 #include <QtTextToSpeech/qtexttospeech_global.h>
+#include <QtTextToSpeech/qvoice.h>
 #include <QtCore/qobject.h>
 #include <QtCore/qshareddata.h>
-#include <QtCore/QSharedDataPointer>
 #include <QtCore/qlocale.h>
-#include <QtTextToSpeech/qvoice.h>
+
+#include <QtCore/q20type_traits.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -39,7 +40,7 @@ public:
         Speaking,
         Paused,
         Error,
-        Synthesizing
+        Synthesizing,
     };
     Q_ENUM(State)
 
@@ -48,7 +49,7 @@ public:
         Initialization,
         Configuration,
         Input,
-        Playback
+        Playback,
     };
     Q_ENUM(ErrorReason)
 
@@ -57,7 +58,7 @@ public:
         Immediate,
         Word,
         Sentence,
-        Utterance
+        Utterance,
     };
     Q_ENUM(BoundaryHint)
 
@@ -128,19 +129,19 @@ public:
         synthesize(text, nullptr, std::forward<Functor>(func));
     }
 
-    template<typename ...Args>
-    inline QList<QVoice> findVoices(Args &&...args) const
+    template <typename ...Args>
+    QList<QVoice> findVoices(Args &&...args) const
     {
         // if any of the arguments is a locale, then we can avoid iterating through all
         // and only have to search through the voices for that locale.
         QLocale locale;
         QLocale *plocale = nullptr;
-        if constexpr (std::disjunction_v<std::is_same<std::decay_t<Args>, QLocale>...>) {
+        if constexpr (std::disjunction_v<std::is_same<q20::remove_cvref_t<Args>, QLocale>...>) {
             locale = std::get<QLocale>(std::make_tuple(args...));
             plocale = &locale;
         }
 
-        auto voices(allVoices(plocale));
+        auto voices = allVoices(plocale);
         if constexpr (sizeof...(args) > 0)
             findVoicesImpl(voices, std::forward<Args>(args)...);
         return voices;
@@ -204,24 +205,24 @@ private:
         static constexpr qsizetype value =
             lastIndexOf(std::make_integer_sequence<qsizetype, sizeof...(Ts)>{});
     };
-    template<typename Arg0, typename ...Args>
-    inline void findVoicesImpl(QList<QVoice> &voices, Arg0 &&arg0, Args &&...args) const
+    template <typename Arg0, typename ...Args>
+    void findVoicesImpl(QList<QVoice> &voices, Arg0 &&arg0, Args &&...args) const
     {
-        using ArgType = std::decay_t<Arg0>;
-        voices.removeIf([=](const auto &voice){
+        using ArgType = q20::remove_cvref_t<Arg0>;
+        voices.removeIf([&](const auto &voice){
             if constexpr (std::is_same_v<ArgType, QLocale>) {
-                return (voice.locale() != arg0);
+                return voice.locale() != arg0;
             } else if constexpr (std::is_same_v<ArgType, QLocale::Language>) {
-                return (voice.locale().language() != arg0);
+                return voice.locale().language() != arg0;
             } else if constexpr (std::is_same_v<ArgType, QLocale::Territory>) {
-                return (voice.locale().territory() != arg0);
+                return voice.locale().territory() != arg0;
             } else if constexpr (std::is_same_v<ArgType, QVoice::Gender>) {
-                return (voice.gender() != arg0);
+                return voice.gender() != arg0;
             } else if constexpr (std::is_same_v<ArgType, QVoice::Age>) {
-                return (voice.age() != arg0);
+                return voice.age() != arg0;
             } else if constexpr (std::disjunction_v<std::is_convertible<ArgType, QString>,
                                                     std::is_convertible<ArgType, QStringView>>) {
-                return (voice.name() != arg0);
+                return voice.name() != arg0;
             } else if constexpr (std::is_same_v<ArgType, QRegularExpression>) {
                 return !arg0.match(voice.name()).hasMatch();
             } else {
@@ -231,7 +232,7 @@ private:
             }
         });
         if constexpr (sizeof...(args) > 0) {
-            static_assert(LastIndexOf<ArgType, std::tuple<std::decay_t<Args>...>>::value == -1,
+            static_assert(LastIndexOf<ArgType, std::tuple<q20::remove_cvref_t<Args>...>>::value == -1,
                           "Using multiple criteria of the same type is not supported");
             findVoicesImpl(voices, std::forward<Args>(args)...);
         }
