@@ -69,7 +69,7 @@ public:
     Gender gender() const;
     Age age() const;
 
-    inline QLocale::Language language() const { return locale().language(); }
+    QLocale::Language language() const { return locale().language(); }
 
     static QString genderName(QVoice::Gender gender);
     static QString ageName(QVoice::Age age);
