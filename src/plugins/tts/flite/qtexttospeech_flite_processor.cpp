@@ -278,7 +278,7 @@ QStringList QTextToSpeechProcessorFlite::fliteAvailableVoices(const QString &lib
         ldPaths.removeDuplicates();
     }
 
-    const QString libPattern = ("lib"_L1 + libPrefix).arg(langCode).arg("*"_L1);
+    const QString libPattern = QString("lib"_L1 + libPrefix).arg(langCode).arg("*"_L1);
     for (const auto &path : ldPaths) {
         QDir dir(path);
         if (!dir.isReadable() || dir.isEmpty())
