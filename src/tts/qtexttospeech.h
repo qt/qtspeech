@@ -143,7 +143,7 @@ public:
 
         auto voices = allVoices(plocale);
         if constexpr (sizeof...(args) > 0)
-            findVoicesImpl(voices, std::forward<Args>(args)...);
+            voices.removeIf([&](const QVoice &voice) -> bool { return !voiceMatches(voice, args...); });
         return voices;
     }
 
@@ -205,37 +205,38 @@ private:
         static constexpr qsizetype value =
             lastIndexOf(std::make_integer_sequence<qsizetype, sizeof...(Ts)>{});
     };
+
     template <typename Arg0, typename ...Args>
-    void findVoicesImpl(QList<QVoice> &voices, Arg0 &&arg0, Args &&...args) const
-    {
+    bool voiceMatches(const QVoice &voice, Arg0 &&arg0, Args &&...args) const {
         using ArgType = q20::remove_cvref_t<Arg0>;
-        voices.removeIf([&](const auto &voice){
+        bool matches = [&]{
             if constexpr (std::is_same_v<ArgType, QLocale>) {
-                return voice.locale() != arg0;
+                return voice.locale() == arg0;
             } else if constexpr (std::is_same_v<ArgType, QLocale::Language>) {
-                return voice.locale().language() != arg0;
+                return voice.locale().language() == arg0;
             } else if constexpr (std::is_same_v<ArgType, QLocale::Territory>) {
-                return voice.locale().territory() != arg0;
+                return voice.locale().territory() == arg0;
             } else if constexpr (std::is_same_v<ArgType, QVoice::Gender>) {
-                return voice.gender() != arg0;
+                return voice.gender() == arg0;
             } else if constexpr (std::is_same_v<ArgType, QVoice::Age>) {
-                return voice.age() != arg0;
+                return voice.age() == arg0;
             } else if constexpr (std::disjunction_v<std::is_convertible<ArgType, QString>,
                                                     std::is_convertible<ArgType, QStringView>>) {
-                return voice.name() != arg0;
+                return voice.name() == arg0;
             } else if constexpr (std::is_same_v<ArgType, QRegularExpression>) {
-                return !arg0.match(voice.name()).hasMatch();
+                return arg0.match(voice.name()).hasMatch();
             } else {
                 static_assert(QtPrivate::type_dependent_false<Arg0>(),
                               "Type cannot be matched to a QVoice property!");
-                return true;
+                return false;
             }
-        });
+        }();
         if constexpr (sizeof...(args) > 0) {
             static_assert(LastIndexOf<ArgType, std::tuple<q20::remove_cvref_t<Args>...>>::value == -1,
                           "Using multiple criteria of the same type is not supported");
-            findVoicesImpl(voices, std::forward<Args>(args)...);
+            matches = matches && voiceMatches(voice, args...);
         }
+        return matches;
     }
 
     Q_DISABLE_COPY(QTextToSpeech)
