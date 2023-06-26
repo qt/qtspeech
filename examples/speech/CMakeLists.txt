@@ -6,3 +6,6 @@
 if(TARGET Qt::Widgets)
     qt_internal_add_example(hello_speak)
 endif()
+if(TARGET Qt::Quick)
+    qt_internal_add_example(quickspeech)
+endif()
