@@ -174,14 +174,14 @@ void QTextToSpeechPrivate::loadPluginMetadata(QMultiHash<QString, QCborMap> &lis
     Use \l say() to start reading text to the default audio device, and
     \l stop(), \l pause(), and \l resume() to control the reading of the text.
 
-    \snippet quickspeech/main.qml initialize
+    \snippet quickspeech/Main.qml initialize
     \codeline
     \dots
     \codeline
-    \snippet quickspeech/main.qml say0
-    \snippet quickspeech/main.qml say1
-    \snippet quickspeech/main.qml pause
-    \snippet quickspeech/main.qml resume
+    \snippet quickspeech/Main.qml say0
+    \snippet quickspeech/Main.qml say1
+    \snippet quickspeech/Main.qml pause
+    \snippet quickspeech/Main.qml resume
     \dots
 
     To synthesize text into PCM data for further processing, use synthesize().
@@ -389,7 +389,7 @@ QStringList QTextToSpeech::availableEngines()
 
     \sa QTextToSpeech::State say() stop() pause()
 
-    \snippet quickspeech/main.qml stateChanged
+    \snippet quickspeech/Main.qml stateChanged
 */
 
 /*!
@@ -478,8 +478,8 @@ QString QTextToSpeech::errorString() const
     This function starts sythesizing the speech asynchronously, and reads the text to the
     default audio output device.
 
-    \snippet quickspeech/main.qml say0
-    \snippet quickspeech/main.qml say1
+    \snippet quickspeech/Main.qml say0
+    \snippet quickspeech/Main.qml say1
 
     \note All in-progress readings are stopped before beginning to read the recently
     synthesized text.
