@@ -21,7 +21,7 @@
     \section1 Initializing a TextToSpeech
     First, we initialize the text to speech object \c{tts}:
 
-    \quotefromfile quickspeech/main.qml
+    \quotefromfile quickspeech/Main.qml
     \skipto TextToSpeech {
     \printuntil rate: rateSlider.value
 
