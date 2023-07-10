@@ -3,7 +3,6 @@
 
 /*!
     \group qttexttospeech_examples
-    \ingroup all-examples
     \title Qt TextToSpeech Examples
     \brief Demonstrates the text-to-speech functionality provided by Qt.
 
