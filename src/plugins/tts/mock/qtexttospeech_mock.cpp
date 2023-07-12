@@ -71,7 +71,7 @@ QList<QVoice> QTextToSpeechEngineMock::availableVoices() const
         }
     } else {
         const QString voiceData = m_locale.bcp47Name();
-        const auto newVoice = [=](const QString &name, QVoice::Gender gender,
+        const auto newVoice = [this, &voiceData](const QString &name, QVoice::Gender gender,
                                   QVoice::Age age, const char *suffix) {
             return createVoice(name, m_locale, gender, age, voiceData + suffix);
         };
