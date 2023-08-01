@@ -378,6 +378,20 @@ QLocale QTextToSpeechEngineSapi::lcidToLocale(const QString &lcid) const
     return QLocale(QString::fromWCharArray(languageCode.data()));
 }
 
+QVoice::Age QTextToSpeechEngineSapi::toVoiceAge(const QString &age) const
+{
+    // See https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ee431801(v=vs.85)#61-category-voices
+    if (age == u"Child")
+        return QVoice::Child;
+    if (age == u"Teen")
+        return QVoice::Teenager;
+    if (age == u"Adult")
+        return QVoice::Adult;
+    if (age == u"Senior")
+        return QVoice::Senior;
+    return QVoice::Other;
+}
+
 void QTextToSpeechEngineSapi::updateVoices()
 {
     HRESULT hr = S_OK;
@@ -405,7 +419,7 @@ void QTextToSpeechEngineSapi::updateVoices()
 
         // Create voice
         const QString name = vAttr[u"Name"_s];
-        const QVoice::Age age = vAttr[u"Age"_s] == u"Adult"_s ?  QVoice::Adult : QVoice::Other;
+        const QVoice::Age age = toVoiceAge(vAttr[u"Age"_s]);
         const QVoice::Gender gender = vAttr[u"Gender"_s] == u"Male"_s ? QVoice::Male :
                                       vAttr[u"Gender"_s] == u"Female"_s ? QVoice::Female :
                                       QVoice::Unknown;
