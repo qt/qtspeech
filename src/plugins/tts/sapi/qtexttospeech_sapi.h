@@ -55,6 +55,7 @@ private:
     QMap<QString, QString> voiceAttributes(ISpObjectToken *speechToken) const;
     QString voiceId(ISpObjectToken *speechToken) const;
     QLocale lcidToLocale(const QString &lcid) const;
+    QVoice::Age toVoiceAge(const QString &age) const;
     void updateVoices();
     void setError(QTextToSpeech::ErrorReason reason, const QString &string);
 
