@@ -103,7 +103,7 @@ QList<QVoice> QDeclarativeTextToSpeech::findVoices(const QVariantMap &criteria) 
     }
     QList<QVoice> voices = allVoices(plocale);
 
-    voices.removeIf([criteria](const QVoice &voice){
+    voices.removeIf([&criteria](const QVoice &voice){
         const QMetaObject &mo = QVoice::staticMetaObject;
         for (const auto &[key, value] : criteria.asKeyValueRange()) {
             const int propertyIndex = mo.indexOfProperty(key.toUtf8().constData());
