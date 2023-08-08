@@ -34,10 +34,17 @@ struct QVoiceForeign
     QML_NAMED_ELEMENT(voice)
 };
 
+// To prevent the same QVoice type from being exported twice into qmltypes
+// (for value type and for the enums)
+struct QVoiceDerived : public QVoice
+{
+    Q_GADGET
+};
+
 namespace QVoiceForeignNamespace
 {
     Q_NAMESPACE
-    QML_FOREIGN_NAMESPACE(QVoice)
+    QML_FOREIGN_NAMESPACE(QVoiceDerived)
     QML_NAMED_ELEMENT(Voice)
 }
 
