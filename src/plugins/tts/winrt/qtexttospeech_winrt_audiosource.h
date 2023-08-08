@@ -124,6 +124,8 @@ private:
     ComPtr<::Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
     // The data in the IBuffer might be paritally consumed
     UINT32 m_bufferOffset = 0;
+    // RIFF header has been checked at the beginning of the stream
+    bool m_riffHeaderChecked = false;
 
     void populateBoundaries();
     QList<Boundary> boundaries;

@@ -117,6 +117,19 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
     bufferByteAccess->Buffer(&pbyte);
     pbyte += m_bufferOffset;
 
+    // Check and skip the RIFF header if present to prevent an audible
+    // click at the start of playback.
+    if (!m_riffHeaderChecked) {
+        m_riffHeaderChecked = true;
+        static const int WaveHeaderLength = 44;
+        const char *descriptor = reinterpret_cast<const char*>(pbyte);
+        if (maxlen >= WaveHeaderLength && !qstrncmp(descriptor, "RIFF", 4)) {
+            pbyte += WaveHeaderLength;
+            m_bufferOffset += WaveHeaderLength;
+            maxlen -= WaveHeaderLength;
+        }
+    }
+
     switch (m_pause) {
     case NoPause:
         break;
