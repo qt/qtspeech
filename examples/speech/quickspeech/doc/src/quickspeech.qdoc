@@ -4,6 +4,7 @@
 /*!
     \example quickspeech
     \title Quick Speech Example
+    \examplecategory {Data Processing & I/O}
     \ingroup qttexttospeech_examples
     \brief The Quick Speech example reads out user-provided text.
     \meta tags {quick Android}
