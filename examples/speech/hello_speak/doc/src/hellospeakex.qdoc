@@ -4,6 +4,7 @@
 /*!
     \example hello_speak
     \title Hello Speak Example
+    \examplecategory {Data Processing & I/O}
     \ingroup qttexttospeech_examples
     \meta tags {widgets}
 
