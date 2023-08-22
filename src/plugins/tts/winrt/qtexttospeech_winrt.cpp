@@ -117,6 +117,7 @@ QTextToSpeechEngineWinRT::QTextToSpeechEngineWinRT(const QVariantMap &params, QO
     if (!SUCCEEDED(hr)) {
         d->setError(QTextToSpeech::ErrorReason::Initialization,
                     QCoreApplication::translate("QTextToSpeech", "Could not initialize text-to-speech engine."));
+        return;
     } else if (voice() == QVoice()) {
         d->setError(QTextToSpeech::ErrorReason::Configuration,
                     QCoreApplication::translate("QTextToSpeech", "Could not set default voice."));
@@ -221,6 +222,8 @@ void QTextToSpeechEngineWinRTPrivate::forEachVoice(Fn &&lambda) const
 QList<QLocale> QTextToSpeechEngineWinRT::availableLocales() const
 {
     Q_D(const QTextToSpeechEngineWinRT);
+    if (!d->synth)
+        return QList<QLocale>();
     QSet<QLocale> uniqueLocales;
     d->forEachVoice([&uniqueLocales](const ComPtr<IVoiceInformation> &voiceInfo) {
         HString voiceLanguage;
@@ -236,6 +239,8 @@ QList<QLocale> QTextToSpeechEngineWinRT::availableLocales() const
 QList<QVoice> QTextToSpeechEngineWinRT::availableVoices() const
 {
     Q_D(const QTextToSpeechEngineWinRT);
+    if (!d->synth)
+        return QList<QVoice>();
     QList<QVoice> voices;
     const QLocale currentLocale = locale();
     d->forEachVoice([&](const ComPtr<IVoiceInformation> &voiceInfo) {
@@ -250,6 +255,8 @@ QList<QVoice> QTextToSpeechEngineWinRT::availableVoices() const
 QLocale QTextToSpeechEngineWinRT::locale() const
 {
     Q_D(const QTextToSpeechEngineWinRT);
+    if (!d->synth)
+        return QLocale(QLocale::C, QLocale::AnyTerritory);
 
     ComPtr<IVoiceInformation> voiceInfo;
     HRESULT hr = d->synth->get_Voice(&voiceInfo);
@@ -263,6 +270,8 @@ QLocale QTextToSpeechEngineWinRT::locale() const
 bool QTextToSpeechEngineWinRT::setLocale(const QLocale &locale)
 {
     Q_D(QTextToSpeechEngineWinRT);
+    if (!d->synth)
+        return false;
 
     ComPtr<IVoiceInformation> foundVoice;
     d->forEachVoice([&locale, &foundVoice](const ComPtr<IVoiceInformation> &voiceInfo) {
@@ -290,6 +299,8 @@ bool QTextToSpeechEngineWinRT::setLocale(const QLocale &locale)
 QVoice QTextToSpeechEngineWinRT::voice() const
 {
     Q_D(const QTextToSpeechEngineWinRT);
+    if (!d->synth)
+        return QVoice();
 
     ComPtr<IVoiceInformation> voiceInfo;
     d->synth->get_Voice(&voiceInfo);
@@ -300,6 +311,8 @@ QVoice QTextToSpeechEngineWinRT::voice() const
 bool QTextToSpeechEngineWinRT::setVoice(const QVoice &voice)
 {
     Q_D(QTextToSpeechEngineWinRT);
+    if (!d->synth)
+        return false;
 
     const QString data = QTextToSpeechEngine::voiceData(voice).toString();
     if (data.isEmpty())
@@ -393,6 +406,8 @@ void QTextToSpeechEngineWinRTPrivate::sinkStateChanged(QAudio::State sinkState)
 void QTextToSpeechEngineWinRT::say(const QString &text)
 {
     Q_D(QTextToSpeechEngineWinRT);
+    if (!d->synth)
+        return;
 
     // stop ongoing speech
     stop(QTextToSpeech::BoundaryHint::Default);
