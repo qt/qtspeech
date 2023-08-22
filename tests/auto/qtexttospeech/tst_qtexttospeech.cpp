@@ -726,7 +726,7 @@ void tst_QTextToSpeech::pauseAtUtterance()
 
     int atIndex = -1;
     bool paused = false;
-    connect(&tts, &QTextToSpeech::aboutToSynthesize, [&]{
+    connect(&tts, &QTextToSpeech::aboutToSynthesize, this, [&]{
         ++atIndex;
         if (atIndex == 1 && !paused) {
             tts.pause(QTextToSpeech::BoundaryHint::Utterance);
@@ -735,7 +735,7 @@ void tst_QTextToSpeech::pauseAtUtterance()
         }
     });
     QStringList wordsSpoken;
-    connect(&tts, &QTextToSpeech::sayingWord,
+    connect(&tts, &QTextToSpeech::sayingWord, this,
             [&](const QString &word, qsizetype id, qsizetype at, qsizetype length){
         const QString text = textList.at(atIndex).mid(at, length);
         QCOMPARE(id, atIndex);
@@ -793,7 +793,7 @@ void tst_QTextToSpeech::sayingWord()
     QElapsedTimer timer;
     QStringList words;
     QList<qint64> times;
-    connect(&tts, &QTextToSpeech::sayingWord,
+    connect(&tts, &QTextToSpeech::sayingWord, this,
         [&words, &times, &timer, text](const QString &word, qsizetype id, qsizetype start, qsizetype length) {
         const QString &slice = text.sliced(start, length);
         QCOMPARE(word, slice);
@@ -856,7 +856,7 @@ void tst_QTextToSpeech::sayingWordWithPause()
     selectWorkingVoice(&tts);
 
     QStringList spokenWords;
-    connect(&tts, &QTextToSpeech::sayingWord,
+    connect(&tts, &QTextToSpeech::sayingWord, this,
             [&](const QString &word, qsizetype id, qsizetype start, qsizetype length) {
         QCOMPARE(word, text.sliced(start, length));
         QCOMPARE(id, 0);
@@ -921,7 +921,8 @@ void tst_QTextToSpeech::synthesize()
     bool running = false;
     bool finished = false;
     qint64 speechTime = 0;
-    connect(&tts, &QTextToSpeech::stateChanged, [&running, &finished, &speechTimer, &speechTime](QTextToSpeech::State state) {
+    connect(&tts, &QTextToSpeech::stateChanged, this,
+            [&running, &finished, &speechTimer, &speechTime](QTextToSpeech::State state) {
         if (state == QTextToSpeech::Synthesizing || state == QTextToSpeech::Speaking) {
             speechTimer.start();
             running = true;
