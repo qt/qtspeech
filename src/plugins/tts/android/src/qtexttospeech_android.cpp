@@ -12,7 +12,7 @@ static jclass g_qtSpeechClass = 0;
 typedef QMap<jlong, QTextToSpeechEngineAndroid *> TextToSpeechMap;
 Q_GLOBAL_STATIC(TextToSpeechMap, textToSpeechMap)
 
-Q_DECLARE_JNI_TYPE(Locale, "Ljava/util/Locale;")
+Q_DECLARE_JNI_CLASS(Locale, "java/util/Locale")
 
 static void notifyError(JNIEnv *env, jobject thiz, jlong id, jlong reason)
 {
