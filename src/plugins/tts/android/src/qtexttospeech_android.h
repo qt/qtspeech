@@ -11,6 +11,7 @@
 #include <QtCore/QLocale>
 #include <QtCore/QString>
 #include <QtCore/qjniobject.h>
+#include <QtCore/qjnitypes.h>
 
 QT_BEGIN_NAMESPACE
 
