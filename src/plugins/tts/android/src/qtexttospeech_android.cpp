@@ -440,8 +440,8 @@ QLocale QTextToSpeechEngineAndroid::locale() const
 {
     auto locale = m_speech.callMethod<QtJniTypes::Locale>("getLocale");
     if (locale.isValid()) {
-        auto localeLanguage = locale.callObjectMethod<jstring>("getLanguage").toString();
-        auto localeCountry = locale.callObjectMethod<jstring>("getCountry").toString();
+        auto localeLanguage = locale.callMethod<jstring>("getLanguage").toString();
+        auto localeCountry = locale.callMethod<jstring>("getCountry").toString();
         if (!localeCountry.isEmpty())
             localeLanguage += QString("_%1").arg(localeCountry).toUpper();
         return QLocale(localeLanguage);
@@ -451,7 +451,7 @@ QLocale QTextToSpeechEngineAndroid::locale() const
 
 QVoice QTextToSpeechEngineAndroid::javaVoiceObjectToQVoice(QJniObject &obj) const
 {
-    auto voiceName = obj.callObjectMethod<jstring>("getName").toString();
+    auto voiceName = obj.callMethod<jstring>("getName").toString();
     QVoice::Gender gender;
     if (voiceName.contains(QStringLiteral("#male"))) {
         gender = QVoice::Male;
@@ -463,8 +463,8 @@ QVoice QTextToSpeechEngineAndroid::javaVoiceObjectToQVoice(QJniObject &obj) cons
     QJniObject locale = obj.callMethod<QtJniTypes::Locale>("getLocale");
     QLocale qlocale;
     if (locale.isValid()) {
-        auto localeLanguage = locale.callObjectMethod<jstring>("getLanguage").toString();
-        auto localeCountry = locale.callObjectMethod<jstring>("getCountry").toString();
+        auto localeLanguage = locale.callMethod<jstring>("getLanguage").toString();
+        auto localeCountry = locale.callMethod<jstring>("getCountry").toString();
         if (!localeCountry.isEmpty())
             localeLanguage += QString("_%1").arg(localeCountry).toUpper();
         qlocale = QLocale(localeLanguage);
