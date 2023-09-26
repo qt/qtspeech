@@ -31,7 +31,7 @@
 
     Switch cases are used to update the Label \c statusLabel in the footer.
 
-    \skipto onStateChanged: (state)
+    \skipto onStateChanged: updateStateLabel(state)
     \printuntil }
 
     \section1 Highlighting words as they are spoken
