@@ -28,6 +28,8 @@ public slots:
     void localeChanged(const QLocale &locale);
 
 private:
+    void onEngineReady();
+
     Ui::MainWindow ui;
     QTextToSpeech *m_speech = nullptr;
     QList<QVoice> m_voices;
