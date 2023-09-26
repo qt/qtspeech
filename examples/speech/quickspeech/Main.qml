@@ -22,7 +22,10 @@ ApplicationWindow {
 //! [initialize]
 
 //! [stateChanged]
-        onStateChanged: (state) => {
+        onStateChanged: updateStateLabel(state)
+
+        function updateStateLabel(state)
+        {
             switch (state) {
                 case TextToSpeech.Ready:
                     statusLabel.text = qsTr("Ready")
@@ -173,10 +176,24 @@ ApplicationWindow {
 
     Component.onCompleted: {
         enginesComboBox.currentIndex = tts.availableEngines().indexOf(tts.engine)
+        // some engines initialize asynchronously
+        if (tts.state == TextToSpeech.Ready) {
+            engineReady()
+        } else {
+            tts.stateChanged.connect(root.engineReady)
+        }
+
+        tts.updateStateLabel(tts.state)
+    }
+
+    function engineReady() {
+        tts.stateChanged.disconnect(root.engineReady)
+        if (tts.state != TextToSpeech.Ready) {
+            tts.updateStateLabel(tts.state)
+            return;
+        }
         updateLocales()
         updateVoices()
-
-        tts.onStateChanged(tts.state)
     }
 
     function updateLocales() {

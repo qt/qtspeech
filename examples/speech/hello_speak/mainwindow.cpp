@@ -70,11 +70,30 @@ void MainWindow::stateChanged(QTextToSpeech::State state)
 
 void MainWindow::engineSelected(int index)
 {
-    QString engineName = ui.engine->itemData(index).toString();
+    ui.engine->setEnabled(false);
+
+    const QString engineName = ui.engine->itemData(index).toString();
     delete m_speech;
     m_speech = engineName == u"default"
                ? new QTextToSpeech(this)
                : new QTextToSpeech(engineName, this);
+
+    // some engines initialize asynchronously
+    if (m_speech->state() == QTextToSpeech::Ready) {
+        onEngineReady();
+    } else {
+        connect(m_speech, &QTextToSpeech::stateChanged, this, &MainWindow::onEngineReady,
+                Qt::SingleShotConnection);
+    }
+}
+
+void MainWindow::onEngineReady()
+{
+    ui.engine->setEnabled(true);
+    if (m_speech->state() != QTextToSpeech::Ready) {
+        stateChanged(m_speech->state());
+        return;
+    }
 
     const bool hasPauseResume = m_speech->engineCapabilities()
                               & QTextToSpeech::Capability::PauseResume;
