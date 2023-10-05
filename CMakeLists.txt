@@ -13,8 +13,14 @@ project(QtSpeech
     LANGUAGES CXX C
 )
 
-find_package(Qt6 ${PROJECT_VERSION} CONFIG REQUIRED COMPONENTS BuildInternals Core Multimedia)
-find_package(Qt6 ${PROJECT_VERSION} CONFIG OPTIONAL_COMPONENTS Gui Widgets Test QuickTest Qml)
+find_package(Qt6 ${PROJECT_VERSION} CONFIG REQUIRED COMPONENTS BuildInternals Core)
+find_package(Qt6 ${PROJECT_VERSION} CONFIG OPTIONAL_COMPONENTS Gui Multimedia Widgets Test QuickTest Qml)
+
+if(NOT TARGET Qt6::Multimedia)
+    message(NOTICE "Skipping the build as the condition \"TARGET Qt6::Multimedia\" is not met.")
+    return()
+endif()
+
 qt_internal_project_setup()
 
 qt_build_repo()

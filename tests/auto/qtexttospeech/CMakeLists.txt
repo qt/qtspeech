@@ -1,11 +1,6 @@
 # Copyright (C) 2022 The Qt Company Ltd.
 # SPDX-License-Identifier: BSD-3-Clause
 
-if(NOT TARGET Qt::Multimedia)
-    message(WARNING "The test case requires Qt::Multimedia to verify the presence of audio devices")
-    return()
-endif()
-
 qt_internal_add_test(tst_qtexttospeech
     SOURCES
         tst_qtexttospeech.cpp
