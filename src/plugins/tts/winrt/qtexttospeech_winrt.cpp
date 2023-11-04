@@ -423,7 +423,8 @@ void QTextToSpeechEngineWinRTPrivate::sinkStateChanged(QAudio::State sinkState)
                 elapsedTimer.invalidate();
             } else {
                 boundaryTimer.stop();
-                playedTime += elapsedTimer.nsecsElapsed() / 1000;
+                if (elapsedTimer.isValid())
+                    playedTime += elapsedTimer.nsecsElapsed() / 1000;
                 elapsedTimer.invalidate();
                 audioSink->suspend();
             }
