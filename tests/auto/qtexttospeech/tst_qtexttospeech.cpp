@@ -901,10 +901,9 @@ void tst_QTextToSpeech::synthesize_data()
 void tst_QTextToSpeech::synthesize()
 {
     QFETCH_GLOBAL(QString, engine);
-    if (engine != "mock" && !hasDefaultAudioOutput())
-        QSKIP("No audio device present");
-
     QFETCH(QString, text);
+
+    const bool canCheckDuration = engine == "mock" || hasDefaultAudioOutput();
 
     QTextToSpeech tts(engine);
     if (!(tts.engineCapabilities() & QTextToSpeech::Capability::Synthesize))
@@ -935,13 +934,15 @@ void tst_QTextToSpeech::synthesize()
         }
     });
 
-    // first, measure how long it takes to speak the text
-    tts.say(text);
-    QTRY_VERIFY(running);
-    QTRY_VERIFY(finished);
+    // first, measure how long it takes to speak the text. We can't do that if we
+    // can't play audio.
+    if (canCheckDuration) {
+        tts.say(text);
+        QTRY_VERIFY(running);
+        QTRY_VERIFY(finished);
+    }
 
     running = false;
-
     QAudioFormat pcmFormat;
     QByteArray pcmData;
 
@@ -956,16 +957,20 @@ void tst_QTextToSpeech::synthesize()
     QTRY_VERIFY(finished);
 
     QVERIFY(pcmFormat.isValid());
-    // bytesForDuration takes micro seconds, we measured in milliseconds.
-    const qint32 bytesExpected = pcmFormat.bytesForDuration(speechTime * 1000);
+    QVERIFY(!pcmData.isEmpty());
 
-    // We should have as much data as the format requires for the time it took
-    // to play the speech, +/- 10% as we can't measure the exact audio duration.
-    QCOMPARE_GE(pcmData.size(), double(bytesExpected) * 0.9);
-    if (engine == "flite") // flite is very unreliable
-        QCOMPARE_LT(pcmData.size(), double(bytesExpected) * 1.5);
-    else
-        QCOMPARE_LT(pcmData.size(), double(bytesExpected) * 1.1);
+    if (canCheckDuration) {
+        // bytesForDuration takes micro seconds, we measured in milliseconds.
+        const qint32 bytesExpected = pcmFormat.bytesForDuration(speechTime * 1000);
+
+        // We should have as much data as the format requires for the time it took
+        // to play the speech, +/- 10% as we can't measure the exact audio duration.
+        QCOMPARE_GE(pcmData.size(), double(bytesExpected) * 0.9);
+        if (engine == "flite") // flite is very unreliable
+            QCOMPARE_LT(pcmData.size(), double(bytesExpected) * 1.5);
+        else
+            QCOMPARE_LT(pcmData.size(), double(bytesExpected) * 1.1);
+    }
 }
 
 /*!

@@ -107,7 +107,7 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
 
     Q_ASSERT(bufferByteAccess);
 
-    const qint64 available = bytesInBuffer();
+    qint64 available = bytesInBuffer();
     maxlen = qMin(available, maxlen);
 
     if (!maxlen && atEnd())
@@ -127,6 +127,7 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
             pbyte += WaveHeaderLength;
             m_bufferOffset += WaveHeaderLength;
             maxlen -= WaveHeaderLength;
+            available -= WaveHeaderLength;
         }
     }
 
