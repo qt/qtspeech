@@ -443,7 +443,8 @@ void QTextToSpeechEngineWinRTPrivate::sinkStateChanged(QAudio::State sinkState)
         state = QTextToSpeech::Speaking;
         break;
     case QAudio::SuspendedState:
-        state = QTextToSpeech::Paused;
+        if (audioSource->m_pause != AudioSource::NoPause)
+            state = QTextToSpeech::Paused;
         break;
     }
     if (state != oldState)
