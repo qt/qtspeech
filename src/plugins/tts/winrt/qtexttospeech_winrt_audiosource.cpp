@@ -138,13 +138,16 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
         Q_ASSERT(audioFormat.sampleFormat() == QAudioFormat::Int16);
         // we are dealing with artificially created sound, so we don't have
         // to find a large enough window with overall low energy; we can just
-        // look for a series (e.g. 1/20th of a second) of samples with value 0.
-        const int silenceDuration = audioFormat.sampleRate() / 20;
+        // look for a series (e.g. 1/50th of a second) of samples with low
+        // absolute values.
+        const int silenceDuration = audioFormat.sampleRate() / 50;
         const short *sample = reinterpret_cast<short*>(pbyte);
         const qsizetype sampleCount = maxlen / sizeof(short);
+        if (sampleCount < silenceDuration)
+            break;
         qint64 silenceCount = 0;
         for (qint64 index = 0; index < sampleCount; ++index) {
-            if (!sample[index]) {
+            if (qAbs(sample[index]) < 10) {
                 ++silenceCount;
             } else if (silenceCount > silenceDuration) {
                 // long enough silence found, only provide the data until we are in the
