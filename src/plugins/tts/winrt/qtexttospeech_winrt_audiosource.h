@@ -51,14 +51,16 @@ public:
         Paused
     } m_pause = NoPause;
 
-    void pause()
+    void pause(quint64 atByte)
     {
         m_pause = PauseRequested;
+        m_pauseRequestedAt = atByte;
     }
 
     void resume()
     {
         m_pause = NoPause;
+        m_pauseRequestedAt = 0;
         if (bytesAvailable())
             emit readyRead();
     }
@@ -126,6 +128,8 @@ private:
     UINT32 m_bufferOffset = 0;
     // RIFF header has been checked at the beginning of the stream
     bool m_riffHeaderChecked = false;
+    quint64 m_bytesRead = 0;
+    quint64 m_pauseRequestedAt = 0;
 
     void populateBoundaries();
     QList<Boundary> boundaries;

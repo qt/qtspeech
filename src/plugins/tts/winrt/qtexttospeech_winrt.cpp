@@ -548,11 +548,41 @@ void QTextToSpeechEngineWinRT::stop(QTextToSpeech::BoundaryHint boundaryHint)
 
 void QTextToSpeechEngineWinRT::pause(QTextToSpeech::BoundaryHint boundaryHint)
 {
-    Q_UNUSED(boundaryHint);
     Q_D(QTextToSpeechEngineWinRT);
 
-    if (d->audioSource)
-        d->audioSource->pause();
+    if (!d->audioSource)
+        return;
+
+    auto pauseBoundaryType = AudioSource::Boundary::Unknown;
+    switch (boundaryHint) {
+    case QTextToSpeech::BoundaryHint::Default:
+        d->audioSource->pause(0);
+        return;
+    case QTextToSpeech::BoundaryHint::Immediate:
+        d->audioSource->pause(0);
+        if (d->audioSink)
+            d->audioSink->suspend();
+        return;
+    case QTextToSpeech::BoundaryHint::Word:
+        pauseBoundaryType = AudioSource::Boundary::Word;
+        break;
+    case QTextToSpeech::BoundaryHint::Sentence:
+        pauseBoundaryType = AudioSource::Boundary::Sentence;
+        break;
+    case QTextToSpeech::BoundaryHint::Utterance:
+        // taken care off by engine-independent implementation
+        return;
+    }
+
+    // find the next boundary of the matching type
+    const auto nextBoundary = std::find_if(d->currentBoundary + 1, d->boundaries.constEnd(),
+                                            [pauseBoundaryType](auto &&it){
+        return it.type == pauseBoundaryType;
+    });
+    if (nextBoundary != d->boundaries.constEnd()) {
+        d->audioSource->pause(d->audioSource->format()
+                                        .bytesForDuration(nextBoundary->startTime));
+    }
 }
 
 void QTextToSpeechEngineWinRT::resume()
