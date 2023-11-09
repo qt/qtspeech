@@ -136,7 +136,23 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
         break;
     case PauseRequested: {
         Q_ASSERT(audioFormat.sampleFormat() == QAudioFormat::Int16);
-        // we are dealing with artificially created sound, so we don't have
+
+        if (m_pauseRequestedAt) {
+            if (m_pauseRequestedAt <= m_bytesRead) {
+                // we missed the window, pause immediately
+                maxlen = 0;
+            } else if (m_pauseRequestedAt <= m_bytesRead + maxlen) {
+                maxlen = qMax(quint64(0), m_pauseRequestedAt - m_bytesRead) + 44;
+            } else {
+                // wait for the next chunk
+                break;
+            }
+            m_pause = Paused;
+            m_pauseRequestedAt = 0;
+            break;
+        }
+        // If no byte to pause at is specified, look for silence in the current
+        // chunk. We are dealing with artificially created sound, so we don't have
         // to find a large enough window with overall low energy; we can just
         // look for a series (e.g. 1/20th of a second) of samples with value 0.
         const int silenceDuration = audioFormat.sampleRate() / 20;
@@ -162,6 +178,9 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
                 silenceCount = 0;
             }
         }
+        // no silence found - stop after this chunk
+        if (m_pause != Paused)
+            m_pause = Paused;
         break;
     }
     case Paused:
@@ -181,6 +200,7 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
     else
         m_bufferOffset += maxlen;
 
+    m_bytesRead += maxlen;
     return maxlen;
 }
 
