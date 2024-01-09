@@ -1,4 +1,11 @@
+# Current OpenSuSE Leap (15.5) is provisioned without
+# dummy audio device (QTBUG-120655). All tests are bound to flake.
+# RHEL and Ubuntu still covering the autotest.
+# => temporarily blacklist, until VM template is fixed
+opensuse
+
 [pauseResume:darwin]
 macos-13 ci # QTBUG-108205
 [sayingWordWithPause:darwin]
 macos-13 ci # QTBUG-108205
+
