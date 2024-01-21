@@ -672,7 +672,7 @@ QTextToSpeech::State QTextToSpeech::state() const
 */
 
 /*!
-    \qmlsignal void TextToSpeech::errorOccured(enumeration reason, string errorString)
+    \qmlsignal void TextToSpeech::errorOccurred(enumeration reason, string errorString)
 
     This signal is emitted after an error occurred and the \l state has been set to
     \c TextToSpeech.Error. The \a reason parameter specifies the type of error,
