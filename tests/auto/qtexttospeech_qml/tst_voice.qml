@@ -23,6 +23,6 @@ TestCase {
         compare(tts.voice.name, "Bob")
         compare(tts.voice.age, Voice.Adult)
         compare(tts.voice.gender, Voice.Male)
-        compare(tts.voice.locale, Qt.locale("en-UK"))
+        compare(tts.voice.locale, Qt.locale("en-GB"))
     }
 }
