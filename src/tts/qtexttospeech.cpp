@@ -826,11 +826,18 @@ qsizetype QTextToSpeech::enqueue(const QString &utterance)
     if (!d->m_engine || utterance.isEmpty())
         return -1;
 
-    if (d->m_engine->state() == QTextToSpeech::Speaking) {
-        d->m_pendingUtterances.enqueue(utterance);
-    } else {
+    switch (d->m_engine->state()) {
+    case QTextToSpeech::Error:
+        return -1;
+    case QTextToSpeech::Ready:
         emit aboutToSynthesize(0);
         d->m_engine->say(utterance);
+        break;
+    case QTextToSpeech::Speaking:
+    case QTextToSpeech::Synthesizing:
+    case QTextToSpeech::Paused:
+        d->m_pendingUtterances.enqueue(utterance);
+        break;
     }
 
     return d->m_utteranceCounter++;
