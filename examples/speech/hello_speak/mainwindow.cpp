@@ -1,4 +1,4 @@
-// Copyright (C) 2017 The Qt Company Ltd.
+// Copyright (C) 2024 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 #include "mainwindow.h"
@@ -70,9 +70,8 @@ void MainWindow::stateChanged(QTextToSpeech::State state)
 
 void MainWindow::engineSelected(int index)
 {
-    ui.engine->setEnabled(false);
-
     const QString engineName = ui.engine->itemData(index).toString();
+
     delete m_speech;
     m_speech = engineName == u"default"
                ? new QTextToSpeech(this)
@@ -89,7 +88,6 @@ void MainWindow::engineSelected(int index)
 
 void MainWindow::onEngineReady()
 {
-    ui.engine->setEnabled(true);
     if (m_speech->state() != QTextToSpeech::Ready) {
         stateChanged(m_speech->state());
         return;
