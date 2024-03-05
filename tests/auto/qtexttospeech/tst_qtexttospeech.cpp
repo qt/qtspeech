@@ -696,8 +696,8 @@ void tst_QTextToSpeech::sayMultiple()
     for (qsizetype i = 0; i < textList.count(); ++i) {
         const QString &text = textList.at(i);
         tts.enqueue(text);
-        if (!i) // wait for the engine to start speaking
-            QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
+        if (!i) // wait for the engine to start synthesizing
+            QTRY_COMPARE_NE(tts.state(), QTextToSpeech::Ready);
     }
 
     QTRY_VERIFY(doneSpeaking);
