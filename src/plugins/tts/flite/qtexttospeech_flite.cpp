@@ -12,8 +12,6 @@ using namespace Qt::StringLiterals;
 QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(const QVariantMap &parameters, QObject *parent)
     : QTextToSpeechEngine(parent)
 {
-    Q_UNUSED(parameters);
-
     QAudioDevice audioDevice;
     if (const auto it = parameters.find("audioDevice"_L1); it != parameters.end())
         audioDevice = (*it).value<QAudioDevice>();
