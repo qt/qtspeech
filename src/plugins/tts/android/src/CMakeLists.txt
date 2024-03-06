@@ -1,9 +1,10 @@
 # Copyright (C) 2022 The Qt Company Ltd.
 # SPDX-License-Identifier: BSD-3-Clause
 
-qt_internal_add_plugin(QTextToSpeechEngineAndroid
+qt_internal_add_plugin(QTextToSpeechEngineAndroidPlugin
     OUTPUT_NAME qttexttospeech_android
     PLUGIN_TYPE texttospeech
+    CLASS_NAME QTextToSpeechEngineAndroid
     SOURCES
         qtexttospeech_android.cpp qtexttospeech_android.h
         qtexttospeech_android_plugin.cpp qtexttospeech_android_plugin.h
@@ -14,4 +15,4 @@ qt_internal_add_plugin(QTextToSpeechEngineAndroid
         Qt::Multimedia
 )
 
-add_dependencies(QTextToSpeechEngineAndroid QtAndroidTextToSpeech)
+add_dependencies(QTextToSpeechEngineAndroidPlugin QtAndroidTextToSpeech)
