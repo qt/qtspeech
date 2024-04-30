@@ -8,11 +8,8 @@
 #include "qtexttospeechengine.h"
 
 #include <QtCore/QObject>
-#include <QtCore/QLoggingCategory>
 
 QT_BEGIN_NAMESPACE
-
-//Q_DECLARE_LOGGING_CATEGORY(lcSpeechTtsSpeechd)
 
 class QTextToSpeechSpeechdPlugin : public QObject, public QTextToSpeechPlugin
 {
