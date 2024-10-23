@@ -553,7 +553,7 @@ void tst_QTextToSpeech::pauseResume()
     QFETCH_GLOBAL(QString, engine);
     if (engine != "mock" && !hasDefaultAudioOutput())
         QSKIP("No audio device present");
-    if (engine == "macos" || engine == "speechd")
+    if (engine == "speechd")
         QSKIP("Native speech engine is faulty");
 
     const QString text = QStringLiteral("Hello. World.");
@@ -839,8 +839,6 @@ void tst_QTextToSpeech::sayingWordWithPause()
     QFETCH_GLOBAL(QString, engine);
     if (engine != "mock" && !hasDefaultAudioOutput())
         QSKIP("No audio device present");
-    if (engine == "macos")
-        QSKIP("macos engine's pause support is faulty");
 
     QFETCH(QStringList, words);
     QFETCH(int, pauseAt);
