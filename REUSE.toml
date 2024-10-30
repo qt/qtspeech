@@ -1,7 +1,8 @@
 version = 1
 
 [[annotations]]
-path = ["src/tts/doc/QtTextToSpeechDoc"]
+path = ["src/tts/doc/QtTextToSpeechDoc",
+        "src/plugins/tts/android/jar/AndroidManifest.xml"]
 precedence = "closest"
 comment = "src and plugin"
 SPDX-FileCopyrightText = "Copyright (C) 2024 The Qt Company Ltd."
@@ -35,12 +36,6 @@ comment = "documentation"
 precedence = "closest"
 SPDX-FileCopyrightText = "Copyright (C) 2024 The Qt Company Ltd."
 SPDX-License-Identifier = "LicenseRef-Qt-Commercial OR GFDL-1.3-no-invariants-only"
-
-[[annotations]]
-path = ["**/AndroidManifest.xml"]
-precedence = "override"
-SPDX-FileCopyrightText = "Copyright 2006, The Android Open Source Project"
-SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
 path = ["**.toml", "licenseRule.json"]
