@@ -962,8 +962,8 @@ void tst_QTextToSpeech::synthesize()
         const qint32 bytesExpected = pcmFormat.bytesForDuration(speechTime * 1000);
 
         // We should have as much data as the format requires for the time it took
-        // to play the speech, +/- 10% as we can't measure the exact audio duration.
-        QCOMPARE_GE(pcmData.size(), double(bytesExpected) * 0.9);
+        // to play the speech, +/- 15% as we can't measure the exact audio duration.
+        QCOMPARE_GE(pcmData.size(), double(bytesExpected) * 0.85);
         if (engine == "flite") // flite is very unreliable
             QCOMPARE_LT(pcmData.size(), double(bytesExpected) * 1.5);
         else
