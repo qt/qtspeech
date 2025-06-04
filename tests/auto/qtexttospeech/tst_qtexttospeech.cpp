@@ -53,6 +53,7 @@ private slots:
 
     void sayMultiple_data();
     void sayMultiple();
+    void sayInvalid();
 
     void pauseAtUtterance_data();
     void pauseAtUtterance();
@@ -659,6 +660,33 @@ void tst_QTextToSpeech::sayWithRates()
         lastTime = time;
     }
     logger.dismiss();
+}
+
+void tst_QTextToSpeech::sayInvalid()
+{
+    QFETCH_GLOBAL(QString, engine);
+    if (engine != "mock" && !hasDefaultAudioOutput())
+        QSKIP("No audio device present");
+
+    QTextToSpeech tts(engine);
+    QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
+    selectWorkingVoice(&tts);
+    auto logger = qScopeGuard([&tts]{
+        qWarning() << "Failure with voice" << tts.voice();
+    });
+
+    int speakingCount = 0;
+    bool doneSpeaking = false;
+    connect(&tts, &QTextToSpeech::stateChanged, this, [&](QTextToSpeech::State state){
+        if (state == QTextToSpeech::Speaking)
+            ++speakingCount;
+        else if (state == QTextToSpeech::Ready)
+            doneSpeaking = true;
+    });
+
+    tts.say("©");
+    QTRY_VERIFY(doneSpeaking);
+    QTRY_COMPARE(speakingCount, 1);
 }
 
 void tst_QTextToSpeech::sayMultiple_data()
