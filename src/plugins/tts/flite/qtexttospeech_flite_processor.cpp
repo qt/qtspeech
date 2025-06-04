@@ -37,7 +37,7 @@ void QTextToSpeechProcessorFlite::startTokenTimer()
     qCDebug(lcSpeechTtsFlite) << "Starting token timer with" << m_tokens.count() - m_currentToken << "left";
 
     const TokenData &token = m_tokens.at(m_currentToken);
-    const qint64 playedTime = m_audioSink->processedUSecs() / 1000;
+    const qint64 playedTime = m_audioSink ? m_audioSink->processedUSecs() / 1000 : 0;
     m_tokenTimer.start(qMax(token.startTime - playedTime, 0), Qt::PreciseTimer, this);
 }
 
