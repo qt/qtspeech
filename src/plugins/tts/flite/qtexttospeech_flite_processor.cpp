@@ -7,6 +7,7 @@
 #include <QtCore/qcoreapplication.h>
 #include <QtCore/qlocale.h>
 #include <QtCore/qmap.h>
+#include <QtCore/qspan.h>
 #include <QtCore/qstring.h>
 
 #include <flite/flite.h>
@@ -88,18 +89,51 @@ int QTextToSpeechProcessorFlite::audioOutput(const cst_wave *w, int start, int s
     if (start == 0 && !initAudio(w->sample_rate, w->num_channels))
         return CST_AUDIO_STREAM_STOP;
 
-    const qsizetype bytesToWrite = size * sizeof(short);
+    QSpan fliteStream{ w->samples + start, size };
+    QSpan fliteBytes = as_bytes(fliteStream);
 
-    if (!m_audioIODevice->write(reinterpret_cast<const char *>(&w->samples[start]), bytesToWrite)) {
+    using namespace std::chrono_literals;
+
+    std::optional<std::chrono::steady_clock::time_point> startTime;
+    qsizetype totalBytesWritten = 0;
+
+    auto handleStreamingError = [&] {
         setError(QTextToSpeech::ErrorReason::Playback,
                  QCoreApplication::translate("QTextToSpeech", "Audio streaming error."));
         stop();
         return CST_AUDIO_STREAM_STOP;
+    };
+
+    while (!fliteBytes.isEmpty()) {
+        qsizetype bytesWritten = m_audioIODevice->write(
+                reinterpret_cast<const char *>(fliteBytes.data()), fliteBytes.size());
+
+        if (bytesWritten < 0) // something really went wrong
+            return handleStreamingError();
+
+        totalBytesWritten += bytesWritten;
+        if (bytesWritten == fliteBytes.size())
+            break;
+
+        if (bytesWritten)
+            fliteBytes = fliteBytes.subspan(bytesWritten); // ranges::drop
+
+        // we could not write (all) data to the QIODevice. Back off and retry for 5 seconds before
+        // we give up. We cannot query the state of the QAudioSink here, as that would require event
+        // loop interaction.
+        constexpr auto timeout = 5s;
+
+        if (!startTime)
+            startTime = std::chrono::steady_clock::now();
+        else if (std::chrono::steady_clock::now() - *startTime > timeout)
+            return handleStreamingError();
+
+        std::this_thread::sleep_for(5ms);
     }
 
     // Stats for debugging
     ++numberChunks;
-    totalBytes += bytesToWrite;
+    totalBytes += totalBytesWritten;
 
     if (last == 1) {
         qCDebug(lcSpeechTtsFlite) << "last data chunk written";
