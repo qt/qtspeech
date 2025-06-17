@@ -7,18 +7,18 @@
 #include "qtexttospeechengine.h"
 #include "qvoice.h"
 
-#include <QtCore/QList>
-#include <QtCore/QMutex>
-#include <QtCore/QThread>
-#include <QtCore/QLibrary>
-#include <QtCore/QString>
-#include <QtCore/QBasicTimer>
-#include <QtCore/QTimerEvent>
-#include <QtCore/QAbstractEventDispatcher>
-#include <QtCore/QProcessEnvironment>
-#include <QtCore/QDateTime>
-#include <QtMultimedia/QAudioSink>
-#include <QtMultimedia/QMediaDevices>
+#include <QtCore/qabstracteventdispatcher.h>
+#include <QtCore/qbasictimer.h>
+#include <QtCore/qcoreevent.h>
+#include <QtCore/qdatetime.h>
+#include <QtCore/qlibrary.h>
+#include <QtCore/qlist.h>
+#include <QtCore/qmutex.h>
+#include <QtCore/qprocess.h>
+#include <QtCore/qstring.h>
+#include <QtCore/qthread.h>
+#include <QtMultimedia/qaudiosink.h>
+#include <QtMultimedia/qmediadevices.h>
 
 #include <flite/flite.h>
 
