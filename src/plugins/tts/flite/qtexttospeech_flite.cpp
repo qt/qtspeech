@@ -13,7 +13,7 @@ QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(const QVariantMap &parameters
     : QTextToSpeechEngine(parent)
 {
     QAudioDevice audioDevice;
-    if (const auto it = parameters.find("audioDevice"_L1); it != parameters.end())
+    if (const auto it = parameters.find(u"audioDevice"_s); it != parameters.end())
         audioDevice = (*it).value<QAudioDevice>();
     else
         audioDevice = QMediaDevices::defaultAudioOutput();
