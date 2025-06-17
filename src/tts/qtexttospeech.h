@@ -7,11 +7,11 @@
 #ifndef QTEXTTOSPEECH_H
 #define QTEXTTOSPEECH_H
 
-#include <QtTextToSpeech/qtexttospeech_global.h>
-#include <QtTextToSpeech/qvoice.h>
+#include <QtCore/qlocale.h>
 #include <QtCore/qobject.h>
 #include <QtCore/qshareddata.h>
-#include <QtCore/qlocale.h>
+#include <QtTextToSpeech/qtexttospeech_global.h>
+#include <QtTextToSpeech/qvoice.h>
 
 #include <QtCore/q20type_traits.h>
 
