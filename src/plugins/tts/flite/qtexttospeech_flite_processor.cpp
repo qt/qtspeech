@@ -4,10 +4,10 @@
 #include "qtexttospeech_flite_processor.h"
 #include "qtexttospeech_flite_plugin.h"
 
-#include <QtCore/QCoreApplication>
-#include <QtCore/QString>
-#include <QtCore/QLocale>
-#include <QtCore/QMap>
+#include <QtCore/qcoreapplication.h>
+#include <QtCore/qlocale.h>
+#include <QtCore/qmap.h>
+#include <QtCore/qstring.h>
 
 #include <flite/flite.h>
 
