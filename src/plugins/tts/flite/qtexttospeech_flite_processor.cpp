@@ -89,7 +89,7 @@ int QTextToSpeechProcessorFlite::audioOutput(const cst_wave *w, int start, int s
 
     const qsizetype bytesToWrite = size * sizeof(short);
 
-    if (!m_audioBuffer->write(reinterpret_cast<const char *>(&w->samples[start]), bytesToWrite)) {
+    if (!m_audioIODevice->write(reinterpret_cast<const char *>(&w->samples[start]), bytesToWrite)) {
         setError(QTextToSpeech::ErrorReason::Playback,
                  QCoreApplication::translate("QTextToSpeech", "Audio streaming error."));
         stop();
@@ -102,7 +102,7 @@ int QTextToSpeechProcessorFlite::audioOutput(const cst_wave *w, int start, int s
 
     if (last == 1) {
         qCDebug(lcSpeechTtsFlite) << "last data chunk written";
-        m_audioBuffer->close();
+        m_audioIODevice->close();
     }
     return CST_AUDIO_STREAM_CONT;
 }
@@ -341,7 +341,7 @@ void QTextToSpeechProcessorFlite::deleteSink()
         m_audioSink->disconnect();
         delete m_audioSink;
         m_audioSink = nullptr;
-        m_audioBuffer = nullptr;
+        m_audioIODevice = nullptr;
     }
 }
 
@@ -363,8 +363,8 @@ void QTextToSpeechProcessorFlite::createSink()
         m_audioSink->reset();
     }
 
-    m_audioBuffer = m_audioSink->start();
-    if (!m_audioBuffer) {
+    m_audioIODevice = m_audioSink->start();
+    if (!m_audioIODevice) {
         deleteSink();
         setError(QTextToSpeech::ErrorReason::Playback,
                  QCoreApplication::translate("QTextToSpeech", "Audio Open error: No I/O device available."));
