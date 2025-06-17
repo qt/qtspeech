@@ -52,6 +52,7 @@ QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(const QVariantMap &parameters
 
     if (voiceIndex) {
         m_state = QTextToSpeech::Ready;
+        m_thread.setObjectName("QTextToSpeechEngineFlite");
         m_processor->moveToThread(&m_thread);
         m_thread.start();
     } else {
