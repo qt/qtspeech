@@ -108,7 +108,7 @@ private:
 
     QAudioSink *m_audioSink = nullptr;
     QAudio::State m_state = QAudio::IdleState;
-    QIODevice *m_audioBuffer = nullptr;
+    QIODevice *m_audioIODevice = nullptr;
 
     QAudioDevice m_audioDevice;
     QAudioFormat m_format;
