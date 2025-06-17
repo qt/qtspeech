@@ -224,10 +224,10 @@ bool QTextToSpeechProcessorFlite::init()
     // ### FIXME: hardcode for now, the only voice files we know about are for en_US
     // We could source the language and perhaps the list of voices we want to load
     // (hardcoded below) from an environment variable.
-    const QLatin1StringView langCode("us");
-    const QLatin1StringView libPrefix("flite_cmu_%1_%2.so.1");
-    const QLatin1StringView registerPrefix("register_cmu_%1_%2");
-    const QLatin1StringView unregisterPrefix("unregister_cmu_%1_%2");
+    const QString langCode(u"us"_s);
+    const QString libPrefix(u"flite_cmu_%1_%2.so.1"_s);
+    const QString registerPrefix(u"register_cmu_%1_%2"_s);
+    const QString unregisterPrefix(u"unregister_cmu_%1_%2"_s);
 
     for (const auto &voice : fliteAvailableVoices(libPrefix, langCode)) {
         QLibrary library(libPrefix.arg(langCode, voice));
@@ -271,15 +271,15 @@ QStringList QTextToSpeechProcessorFlite::fliteAvailableVoices(const QString &lib
     // Read available libraries
     // TODO: make default library paths OS dependent
     const QProcessEnvironment pe;
-    QStringList ldPaths = pe.value("LD_LIBRARY_PATH"_L1).split(":", Qt::SkipEmptyParts);
+    QStringList ldPaths = pe.value(u"LD_LIBRARY_PATH"_s).split(u":"_s, Qt::SkipEmptyParts);
     if (ldPaths.isEmpty()) {
-        ldPaths = QStringList{"/usr/lib64"_L1, "/usr/local/lib64"_L1, "/lib64"_L1,
-                              "/usr/lib/x86_64-linux-gnu"_L1, "/usr/lib"_L1};
+        ldPaths = QStringList{ u"/usr/lib64"_s, u"/usr/local/lib64"_s, u"/lib64"_s,
+                               u"/usr/lib/x86_64-linux-gnu"_s, u"/usr/lib"_s };
     } else {
         ldPaths.removeDuplicates();
     }
 
-    const QString libPattern = QString("lib"_L1 + libPrefix).arg(langCode).arg("*"_L1);
+    const QString libPattern = QString(u"lib"_s + libPrefix).arg(langCode).arg("*"_L1);
     for (const auto &path : ldPaths) {
         QDir dir(path);
         if (!dir.isReadable() || dir.isEmpty())
