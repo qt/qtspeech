@@ -333,9 +333,7 @@ bool QTextToSpeechProcessorFlite::initAudio(int rate, int channelCount)
 
     createSink();
 
-    m_audioSink->setVolume(m_volume);
-
-    return true;
+    return bool(m_audioSink);
 }
 
 void QTextToSpeechProcessorFlite::deleteSink()
@@ -358,6 +356,7 @@ void QTextToSpeechProcessorFlite::createSink()
         blockSignals(true);
         deleteSink();
         m_audioSink = new QAudioSink(m_audioDevice, m_format, this);
+        m_audioSink->setVolume(m_volume);
         connect(m_audioSink, &QAudioSink::stateChanged, this, &QTextToSpeechProcessorFlite::changeState);
         connect(QThread::currentThread(), &QThread::finished, m_audioSink, &QObject::deleteLater);
     }
