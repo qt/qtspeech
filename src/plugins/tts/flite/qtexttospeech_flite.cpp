@@ -22,7 +22,7 @@ QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(const QVariantMap &parameters
         m_errorReason = QTextToSpeech::ErrorReason::Playback;
         m_errorString = QCoreApplication::translate("QTextToSpeech", "No audio device available");
     }
-    m_processor.reset(new QTextToSpeechProcessorFlite(audioDevice));
+    m_processor = std::make_unique<QTextToSpeechProcessorFlite>(audioDevice);
 
     // Connect processor to engine for state changes and error
     connect(m_processor.get(), &QTextToSpeechProcessorFlite::stateChanged,
