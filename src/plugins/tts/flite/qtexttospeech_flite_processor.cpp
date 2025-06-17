@@ -358,7 +358,11 @@ void QTextToSpeechProcessorFlite::createSink()
         m_audioSink->setVolume(m_volume);
         connect(m_audioSink, &QAudioSink::stateChanged, this, &QTextToSpeechProcessorFlite::changeState);
         connect(QThread::currentThread(), &QThread::finished, m_audioSink, &QObject::deleteLater);
+    } else {
+        // stop before we can restart with a new QIODevice
+        m_audioSink->reset();
     }
+
     m_audioBuffer = m_audioSink->start();
     if (!m_audioBuffer) {
         deleteSink();
