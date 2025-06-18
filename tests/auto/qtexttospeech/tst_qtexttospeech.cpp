@@ -850,14 +850,12 @@ void tst_QTextToSpeech::sayingWord()
     if (words.count() > 1)
         QCOMPARE_GE(times.last(), totalTime * 0.4);
 
-    if (engine != "flite") {
-        std::list<std::chrono::nanoseconds> timeDifferences;
-        std::adjacent_difference(times.begin(), times.end(), std::back_inserter(timeDifferences));
-        timeDifferences.pop_front(); // first element is always 0
+    std::list<std::chrono::nanoseconds> timeDifferences;
+    std::adjacent_difference(times.begin(), times.end(), std::back_inserter(timeDifferences));
+    timeDifferences.pop_front(); // first element is always 0
 
-        for (auto timeDiff : timeDifferences)
-            QCOMPARE_GT(timeDiff, std::chrono::milliseconds(5));
-    }
+    for (auto timeDiff : timeDifferences)
+        QCOMPARE_GT(timeDiff, std::chrono::milliseconds(5));
 
     debugHelper.dismiss();
 }
