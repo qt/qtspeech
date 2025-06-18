@@ -156,19 +156,22 @@ int QTextToSpeechProcessorFlite::dataOutput(const cst_wave *w, int start, int si
     if (start == 0)
         emit stateChanged(QTextToSpeech::Synthesizing);
 
-    QAudioFormat format;
-    if (w->num_channels == 1)
-        format.setChannelConfig(QAudioFormat::ChannelConfigMono);
-    else
-        format.setChannelCount(w->num_channels);
-    format.setSampleRate(w->sample_rate);
-    format.setSampleFormat(QAudioFormat::Int16);
+    if (!m_synthesisFormat) {
+        QAudioFormat format;
+        if (w->num_channels == 1)
+            format.setChannelConfig(QAudioFormat::ChannelConfigMono);
+        else
+            format.setChannelCount(w->num_channels);
+        format.setSampleRate(w->sample_rate);
+        format.setSampleFormat(QAudioFormat::Int16);
+        if (!format.isValid())
+            return CST_AUDIO_STREAM_STOP;
+        m_synthesisFormat = format;
+    }
 
-    if (!format.isValid())
-        return CST_AUDIO_STREAM_STOP;
-
-    const qsizetype bytesToWrite = size * format.bytesPerSample();
-    emit synthesized(format, QByteArray(reinterpret_cast<const char *>(&w->samples[start]), bytesToWrite));
+    const qsizetype bytesToWrite = size * m_synthesisFormat->bytesPerSample();
+    emit synthesized(*m_synthesisFormat,
+                     QByteArray(reinterpret_cast<const char *>(&w->samples[start]), bytesToWrite));
 
     if (last == 1)
         emit stateChanged(QTextToSpeech::Ready);
@@ -568,9 +571,11 @@ void QTextToSpeechProcessorFlite::synthesize(const QString &text, int voiceId, d
     if (!checkVoice(voiceId))
         return;
 
+    m_synthesisFormat = std::nullopt;
     m_volume = volume;
     processText(text, voiceId, float(pitch), float(rate),
                 QTextToSpeechProcessorFlite::dataOutputCb);
+    m_synthesisFormat = std::nullopt;
 }
 
 QT_END_NAMESPACE
