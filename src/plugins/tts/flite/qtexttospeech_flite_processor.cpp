@@ -33,56 +33,30 @@ const QList<QTextToSpeechProcessorFlite::VoiceInfo> &QTextToSpeechProcessorFlite
     return m_voices;
 }
 
-void QTextToSpeechProcessorFlite::startTokenTimer()
-{
-    qCDebug(lcSpeechTtsFlite) << "Starting token timer with" << m_tokens.count() - m_currentToken << "left";
-
-    const TokenData &token = m_tokens.at(m_currentToken);
-    const qint64 playedTime = m_audioSink ? m_audioSink->processedUSecs() / 1000 : 0;
-    m_tokenTimer.start(qMax(token.startTime - playedTime, 0), Qt::PreciseTimer, this);
-}
-
 int QTextToSpeechProcessorFlite::audioOutputCb(const cst_wave *w, int start, int size,
                                                int last, cst_audio_streaming_info *asi)
 {
     auto *processor = static_cast<QTextToSpeechProcessorFlite *>(asi->userdata);
     Q_ASSERT(processor);
 
-    if (asi->item == NULL)
+    if (!asi->item)
         asi->item = relation_head(utt_relation(asi->utt, "Token"));
 
-    const float startTime = flite_ffeature_float(
+    const float tokenStartTime = flite_ffeature_float(
             asi->item, "R:Token.daughter1.R:SylStructure.daughter1.daughter1.R:Segment.p.end");
-    const int startSample = int(startTime * float(w->sample_rate));
-    if ((startSample >= start) && (startSample < start + size)) {
-        auto normalizeFeatureString = [&](const char *feature) -> const char * {
-            const char *featureString = flite_ffeature_string(asi->item, feature);
-            if (cst_streq("0", featureString))
-                return "";
-            return featureString;
-        };
-
-        const char *token = flite_ffeature_string(asi->item, "name");
-        if (token) {
-            qCDebug(lcSpeechTtsFlite).nospace()
-                    << "Processing token start_time: " << startTime << " content: \""
-                    << flite_ffeature_string(asi->item, "whitespace")
-                    << normalizeFeatureString("prepunctuation") << "'" << token << "'"
-                    << normalizeFeatureString("punc") << "\"";
-            processor->m_tokens.append(
-                    TokenData{ qRound(startTime * 1000), QString::fromUtf8(token) });
-            if (!processor->m_tokenTimer.isActive())
-                processor->startTokenTimer();
-        }
+    const int tokenStartSample = int(tokenStartTime * float(w->sample_rate));
+    if ((tokenStartSample >= start) && (tokenStartSample < start + size)) {
+        // a new token starts in this chunk
+        processor->audioHandleNewToken(
+                std::chrono::milliseconds(std::lround(tokenStartTime * 1000)), asi);
         asi->item = item_next(asi->item);
     }
     return processor->audioOutput(w, start, size, last, asi);
 }
 
-int QTextToSpeechProcessorFlite::audioOutput(const cst_wave *w, int start, int size,
-                                             int last, cst_audio_streaming_info *asi)
+int QTextToSpeechProcessorFlite::audioOutput(const cst_wave *w, int start, int size, int last,
+                                             cst_audio_streaming_info *)
 {
-    Q_UNUSED(asi);
     Q_ASSERT(QThread::currentThread() == thread());
     if (size == 0)
         return CST_AUDIO_STREAM_CONT;
@@ -142,6 +116,34 @@ int QTextToSpeechProcessorFlite::audioOutput(const cst_wave *w, int start, int s
     return CST_AUDIO_STREAM_CONT;
 }
 
+void QTextToSpeechProcessorFlite::audioHandleNewToken(std::chrono::milliseconds tokenStartTime,
+                                                      cst_audio_streaming_info *asi)
+{
+    auto normalizeFeatureString = [&](const char *feature) -> const char * {
+        const char *featureString = flite_ffeature_string(asi->item, feature);
+        if (cst_streq("0", featureString))
+            return "";
+        return featureString;
+    };
+
+    const char *token = flite_ffeature_string(asi->item, "name");
+    if (!token) {
+        Q_UNLIKELY_BRANCH;
+        qCWarning(lcSpeechTtsFlite) << "No token found, skipping";
+        return;
+    }
+
+    qCDebug(lcSpeechTtsFlite).nospace()
+            << "Processing token start_time: " << tokenStartTime << " content: \""
+            << flite_ffeature_string(asi->item, "whitespace")
+            << normalizeFeatureString("prepunctuation") << "'" << token << "'"
+            << normalizeFeatureString("punc") << "\"";
+
+    QString currentToken = QString::fromUtf8(token);
+    m_index = m_text.indexOf(currentToken, m_index);
+    emit sayingWord(currentToken, m_index, currentToken.length());
+}
+
 int QTextToSpeechProcessorFlite::dataOutputCb(const cst_wave *w, int start, int size,
                                               int last, cst_audio_streaming_info *asi)
 {
@@ -179,25 +181,6 @@ int QTextToSpeechProcessorFlite::dataOutput(const cst_wave *w, int start, int si
     return CST_AUDIO_STREAM_CONT;
 }
 
-void QTextToSpeechProcessorFlite::timerEvent(QTimerEvent *event)
-{
-    if (event->timerId() != m_tokenTimer.timerId()) {
-        QObject::timerEvent(event);
-        return;
-    }
-
-    qCDebug(lcSpeechTtsFlite) << "Moving current token" << m_currentToken << m_tokens.size();
-    auto currentToken = m_tokens.at(m_currentToken);
-    m_index = m_text.indexOf(currentToken.text, m_index);
-    emit sayingWord(currentToken.text, m_index, currentToken.text.length());
-    m_index += currentToken.text.length();
-    ++m_currentToken;
-    if (m_currentToken == m_tokens.size())
-        m_tokenTimer.stop();
-    else
-        startTokenTimer();
-}
-
 void QTextToSpeechProcessorFlite::processText(const QString &text, int voiceId, float pitch,
                                               float rate, OutputHandler outputHandler)
 {
@@ -206,8 +189,6 @@ void QTextToSpeechProcessorFlite::processText(const QString &text, int voiceId, 
         return;
 
     m_text = text;
-    m_tokens.clear();
-    m_currentToken = 0;
     m_index = 0;
     float secsToSpeak = -1;
     const VoiceInfo &voiceInfo = m_voices.at(voiceId);
@@ -385,6 +366,7 @@ void QTextToSpeechProcessorFlite::deleteSink()
 
 void QTextToSpeechProcessorFlite::createSink()
 {
+    using namespace std::chrono;
     // Create new sink if none exists or the format has changed
     if (!m_audioSink || (m_audioSink->format() != m_format)) {
         // No signals while we create new sink with QIODevice
@@ -394,7 +376,10 @@ void QTextToSpeechProcessorFlite::createSink()
         deleteSink();
         m_audioSink = new QAudioSink(m_audioDevice, m_format, this);
         m_audioSink->setVolume(m_volume);
-        connect(m_audioSink, &QAudioSink::stateChanged, this, &QTextToSpeechProcessorFlite::changeState);
+        constexpr auto bufferDuration = milliseconds(100);
+        m_audioSink->setBufferSize(m_format.bytesForDuration(microseconds(bufferDuration).count()));
+        connect(m_audioSink, &QAudioSink::stateChanged, this,
+                &QTextToSpeechProcessorFlite::changeState);
         connect(QThread::currentThread(), &QThread::finished, m_audioSink, &QObject::deleteLater);
     } else {
         // stop before we can restart with a new QIODevice
@@ -419,19 +404,6 @@ void QTextToSpeechProcessorFlite::changeState(QAudio::State newState)
         return;
 
     qCDebug(lcSpeechTtsFlite) << "Audio sink state transition" << m_state << newState;
-
-    switch (newState) {
-    case QAudio::ActiveState:
-        // Once the sink starts playing, start a timer to keep track of the tokens.
-        if (!m_tokenTimer.isActive() && m_currentToken < m_tokens.count())
-            startTokenTimer();
-        break;
-    case QAudio::SuspendedState:
-    case QAudio::IdleState:
-    case QAudio::StoppedState:
-        m_tokenTimer.stop();
-        break;
-    }
 
     m_state = newState;
     const QTextToSpeech::State ttsState = audioStateToTts(newState);
@@ -467,9 +439,7 @@ constexpr QTextToSpeech::State QTextToSpeechProcessorFlite::audioStateToTts(QAud
 
 void QTextToSpeechProcessorFlite::deinitAudio()
 {
-    m_tokenTimer.stop();
     m_index = -1;
-    m_currentToken = -1;
     deleteSink();
 }
 
