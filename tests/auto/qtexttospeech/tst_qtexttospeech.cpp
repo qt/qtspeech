@@ -821,14 +821,15 @@ void tst_QTextToSpeech::sayingWord()
 
     QElapsedTimer timer;
     QStringList words;
-    QList<qint64> times;
+
+    QList<std::chrono::nanoseconds> times;
     connect(&tts, &QTextToSpeech::sayingWord, this,
         [&words, &times, &timer, text](const QString &word, qsizetype id, qsizetype start, qsizetype length) {
         const QString &slice = text.sliced(start, length);
         QCOMPARE(word, slice);
         QCOMPARE(id, 0);
         words << text.sliced(start, length);
-        times << timer.elapsed();
+        times << timer.durationElapsed();
     });
 
     timer.start();
@@ -839,7 +840,7 @@ void tst_QTextToSpeech::sayingWord()
     });
     QTRY_COMPARE(tts.state(), QTextToSpeech::Speaking);
     QTRY_COMPARE(tts.state(), QTextToSpeech::Ready);
-    qint64 totalTime = timer.elapsed();
+    auto totalTime = timer.durationElapsed();
 
     QCOMPARE(words, expectedWords);
 
@@ -849,6 +850,15 @@ void tst_QTextToSpeech::sayingWord()
     // doesn't get emitted with all words immediately.
     if (words.count() > 1)
         QCOMPARE_GE(times.last(), totalTime * 0.4);
+
+    if (engine != "flite") {
+        std::list<std::chrono::nanoseconds> timeDifferences;
+        std::adjacent_difference(times.begin(), times.end(), std::back_inserter(timeDifferences));
+        timeDifferences.pop_front(); // first element is always 0
+
+        for (auto timeDiff : timeDifferences)
+            QCOMPARE_GT(timeDiff, std::chrono::milliseconds(5));
+    }
 
     debugHelper.dismiss();
 }
