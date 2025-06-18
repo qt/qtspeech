@@ -113,6 +113,7 @@ private:
     QAudioDevice m_audioDevice;
     QAudioFormat m_format;
     double m_volume = 1;
+    std::optional<QAudioFormat> m_synthesisFormat;
 
     QList<VoiceInfo> m_voices;
 
