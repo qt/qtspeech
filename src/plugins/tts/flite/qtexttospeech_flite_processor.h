@@ -61,15 +61,16 @@ private:
 
     using OutputHandler = decltype(QTextToSpeechProcessorFlite::audioOutputCb);
     // Process a single text
-    void processText(const QString &text, int voiceId, double pitch, double rate, OutputHandler outputHandler);
+    void processText(const QString &text, int voiceId, float pitch, float rate,
+                     OutputHandler outputHandler);
     int audioOutput(const cst_wave *w, int start, int size, int last, cst_audio_streaming_info *asi);
     int dataOutput(const cst_wave *w, int start, int size, int last, cst_audio_streaming_info *asi);
 
-    void setRateForVoice(cst_voice *voice, float rate);
-    void setPitchForVoice(cst_voice *voice, float pitch);
+    static void setRateForVoice(cst_voice *voice, float rate);
+    static void setPitchForVoice(cst_voice *voice, float pitch);
 
     bool init();
-    bool initAudio(double rate, int channelCount);
+    bool initAudio(int rate, int channelCount);
     void deinitAudio();
     bool checkFormat(const QAudioFormat &format);
     bool checkVoice(int voiceId);
@@ -79,7 +80,7 @@ private:
     void setError(QTextToSpeech::ErrorReason err, const QString &errorString = QString());
 
     // Read available flite voices
-    QStringList fliteAvailableVoices(const QString &libPrefix, const QString &langCode) const;
+    static QStringList fliteAvailableVoices(const QString &libPrefix, const QString &langCode);
 
 private slots:
     void changeState(QAudio::State newState);

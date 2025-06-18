@@ -44,7 +44,7 @@ void QTextToSpeechProcessorFlite::startTokenTimer()
 int QTextToSpeechProcessorFlite::audioOutputCb(const cst_wave *w, int start, int size,
                                                int last, cst_audio_streaming_info *asi)
 {
-    QTextToSpeechProcessorFlite *processor = static_cast<QTextToSpeechProcessorFlite *>(asi->userdata);
+    auto *processor = static_cast<QTextToSpeechProcessorFlite *>(asi->userdata);
     if (processor) {
         if (asi->item == NULL)
             asi->item = relation_head(utt_relation(asi->utt,"Token"));
@@ -110,7 +110,7 @@ int QTextToSpeechProcessorFlite::audioOutput(const cst_wave *w, int start, int s
 int QTextToSpeechProcessorFlite::dataOutputCb(const cst_wave *w, int start, int size,
                                               int last, cst_audio_streaming_info *asi)
 {
-    QTextToSpeechProcessorFlite *processor = static_cast<QTextToSpeechProcessorFlite *>(asi->userdata);
+    auto *processor = static_cast<QTextToSpeechProcessorFlite *>(asi->userdata);
     if (processor)
         return processor->dataOutput(w, start, size, last, asi);
     return CST_AUDIO_STREAM_STOP;
@@ -161,7 +161,8 @@ void QTextToSpeechProcessorFlite::timerEvent(QTimerEvent *event)
         startTokenTimer();
 }
 
-void QTextToSpeechProcessorFlite::processText(const QString &text, int voiceId, double pitch, double rate, OutputHandler outputHandler)
+void QTextToSpeechProcessorFlite::processText(const QString &text, int voiceId, float pitch,
+                                              float rate, OutputHandler outputHandler)
 {
     qCDebug(lcSpeechTtsFlite) << "processText() begin";
     if (!checkVoice(voiceId))
@@ -199,7 +200,7 @@ void QTextToSpeechProcessorFlite::setRateForVoice(cst_voice *voice, float rate)
     if (rate < 0)
         stretch -= rate * 2;
     if (rate > 0)
-        stretch -= rate * (100.0 / 175.0);
+        stretch -= rate * (100.0f / 175.0f);
     feat_set_float(voice->features, "duration_stretch", stretch);
 }
 
@@ -239,7 +240,7 @@ bool QTextToSpeechProcessorFlite::init()
         auto unregisterFn = reinterpret_cast<unregisterFnType>(library.resolve(
             unregisterPrefix.arg(langCode, voice).toLatin1().constData()));
         if (registerFn && unregisterFn) {
-            const int id = m_voices.count();
+            const int id = int(m_voices.count());
             m_voices.append(VoiceInfo{
                 id,
                 registerFn(),
@@ -258,7 +259,7 @@ bool QTextToSpeechProcessorFlite::init()
 }
 
 QStringList QTextToSpeechProcessorFlite::fliteAvailableVoices(const QString &libPrefix,
-                                                              const QString &langCode) const
+                                                              const QString &langCode)
 {
     // Read statically linked voices
     QStringList voices;
@@ -296,7 +297,7 @@ QStringList QTextToSpeechProcessorFlite::fliteAvailableVoices(const QString &lib
     return voices;
 }
 
-bool QTextToSpeechProcessorFlite::initAudio(double rate, int channelCount)
+bool QTextToSpeechProcessorFlite::initAudio(int rate, int channelCount)
 {
     m_format.setSampleFormat(QAudioFormat::Int16);
     m_format.setSampleRate(rate);
@@ -518,7 +519,8 @@ void QTextToSpeechProcessorFlite::say(const QString &text, int voiceId, double p
         return;
 
     m_volume = volume;
-    processText(text, voiceId, pitch, rate, QTextToSpeechProcessorFlite::audioOutputCb);
+    processText(text, voiceId, float(pitch), float(rate),
+                QTextToSpeechProcessorFlite::audioOutputCb);
 }
 
 void QTextToSpeechProcessorFlite::synthesize(const QString &text, int voiceId, double pitch, double rate, double volume)
@@ -530,7 +532,8 @@ void QTextToSpeechProcessorFlite::synthesize(const QString &text, int voiceId, d
         return;
 
     m_volume = volume;
-    processText(text, voiceId, pitch, rate, QTextToSpeechProcessorFlite::dataOutputCb);
+    processText(text, voiceId, float(pitch), float(rate),
+                QTextToSpeechProcessorFlite::dataOutputCb);
 }
 
 QT_END_NAMESPACE
