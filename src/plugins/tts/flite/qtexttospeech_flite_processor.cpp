@@ -53,17 +53,20 @@ int QTextToSpeechProcessorFlite::audioOutputCb(const cst_wave *w, int start, int
         const float startTime = flite_ffeature_float(asi->item, "R:Token.daughter1.R:SylStructure.daughter1.daughter1.R:Segment.p.end");
         const int startSample = int(startTime * float(w->sample_rate));
         if ((startSample >= start) && (startSample < start + size)) {
-            const char *ws = flite_ffeature_string(asi->item, "whitespace");
-            const char *prepunc = flite_ffeature_string(asi->item, "prepunctuation");
-            if (cst_streq("0",prepunc))
-                prepunc = "";
+            auto normalizeFeatureString = [&](const char *feature) -> const char * {
+                const char *featureString = flite_ffeature_string(asi->item, feature);
+                if (cst_streq("0", featureString))
+                    return "";
+                return featureString;
+            };
+
             const char *token = flite_ffeature_string(asi->item, "name");
-            const char *postpunc = flite_ffeature_string(asi->item, "punc");
-            if (cst_streq("0",postpunc))
-                postpunc = "";
             if (token) {
-                qCDebug(lcSpeechTtsFlite).nospace() << "Processing token start_time: " << startTime
-                                                    << " content: \"" << ws << prepunc << "'" << token << "'" << postpunc << "\"";
+                qCDebug(lcSpeechTtsFlite).nospace()
+                        << "Processing token start_time: " << startTime << " content: \""
+                        << flite_ffeature_string(asi->item, "whitespace")
+                        << normalizeFeatureString("prepunctuation") << "'" << token << "'"
+                        << normalizeFeatureString("punc") << "\"";
                 processor->m_tokens.append(TokenData{
                     qRound(startTime * 1000),
                     QString::fromUtf8(token)
