@@ -16,8 +16,3 @@ qt_internal_add_plugin(QTextToSpeechFlitePlugin
         Qt::Multimedia
         Qt::TextToSpeech
 )
-
-qt_internal_extend_target(QTextToSpeechFlitePlugin CONDITION QT_FEATURE_flite_alsa
-    LIBRARIES
-        ALSA::ALSA
-)
