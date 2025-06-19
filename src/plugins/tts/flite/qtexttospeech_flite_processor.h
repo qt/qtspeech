@@ -67,7 +67,7 @@ private:
     int dataOutput(const cst_wave *w, int start, int size, int last, cst_audio_streaming_info *asi);
 
     bool init();
-    bool initAudio(int rate, int channelCount);
+    bool initAudio(const cst_wave *w);
     void deinitAudio();
     bool checkFormat(const QAudioFormat &format);
     bool checkVoice(int voiceId);

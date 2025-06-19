@@ -123,6 +123,16 @@ QStringList fliteAvailableVoices(const QString &libPrefix, const QString &langCo
     return voices;
 }
 
+QAudioFormat getAudioFormat(const cst_wave &w)
+{
+    QAudioFormat fmt;
+    fmt.setSampleFormat(QAudioFormat::Int16);
+    fmt.setSampleRate(w.sample_rate);
+    fmt.setChannelCount(w.num_channels);
+    fmt.setChannelConfig(QAudioFormat::defaultChannelConfigForChannelCount(w.num_channels));
+    return fmt;
+}
+
 } // namespace
 
 QTextToSpeechProcessorFlite::QTextToSpeechProcessorFlite(const QAudioDevice &audioDevice)
@@ -195,7 +205,7 @@ int QTextToSpeechProcessorFlite::audioOutput(const cst_wave *w, int start, int s
     Q_ASSERT(QThread::currentThread() == thread());
     if (size == 0)
         return CST_AUDIO_STREAM_CONT;
-    if (start == 0 && !initAudio(w->sample_rate, w->num_channels))
+    if (start == 0 && !initAudio(w))
         return CST_AUDIO_STREAM_STOP;
 
     QSpan fliteStream{ w->samples + start, size };
@@ -266,13 +276,7 @@ int QTextToSpeechProcessorFlite::dataOutput(const cst_wave *w, int start, int si
         emit stateChanged(QTextToSpeech::Synthesizing);
 
     if (!m_synthesisFormat) {
-        QAudioFormat format;
-        if (w->num_channels == 1)
-            format.setChannelConfig(QAudioFormat::ChannelConfigMono);
-        else
-            format.setChannelCount(w->num_channels);
-        format.setSampleRate(w->sample_rate);
-        format.setSampleFormat(QAudioFormat::Int16);
+        QAudioFormat format = getAudioFormat(*w);
         if (!format.isValid())
             return CST_AUDIO_STREAM_STOP;
         m_synthesisFormat = format;
@@ -383,13 +387,9 @@ bool QTextToSpeechProcessorFlite::init()
     return !m_voices.isEmpty();
 }
 
-bool QTextToSpeechProcessorFlite::initAudio(int rate, int channelCount)
+bool QTextToSpeechProcessorFlite::initAudio(const cst_wave *w)
 {
-    m_format.setSampleFormat(QAudioFormat::Int16);
-    m_format.setSampleRate(rate);
-    m_format.setChannelCount(channelCount);
-    m_format.setChannelConfig(QAudioFormat::defaultChannelConfigForChannelCount(channelCount));
-
+    m_format = getAudioFormat(*w);
     if (!checkFormat(m_format))
        return false;
 
