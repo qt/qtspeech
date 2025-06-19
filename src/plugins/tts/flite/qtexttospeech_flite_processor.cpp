@@ -10,6 +10,8 @@
 #include <QtCore/qspan.h>
 #include <QtCore/qstring.h>
 
+#include <thread>
+
 #include <flite/flite.h>
 
 QT_BEGIN_NAMESPACE
