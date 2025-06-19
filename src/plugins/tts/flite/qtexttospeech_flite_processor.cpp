@@ -476,8 +476,12 @@ void QTextToSpeechProcessorFlite::deinitAudio()
 // Check format/device and set corresponding error messages
 bool QTextToSpeechProcessorFlite::checkFormat(const QAudioFormat &format)
 {
-    QString formatString;
-    QDebug(&formatString) << format;
+    auto streamToString = [](auto &&arg) {
+        QString string;
+        QDebug(&string) << arg;
+        return string;
+    };
+
     bool formatOK = true;
 
     // Format must be valid
@@ -485,7 +489,7 @@ bool QTextToSpeechProcessorFlite::checkFormat(const QAudioFormat &format)
         formatOK = false;
         setError(QTextToSpeech::ErrorReason::Playback,
                  QCoreApplication::translate("QTextToSpeech", "Invalid audio format: %1")
-                    .arg(formatString));
+                         .arg(streamToString(format)));
     }
 
     // Device must exist
@@ -499,8 +503,9 @@ bool QTextToSpeechProcessorFlite::checkFormat(const QAudioFormat &format)
     if (!m_audioDevice.isFormatSupported(format)) {
         formatOK = false;
         setError(QTextToSpeech::ErrorReason::Playback,
-                 QCoreApplication::translate("QTextToSpeech", "Audio device does not support format: %1")
-                    .arg(formatString));
+                 QCoreApplication::translate("QTextToSpeech",
+                                             "Audio device does not support format: %1")
+                         .arg(streamToString(format)));
     }
 
     return formatOK;
