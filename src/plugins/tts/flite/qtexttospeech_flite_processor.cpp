@@ -18,6 +18,70 @@ QT_BEGIN_NAMESPACE
 
 using namespace Qt::StringLiterals;
 
+namespace {
+
+void setRateForVoice(cst_voice *voice, float rate)
+{
+    float stretch = 1.0;
+    Q_ASSERT(rate >= -1.0 && rate <= 1.0);
+    // Stretch multipliers taken from Speech Dispatcher
+    if (rate < 0)
+        stretch -= rate * 2;
+    if (rate > 0)
+        stretch -= rate * (100.0f / 175.0f);
+    feat_set_float(voice->features, "duration_stretch", stretch);
+}
+
+void setPitchForVoice(cst_voice *voice, float pitch)
+{
+    float f0;
+    Q_ASSERT(pitch >= -1.0 && pitch <= 1.0);
+    // Conversion taken from Speech Dispatcher
+    f0 = (pitch * 80) + 100;
+    feat_set_float(voice->features, "int_f0_target_mean", f0);
+}
+
+// Read available flite voices
+QStringList fliteAvailableVoices(const QString &libPrefix, const QString &langCode)
+{
+    // Read statically linked voices
+    QStringList voices;
+    for (const cst_val *v = flite_voice_list; v; v = val_cdr(v)) {
+        cst_voice *voice = val_voice(val_car(v));
+        voices.append(voice->name);
+    }
+
+    // Read available libraries
+    // TODO: make default library paths OS dependent
+    const QProcessEnvironment pe;
+    QStringList ldPaths = pe.value(u"LD_LIBRARY_PATH"_s).split(u":"_s, Qt::SkipEmptyParts);
+    if (ldPaths.isEmpty()) {
+        ldPaths = QStringList{ u"/usr/lib64"_s, u"/usr/local/lib64"_s, u"/lib64"_s,
+                               u"/usr/lib/x86_64-linux-gnu"_s, u"/usr/lib"_s };
+    } else {
+        ldPaths.removeDuplicates();
+    }
+
+    const QString libPattern = QString(u"lib"_s + libPrefix).arg(langCode).arg("*"_L1);
+    for (const auto &path : ldPaths) {
+        QDir dir(path);
+        if (!dir.isReadable() || dir.isEmpty())
+            continue;
+        dir.setNameFilters({ libPattern });
+        dir.setFilter(QDir::Files);
+        const QFileInfoList fileList = dir.entryInfoList();
+        for (const auto &file : fileList) {
+            const QString vox = file.fileName().mid(16, file.fileName().indexOf(u'.') - 16);
+            voices.append(vox);
+        }
+    }
+
+    voices.removeDuplicates();
+    return voices;
+}
+
+} // namespace
+
 QTextToSpeechProcessorFlite::QTextToSpeechProcessorFlite(const QAudioDevice &audioDevice)
     : m_audioDevice(audioDevice)
 {
@@ -212,27 +276,6 @@ void QTextToSpeechProcessorFlite::processText(const QString &text, int voiceId, 
     qCDebug(lcSpeechTtsFlite) << "processText() end" << secsToSpeak << "Seconds";
 }
 
-void QTextToSpeechProcessorFlite::setRateForVoice(cst_voice *voice, float rate)
-{
-    float stretch = 1.0;
-    Q_ASSERT(rate >= -1.0 && rate <= 1.0);
-    // Stretch multipliers taken from Speech Dispatcher
-    if (rate < 0)
-        stretch -= rate * 2;
-    if (rate > 0)
-        stretch -= rate * (100.0f / 175.0f);
-    feat_set_float(voice->features, "duration_stretch", stretch);
-}
-
-void QTextToSpeechProcessorFlite::setPitchForVoice(cst_voice *voice, float pitch)
-{
-    float f0;
-    Q_ASSERT(pitch >= -1.0 && pitch <= 1.0);
-    // Conversion taken from Speech Dispatcher
-    f0 = (pitch * 80) + 100;
-    feat_set_float(voice->features, "int_f0_target_mean", f0);
-}
-
 typedef cst_voice*(*registerFnType)();
 typedef void(*unregisterFnType)(cst_voice *);
 
@@ -276,45 +319,6 @@ bool QTextToSpeechProcessorFlite::init()
     }
 
     return !m_voices.isEmpty();
-}
-
-QStringList QTextToSpeechProcessorFlite::fliteAvailableVoices(const QString &libPrefix,
-                                                              const QString &langCode)
-{
-    // Read statically linked voices
-    QStringList voices;
-    for (const cst_val *v = flite_voice_list; v; v = val_cdr(v)) {
-        cst_voice *voice = val_voice(val_car(v));
-        voices.append(voice->name);
-    }
-
-    // Read available libraries
-    // TODO: make default library paths OS dependent
-    const QProcessEnvironment pe;
-    QStringList ldPaths = pe.value(u"LD_LIBRARY_PATH"_s).split(u":"_s, Qt::SkipEmptyParts);
-    if (ldPaths.isEmpty()) {
-        ldPaths = QStringList{ u"/usr/lib64"_s, u"/usr/local/lib64"_s, u"/lib64"_s,
-                               u"/usr/lib/x86_64-linux-gnu"_s, u"/usr/lib"_s };
-    } else {
-        ldPaths.removeDuplicates();
-    }
-
-    const QString libPattern = QString(u"lib"_s + libPrefix).arg(langCode).arg("*"_L1);
-    for (const auto &path : ldPaths) {
-        QDir dir(path);
-        if (!dir.isReadable() || dir.isEmpty())
-            continue;
-        dir.setNameFilters({libPattern});
-        dir.setFilter(QDir::Files);
-        const QFileInfoList fileList = dir.entryInfoList();
-        for (const auto &file : fileList) {
-            const QString vox = file.fileName().mid(16, file.fileName().indexOf(u'.') - 16);
-            voices.append(vox);
-        }
-    }
-
-    voices.removeDuplicates();
-    return voices;
 }
 
 bool QTextToSpeechProcessorFlite::initAudio(int rate, int channelCount)
