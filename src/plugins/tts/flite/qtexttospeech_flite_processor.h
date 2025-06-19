@@ -66,9 +66,6 @@ private:
     int audioOutput(const cst_wave *w, int start, int size, int last, cst_audio_streaming_info *asi);
     int dataOutput(const cst_wave *w, int start, int size, int last, cst_audio_streaming_info *asi);
 
-    static void setRateForVoice(cst_voice *voice, float rate);
-    static void setPitchForVoice(cst_voice *voice, float pitch);
-
     bool init();
     bool initAudio(int rate, int channelCount);
     void deinitAudio();
@@ -78,9 +75,6 @@ private:
     void createSink();
     QAudio::State audioSinkState() const;
     void setError(QTextToSpeech::ErrorReason err, const QString &errorString = QString());
-
-    // Read available flite voices
-    static QStringList fliteAvailableVoices(const QString &libPrefix, const QString &langCode);
 
 private slots:
     void changeState(QAudio::State newState);
