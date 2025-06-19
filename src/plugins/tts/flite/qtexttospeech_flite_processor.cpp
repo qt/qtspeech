@@ -341,32 +341,8 @@ bool QTextToSpeechProcessorFlite::initAudio(int rate, int channelCount)
     m_format.setSampleFormat(QAudioFormat::Int16);
     m_format.setSampleRate(rate);
     m_format.setChannelCount(channelCount);
-    switch (channelCount) {
-    case 1:
-        m_format.setChannelConfig(QAudioFormat::ChannelConfigMono);
-        break;
-    case 2:
-        m_format.setChannelConfig(QAudioFormat::ChannelConfigStereo);
-        break;
-    case 3:
-        m_format.setChannelConfig(QAudioFormat::ChannelConfig2Dot1);
-        break;
-    case 5:
-        m_format.setChannelConfig(QAudioFormat::ChannelConfigSurround5Dot0);
-        break;
-    case 6:
-        m_format.setChannelConfig(QAudioFormat::ChannelConfigSurround5Dot1);
-        break;
-    case 7:
-        m_format.setChannelConfig(QAudioFormat::ChannelConfigSurround7Dot0);
-        break;
-    case 8:
-        m_format.setChannelConfig(QAudioFormat::ChannelConfigSurround7Dot1);
-        break;
-    default:
-        m_format.setChannelConfig(QAudioFormat::ChannelConfigUnknown);
-        break;
-    }
+    m_format.setChannelConfig(QAudioFormat::defaultChannelConfigForChannelCount(channelCount));
+
     if (!checkFormat(m_format))
        return false;
 
