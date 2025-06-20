@@ -23,14 +23,18 @@
 
 #include <flite/flite.h>
 
+#include <optional>
+
 QT_BEGIN_NAMESPACE
+
+class QFliteSynthesisProcess;
 
 class QTextToSpeechProcessorFlite : public QObject
 {
     Q_OBJECT
 
 public:
-    QTextToSpeechProcessorFlite(const QAudioDevice &audioDevice);
+    QTextToSpeechProcessorFlite(QAudioDevice audioDevice);
     ~QTextToSpeechProcessorFlite();
 
     struct VoiceInfo
@@ -51,36 +55,13 @@ public:
     Q_INVOKABLE void stop();
 
     const QList<QTextToSpeechProcessorFlite::VoiceInfo> &voices() const;
-    static constexpr QTextToSpeech::State audioStateToTts(QAudio::State audioState);
 
 private:
-    // Flite callbacks
-    static int audioOutputCb(const cst_wave *w, int start, int size,
-                             int last, cst_audio_streaming_info *asi);
-    static int dataOutputCb(const cst_wave *w, int start, int size,
-                            int last, cst_audio_streaming_info *asi);
-
-    using OutputHandler = decltype(QTextToSpeechProcessorFlite::audioOutputCb);
-    // Process a single text
-    void processText(const QString &text, int voiceId, float pitch, float rate,
-                     OutputHandler outputHandler);
-    int audioOutput(const cst_wave *w, int start, int size, int last, cst_audio_streaming_info *asi);
-    void audioHandleNewToken(std::chrono::milliseconds tokenStartTime,
-                             cst_audio_streaming_info *asi);
-    int dataOutput(const cst_wave *w, int start, int size, int last, cst_audio_streaming_info *asi);
-
     bool init();
-    bool initAudio(const cst_wave *w);
-    void deinitAudio();
-    bool checkFormat(const QAudioFormat &format);
     bool checkVoice(int voiceId);
-    void deleteSink();
-    void createSink();
-    QAudio::State audioSinkState() const;
-    void setError(QTextToSpeech::ErrorReason err, const QString &errorString = QString());
 
-private slots:
-    void changeState(QAudio::State newState);
+    void setError(QTextToSpeech::ErrorReason err, const QString &errorString = QString());
+    void updateState(QTextToSpeech::State);
 
 Q_SIGNALS:
     void errorOccurred(QTextToSpeech::ErrorReason error, const QString &errorString);
@@ -89,23 +70,20 @@ Q_SIGNALS:
     void synthesized(const QAudioFormat &format, const QByteArray &array);
 
 private:
-    QString m_text;
-    qsizetype m_index = -1;
+    QTextToSpeech::State m_state = {};
 
-    QAudioSink *m_audioSink = nullptr;
-    QAudio::State m_state = QAudio::IdleState;
-    QIODevice *m_audioIODevice = nullptr;
-
-    QAudioDevice m_audioDevice;
-    QAudioFormat m_format;
-    double m_volume = 1;
+    std::unique_ptr<QAudioSink> m_audioSink;
+    const QAudioDevice m_audioDevice;
+    float m_volume = 1.f;
     std::optional<QAudioFormat> m_synthesisFormat;
 
     QList<VoiceInfo> m_voices;
 
-    // Statistics for debugging
-    qint64 numberChunks = 0;
-    qint64 totalBytes = 0;
+    // synthesis process
+    friend class QFliteSynthesisProcess;
+    std::unique_ptr<QFliteSynthesisProcess> m_synthesisProcess;
+
+    void prepareAudioSink(QAudioFormat);
 };
 
 QT_END_NAMESPACE

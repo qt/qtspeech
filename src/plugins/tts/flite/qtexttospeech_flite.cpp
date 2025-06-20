@@ -4,7 +4,8 @@
 
 #include "qtexttospeech_flite.h"
 
-#include <QtCore/QCoreApplication>
+#include <QtCore/qcoreapplication.h>
+#include <QtCore/qsemaphore.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -56,6 +57,7 @@ QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(const QVariantMap &parameters
         m_thread.setObjectName("QTextToSpeechEngineFlite");
         m_processor->moveToThread(&m_thread);
         m_thread.start();
+        m_thread.setPriority(QThread::HighestPriority); // we feed data to the audio sink
     } else {
         m_errorReason = QTextToSpeech::ErrorReason::Configuration;
         m_errorString = QCoreApplication::translate("QTextToSpeech", "No voices available");
@@ -64,6 +66,12 @@ QTextToSpeechEngineFlite::QTextToSpeechEngineFlite(const QVariantMap &parameters
 
 QTextToSpeechEngineFlite::~QTextToSpeechEngineFlite()
 {
+    if (m_processor->thread() != thread()) {
+        QMetaObject::invokeMethod(m_processor.get(), [&] {
+            m_processor.reset(); // ensure destruction on the correct thread
+        }, Qt::BlockingQueuedConnection);
+    }
+
     m_thread.exit();
     m_thread.wait();
 }
