@@ -880,6 +880,10 @@ void tst_QTextToSpeech::sayingWordWithPause()
     if (engine == "macos")
         QSKIP("macos engine's pause support is faulty");
 
+    if (engine == "flite")
+        QSKIP("QTBUG-137947 QTextToSpeech::pause(QTextToSpeech::BoundaryHint::Word) not implemented"
+              " for flite");
+
     QFETCH(QStringList, words);
     QFETCH(int, pauseAt);
 
