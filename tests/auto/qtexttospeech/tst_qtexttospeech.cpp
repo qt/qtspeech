@@ -877,6 +877,10 @@ void tst_QTextToSpeech::sayingWordWithPause()
     if (engine != "mock" && !hasDefaultAudioOutput())
         QSKIP("No audio device present");
 
+    if (engine == "flite")
+        QSKIP("QTBUG-137947 QTextToSpeech::pause(QTextToSpeech::BoundaryHint::Word) not implemented"
+              " for flite");
+
     QFETCH(QStringList, words);
     QFETCH(int, pauseAt);
 
