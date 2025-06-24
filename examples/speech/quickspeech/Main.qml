@@ -103,7 +103,7 @@ ApplicationWindow {
         GridLayout {
             columns: 2
 
-            Text {
+            Label {
                 text: qsTr("Engine:")
             }
             ComboBox {
@@ -116,7 +116,7 @@ ApplicationWindow {
                     updateVoices()
                 }
             }
-            Text {
+            Label {
                 text: qsTr("Locale:")
             }
             ComboBox {
@@ -128,14 +128,14 @@ ApplicationWindow {
                     updateVoices()
                 }
             }
-            Text {
+            Label {
                 text: qsTr("Voice:")
             }
             ComboBox {
                 id: voicesComboBox
                 Layout.fillWidth: true
             }
-            Text {
+            Label {
                 text: qsTr("Volume:")
             }
             Slider {
@@ -146,7 +146,7 @@ ApplicationWindow {
                 value: 0.8
                 Layout.fillWidth: true
             }
-            Text {
+            Label {
                 text: qsTr("Pitch:")
             }
             Slider {
@@ -157,7 +157,7 @@ ApplicationWindow {
                 value: 0
                 Layout.fillWidth: true
             }
-            Text {
+            Label {
                 text: qsTr("Rate:")
             }
             Slider {
