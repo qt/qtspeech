@@ -174,10 +174,16 @@ class QFliteSynthesisProcess final : public QIODevice
         std::chrono::milliseconds startTime;
     };
 
+    using BoundaryHint = QTextToSpeech::BoundaryHint;
+
 public:
     QFliteSynthesisProcess(cst_voice *voice, QTextToSpeechProcessorFlite *parent, QString text,
                            float pitch, float rate);
     ~QFliteSynthesisProcess();
+
+    void pause(QTextToSpeech::BoundaryHint boundaryHint);
+    void stop(QTextToSpeech::BoundaryHint boundaryHint);
+    void resume();
 
 private:
     template <typename Closure>
@@ -212,6 +218,14 @@ private:
     qsizetype m_currentBytePosition{}; // Position of m_audioBuffer.begin()
     qsizetype m_currentTokenIndex{};
     bool m_lastChunkReceived{};
+
+    // pause/stop handling
+    bool m_paused{};
+    // NOTE: at the moment only BoundaryHint::Word is supported
+    std::optional<QTextToSpeech::BoundaryHint> m_pauseRequest;
+    std::optional<QTextToSpeech::BoundaryHint> m_stopRequest;
+
+    std::optional<qint64> bytesToNextWord() const;
 };
 
 QFliteSynthesisProcess::QFliteSynthesisProcess(cst_voice *voice,
@@ -237,6 +251,41 @@ QFliteSynthesisProcess::~QFliteSynthesisProcess()
 {
     m_task.cancel();
     m_task.waitForFinished();
+}
+
+void QFliteSynthesisProcess::pause(QTextToSpeech::BoundaryHint boundaryHint)
+{
+    if (m_paused)
+        return;
+
+    switch (boundaryHint) {
+    case BoundaryHint::Default:
+    case BoundaryHint::Immediate:
+        Q_UNREACHABLE_RETURN();
+        break;
+
+    default:
+        m_pauseRequest = boundaryHint;
+    }
+}
+
+void QFliteSynthesisProcess::stop(QTextToSpeech::BoundaryHint boundaryHint)
+{
+    switch (boundaryHint) {
+    case BoundaryHint::Default:
+    case BoundaryHint::Immediate:
+        Q_UNREACHABLE_RETURN();
+        break;
+
+    default:
+        m_stopRequest = boundaryHint;
+    }
+}
+
+void QFliteSynthesisProcess::resume()
+{
+    m_paused = false;
+    m_pauseRequest = std::nullopt;
 }
 
 template <typename Closure>
@@ -321,32 +370,65 @@ int QFliteSynthesisProcess::outputCallback(const cst_wave *w, int start, int siz
 
 qint64 QFliteSynthesisProcess::readData(char *data, qint64 maxlen)
 {
-    qint64 bytesAvailable = this->bytesAvailable();
-    qint64 bytesToRead = std::min(bytesAvailable, maxlen);
+    if (m_paused)
+        Q_ASSERT(m_pauseRequest || m_stopRequest);
 
-    std::copy_n(m_audioBuffer.begin(), bytesToRead, data);
-    m_audioBuffer.erase(m_audioBuffer.begin(), m_audioBuffer.begin() + bytesToRead);
+    const qint64 bytesAvailable = this->bytesAvailable();
+    const qint64 bytesRequested = std::min(bytesAvailable, maxlen);
+    qint64 bytesToRead = bytesRequested;
 
-    m_currentBytePosition += bytesToRead;
-
-    const std::chrono::microseconds currentTimeStamp{
-        m_format.durationForBytes(m_currentBytePosition),
-    };
-
-    while (!m_tokens.empty() && m_tokens.front().startTime <= currentTimeStamp) {
-        const TokenInformation &token = m_tokens.front();
-        m_currentTokenIndex = m_text.indexOf(token.word, m_currentTokenIndex);
-        emit m_parent->sayingWord(token.word, m_currentTokenIndex, token.word.length());
-        m_tokens.pop_front();
+    bool atWordBoundary = false;
+    if (!m_paused && (m_pauseRequest || m_stopRequest)) {
+        std::optional<qsizetype> bytesToNextWord = this->bytesToNextWord();
+        if (bytesToNextWord && bytesToNextWord < bytesRequested) {
+            // We are at a word boundary, so we only read up to the next word.
+            bytesToRead = bytesToNextWord.value();
+            atWordBoundary = true;
+        }
     }
 
-    if (m_lastChunkReceived && m_audioBuffer.empty()) {
-        // Voice synthesis is finished.
+    if (m_paused) {
+        // feed null to sink during async operation
+        std::fill_n(data, bytesToRead, 0);
+    } else {
+        std::copy_n(m_audioBuffer.begin(), bytesToRead, data);
+        std::fill_n(data, bytesRequested - bytesToRead, 0);
+
+        m_audioBuffer.erase(m_audioBuffer.begin(), m_audioBuffer.begin() + bytesToRead);
+
+        m_currentBytePosition += bytesToRead;
+
+        const std::chrono::microseconds currentTimeStamp{
+            m_format.durationForBytes(m_currentBytePosition),
+        };
+
+        while (!m_tokens.empty() && m_tokens.front().startTime <= currentTimeStamp) {
+            const TokenInformation &token = m_tokens.front();
+            m_currentTokenIndex = m_text.indexOf(token.word, m_currentTokenIndex);
+            emit m_parent->sayingWord(token.word, m_currentTokenIndex, token.word.length());
+            m_tokens.pop_front();
+        }
+    }
+
+    const bool stopSynthesisProcess = [&] {
+        if (m_lastChunkReceived && m_audioBuffer.empty())
+            return true; // end of file reached
+        if (atWordBoundary && m_stopRequest == BoundaryHint::Word)
+            return true; // stop at word boundary
+        return false;
+    }();
+
+    if (stopSynthesisProcess) {
+        m_paused = true; // we feed silence to the audio sink until the stop is processed
 
         invokeOnParent([](QTextToSpeechProcessorFlite *parent) {
-            parent->m_audioSink->stop();
-            parent->m_synthesisProcess.reset();
-            parent->updateState(QTextToSpeech::Ready);
+            parent->stop(QTextToSpeech::BoundaryHint::Immediate);
+        });
+    } else if (atWordBoundary && m_pauseRequest == BoundaryHint::Word) {
+        m_paused = true;
+
+        invokeOnParent([](QTextToSpeechProcessorFlite *parent) {
+            parent->pause(QTextToSpeech::BoundaryHint::Immediate);
         });
     }
 
@@ -356,6 +438,22 @@ qint64 QFliteSynthesisProcess::readData(char *data, qint64 maxlen)
 qint64 QFliteSynthesisProcess::bytesAvailable() const
 {
     return qint64(m_audioBuffer.size());
+}
+
+std::optional<qint64> QFliteSynthesisProcess::bytesToNextWord() const
+{
+    if (m_tokens.empty())
+        return std::nullopt;
+
+    using namespace std::chrono;
+
+    const microseconds currentTimeStamp{
+        m_format.durationForBytes(m_currentBytePosition),
+    };
+    const microseconds nextTokenStart{
+        m_tokens.front().startTime,
+    };
+    return m_format.bytesForDuration((nextTokenStart - currentTimeStamp).count());
 }
 
 std::optional<QFliteSynthesisProcess::TokenInformation>
@@ -527,17 +625,35 @@ bool QTextToSpeechProcessorFlite::checkVoice(int voiceId)
 
 
 // Stop current and cancel subsequent utterances
-void QTextToSpeechProcessorFlite::stop()
+void QTextToSpeechProcessorFlite::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    using BoundaryHint = QTextToSpeech::BoundaryHint;
+
     switch (m_state) {
     case QTextToSpeech::Speaking:
     case QTextToSpeech::Paused: {
-        if (m_audioSink) {
-            m_audioSink->reset();
-            m_audioSink.reset();
+        switch (boundaryHint) {
+        case BoundaryHint::Sentence: {
+            qCDebug(lcSpeechTtsFlite)
+                    << "Stopping after sentence not implemented. Stopping after next word";
+            return stop(BoundaryHint::Word);
         }
-        m_synthesisProcess.reset();
-        break;
+        case BoundaryHint::Utterance:
+            Q_UNREACHABLE_RETURN(); // handled by QTextToSpeech
+        case BoundaryHint::Word: {
+            m_synthesisProcess->stop(BoundaryHint::Word);
+            return;
+        }
+        default: {
+            if (m_audioSink) {
+                m_audioSink->reset();
+                m_audioSink.reset();
+            }
+            m_synthesisProcess.reset();
+            updateState(QTextToSpeech::Ready);
+            break;
+        }
+        }
     }
 
     case QTextToSpeech::Synthesizing:
@@ -557,17 +673,38 @@ void QTextToSpeechProcessorFlite::stop()
     }
 }
 
-void QTextToSpeechProcessorFlite::pause()
+void QTextToSpeechProcessorFlite::pause(QTextToSpeech::BoundaryHint boundaryHint)
 {
+    using BoundaryHint = QTextToSpeech::BoundaryHint;
+
     if (m_state == QTextToSpeech::Speaking) {
-        if (m_audioSink)
-            m_audioSink->suspend();
-        updateState(QTextToSpeech::Paused);
+        switch (boundaryHint) {
+        case BoundaryHint::Sentence: {
+            qCDebug(lcSpeechTtsFlite)
+                    << "Pausing after sentence not implemented. Pausing after next word";
+            return pause(BoundaryHint::Word);
+        }
+        case BoundaryHint::Utterance:
+            Q_UNREACHABLE_RETURN(); // handled by QTextToSpeech
+
+        case BoundaryHint::Word: {
+            m_synthesisProcess->pause(BoundaryHint::Word);
+            return;
+        }
+
+        default:
+            if (m_audioSink)
+                m_audioSink->suspend();
+            updateState(QTextToSpeech::Paused);
+        }
     }
 }
 
 void QTextToSpeechProcessorFlite::resume()
 {
+    if (m_synthesisProcess)
+        m_synthesisProcess->resume();
+
     if (m_state == QTextToSpeech::Paused) {
         if (m_audioSink && m_synthesisProcess)
             m_audioSink->resume();
@@ -586,7 +723,7 @@ void QTextToSpeechProcessorFlite::say(const QString &text, int voiceId, double p
     switch (m_state) {
     case QTextToSpeech::Speaking:
     case QTextToSpeech::Paused:
-        stop();
+        stop(QTextToSpeech::BoundaryHint::Immediate);
         break;
 
     case QTextToSpeech::Synthesizing:

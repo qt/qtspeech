@@ -102,14 +102,14 @@ void QTextToSpeechEngineFlite::synthesize(const QString &text)
 
 void QTextToSpeechEngineFlite::stop(QTextToSpeech::BoundaryHint boundaryHint)
 {
-    Q_UNUSED(boundaryHint);
-    QMetaObject::invokeMethod(m_processor.get(), &QTextToSpeechProcessorFlite::stop, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(m_processor.get(), &QTextToSpeechProcessorFlite::stop,
+                              Qt::QueuedConnection, boundaryHint);
 }
 
 void QTextToSpeechEngineFlite::pause(QTextToSpeech::BoundaryHint boundaryHint)
 {
-    Q_UNUSED(boundaryHint);
-    QMetaObject::invokeMethod(m_processor.get(), &QTextToSpeechProcessorFlite::pause, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(m_processor.get(), &QTextToSpeechProcessorFlite::pause,
+                              Qt::QueuedConnection, boundaryHint);
 }
 
 void QTextToSpeechEngineFlite::resume()

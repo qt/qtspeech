@@ -50,9 +50,9 @@ public:
 
     Q_INVOKABLE void say(const QString &text, int voiceId, double pitch, double rate, double volume);
     Q_INVOKABLE void synthesize(const QString &text, int voiceId, double pitch, double rate, double volume);
-    Q_INVOKABLE void pause();
+    Q_INVOKABLE void pause(QTextToSpeech::BoundaryHint boundaryHint);
     Q_INVOKABLE void resume();
-    Q_INVOKABLE void stop();
+    Q_INVOKABLE void stop(QTextToSpeech::BoundaryHint boundaryHint);
 
     const QList<QTextToSpeechProcessorFlite::VoiceInfo> &voices() const;
 
