@@ -83,15 +83,16 @@ public:
     }
 
     // IUnknown
-    ULONG STDMETHODCALLTYPE AddRef() { return ++ref; }
-    ULONG STDMETHODCALLTYPE Release() {
+    ULONG STDMETHODCALLTYPE AddRef() override { return ++ref; }
+    ULONG STDMETHODCALLTYPE Release() override
+    {
         if (!--ref) {
             delete this;
             return 0;
         }
         return ref;
     }
-    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface);
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface) override;
 
     // completion handler for synthesising the stream
     HRESULT STDMETHODCALLTYPE Invoke(IAsyncOperation<SpeechSynthesisStream*> *operation,
