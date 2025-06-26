@@ -5,9 +5,10 @@
 #include "qtexttospeech_winrt.h"
 #include "qtexttospeech_winrt_audiosource.h"
 
-#include <QtMultimedia/QAudioSink>
-#include <QtMultimedia/QMediaDevices>
-#include <QtMultimedia/QAudioDevice>
+#include <QtMultimedia/qaudiodevice.h>
+#include <QtMultimedia/qaudiosink.h>
+#include <QtMultimedia/qmediadevices.h>
+#include <QtMultimedia/private/qaudiosystem_p.h>
 
 #include <QtCore/QBasicTimer>
 #include <QtCore/QCoreApplication>
@@ -404,6 +405,10 @@ void QTextToSpeechEngineWinRTPrivate::initializeAudioSink(const QAudioFormat &fo
     currentBoundary = boundaries.constBegin();
 
     audioSink.reset(new QAudioSink(audioDevice, format));
+    // LATER: use public API (compare QTBUG-138378)
+    QPlatformAudioSink::get(*audioSink)
+            ->setRole(QPlatformAudioSink::AudioEndpointRole::Accessibility);
+
     QObject::connect(audioSink.get(), &QAudioSink::stateChanged,
                      q, [this](QAudio::State sinkState) {
         sinkStateChanged(sinkState);

@@ -15,6 +15,7 @@
 #include <QtCore/qthreadpool.h>
 #include <QtConcurrent/qtconcurrentrun.h>
 #include <QtMultimedia/private/qaudiohelpers_p.h>
+#include <QtMultimedia/private/qaudiosystem_p.h>
 
 #include <flite/flite.h>
 
@@ -571,6 +572,10 @@ void QTextToSpeechProcessorFlite::prepareAudioSink(QAudioFormat format)
     m_audioSink = std::make_unique<QAudioSink>(m_audioDevice, format);
     m_audioSink->setVolume(m_volume);
     m_audioSink->setBufferSize(format.bytesForDuration(std::chrono::microseconds(100ms).count()));
+
+    // LATER: use public API (compare QTBUG-138378)
+    QPlatformAudioSink::get(*m_audioSink)
+            ->setRole(QPlatformAudioSink::AudioEndpointRole::Accessibility);
 
     QObject::connect(m_audioSink.get(), &QAudioSink::stateChanged, m_audioSink.get(),
                      [&](QAudio::State state) {
