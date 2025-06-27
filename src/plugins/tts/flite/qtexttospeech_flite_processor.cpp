@@ -53,59 +53,69 @@ QStringList fliteAvailableVoices(const QString &libPrefix, const QString &langCo
     }
 
     // Read available libraries
-    const QProcessEnvironment pe;
-    QStringList ldPaths = pe.value(u"LD_LIBRARY_PATH"_s).split(u":"_s, Qt::SkipEmptyParts);
-    if (ldPaths.isEmpty()) {
-        ldPaths = QStringList{
-            // Fedora-style lib64 library paths
-            u"/usr/lib64"_s,
-            u"/usr/local/lib64"_s,
-            u"/lib64"_s,
+    static const QStringList ldPaths = [] {
+        const QProcessEnvironment pe;
+        QStringList ldPaths = pe.value(u"LD_LIBRARY_PATH"_s).split(u":"_s, Qt::SkipEmptyParts);
+        if (ldPaths.isEmpty()) {
+            ldPaths = QStringList{
+                // Fedora-style lib64 library paths
+                u"/usr/lib64"_s,
+                u"/usr/local/lib64"_s,
+                u"/lib64"_s,
 
-           // Debian-style multi-arch library paths
+                // Debian-style multi-arch library paths
 #if defined(Q_PROCESSOR_ARM_V8)
 #  if defined(__MUSL__)
-            u"/usr/lib/aarch64-linux-musl"_s,
+                u"/usr/lib/aarch64-linux-musl"_s,
 #  else
-            u"/usr/lib/aarch64-linux-gnu"_s,
+                u"/usr/lib/aarch64-linux-gnu"_s,
 #  endif
 #elif defined(Q_PROCESSOR_ARM_V7)
 #  if defined(__MUSL__)
-            u"/usr/lib/arm-linux-musleabihf"_s,
+                u"/usr/lib/arm-linux-musleabihf"_s,
 #  else
 #    if defined(__ARM_PCS_VFP)
-            u"/usr/lib/arm-linux-gnueabihf"_s,
+                u"/usr/lib/arm-linux-gnueabihf"_s,
 #    else
-            u"/usr/lib/arm-linux-gnueabi"_s,
+                u"/usr/lib/arm-linux-gnueabi"_s,
 #    endif
 #  endif
 #elif defined(Q_PROCESSOR_X86_64)
-            u"/usr/lib/x86_64-linux-gnu"_s,
+                u"/usr/lib/x86_64-linux-gnu"_s,
 #elif defined(Q_PROCESSOR_X86)
-            u"/usr/lib/i686-linux-gnu"_s,
-            u"/usr/lib/i386-linux-gnu"_s,
+                u"/usr/lib/i686-linux-gnu"_s,
+                u"/usr/lib/i386-linux-gnu"_s,
 #endif
 
-            // generic paths
-            u"/usr/lib"_s,
-            u"/usr/local/lib"_s,
-            u"/lib"_s,
-        };
-    } else {
-        ldPaths.removeDuplicates();
-    }
+                // generic paths
+                u"/usr/lib"_s,
+                u"/usr/local/lib"_s,
+                u"/lib"_s,
+            };
+        } else {
+            ldPaths.removeDuplicates();
+        }
+
+        ldPaths.removeIf([](const QString &path) {
+            QDir dir(path);
+            return !dir.isReadable() || dir.isEmpty();
+        });
+
+        qCDebug(lcSpeechTtsFlite) << "QTextToSpeechProcessorFlite: initialized voice paths to"
+                                  << ldPaths;
+
+        return ldPaths;
+    }();
 
     const QString libPattern = QString(u"lib"_s + libPrefix).arg(langCode).arg("*"_L1);
     for (const auto &path : ldPaths) {
         QDir dir(path);
-        if (!dir.isReadable() || dir.isEmpty())
-            continue;
         dir.setNameFilters({ libPattern });
         dir.setFilter(QDir::Files);
         const QFileInfoList fileList = dir.entryInfoList();
         for (const auto &file : fileList) {
-            const QString vox = file.fileName().mid(16, file.fileName().indexOf(u'.') - 16);
-            voices.append(vox);
+            QString vox = file.fileName().mid(16, file.fileName().indexOf(u'.') - 16);
+            voices.append(std::move(vox));
         }
     }
 
