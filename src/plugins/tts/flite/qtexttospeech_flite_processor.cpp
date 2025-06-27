@@ -7,6 +7,7 @@
 #include <QtCore/qcoreapplication.h>
 #include <QtCore/qlocale.h>
 #include <QtCore/qmap.h>
+#include <QtCore/qprocessordetection.h>
 #include <QtCore/qspan.h>
 #include <QtCore/qstring.h>
 
@@ -52,12 +53,44 @@ QStringList fliteAvailableVoices(const QString &libPrefix, const QString &langCo
     }
 
     // Read available libraries
-    // TODO: make default library paths OS dependent
     const QProcessEnvironment pe;
     QStringList ldPaths = pe.value(u"LD_LIBRARY_PATH"_s).split(u":"_s, Qt::SkipEmptyParts);
     if (ldPaths.isEmpty()) {
-        ldPaths = QStringList{ u"/usr/lib64"_s, u"/usr/local/lib64"_s, u"/lib64"_s,
-                               u"/usr/lib/x86_64-linux-gnu"_s, u"/usr/lib"_s };
+        ldPaths = QStringList{
+            // Fedora-style lib64 library paths
+            u"/usr/lib64"_s,
+            u"/usr/local/lib64"_s,
+            u"/lib64"_s,
+
+           // Debian-style multi-arch library paths
+#if defined(Q_PROCESSOR_ARM_V8)
+#  if defined(__MUSL__)
+            u"/usr/lib/aarch64-linux-musl"_s,
+#  else
+            u"/usr/lib/aarch64-linux-gnu"_s,
+#  endif
+#elif defined(Q_PROCESSOR_ARM_V7)
+#  if defined(__MUSL__)
+            u"/usr/lib/arm-linux-musleabihf"_s,
+#  else
+#    if defined(__ARM_PCS_VFP)
+            u"/usr/lib/arm-linux-gnueabihf"_s,
+#    else
+            u"/usr/lib/arm-linux-gnueabi"_s,
+#    endif
+#  endif
+#elif defined(Q_PROCESSOR_X86_64)
+            u"/usr/lib/x86_64-linux-gnu"_s,
+#elif defined(Q_PROCESSOR_X86)
+            u"/usr/lib/i686-linux-gnu"_s,
+            u"/usr/lib/i386-linux-gnu"_s,
+#endif
+
+            // generic paths
+            u"/usr/lib"_s,
+            u"/usr/local/lib"_s,
+            u"/lib"_s,
+        };
     } else {
         ldPaths.removeDuplicates();
     }
