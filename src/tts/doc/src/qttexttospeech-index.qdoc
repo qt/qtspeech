@@ -73,5 +73,5 @@
     Furthermore, Qt TextToSpeech in Qt \QtVersion may contain third party
     modules under the following permissive licenses:
 
-    \generatelist{groupsbymodule attributions-qtspeech}
+    \annotatedlist attributions-qtspeech
 */
