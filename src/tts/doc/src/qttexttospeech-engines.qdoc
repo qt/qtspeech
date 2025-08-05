@@ -79,6 +79,21 @@
             \li There is no API in Qt to get the list of installed engines.
     \endtable
 
+    \section1 HarmonyOS
+
+    The HarmonyOS engine uses the \l{https://developer.huawei.com/consumer/en/doc/harmonyos-references/hms-ai-texttospeech}
+    {Core Speech Kit} text-to-speech APIs.
+    The system engine synthesizes and plays back the speech.
+
+    The Core Speech Kit engine is created for a fixed language, which the plugin sets to
+    \c {zh-CN}. As stated in the \l{https://developer.huawei.com/consumer/en/doc/harmonyos-references/hms-ai-texttospeech#createengineparams}
+    {createEngine() documentation}, only Chinese and English are supported, with
+    \c {zh-CN} recommended for Chinese and \c {en-US} for English.
+
+    \note The HarmonyOS engine only has the \l{QTextToSpeech::Capabilities}{Speak}
+    capability. It supports neither \l{QTextToSpeech::Capabilities}{PauseResume},
+    \l{QTextToSpeech::Capabilities}{WordByWordProgress}, nor
+    \l{QTextToSpeech::Capabilities}{Synthesize}.
 
     \section1 Flite
 
