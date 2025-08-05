@@ -5,6 +5,8 @@
 #include "qtexttospeech_ohos.h"
 #include "qtexttospeech_ohos_plugin.h"
 
+#include "corespeechkit/texttospeechproxy.h"
+
 #include <QtTextToSpeech/qvoice.h>
 
 #include <QtCore/qlist.h>
@@ -12,14 +14,25 @@
 #include <QtCore/qloggingcategory.h>
 #include <QtCore/qstring.h>
 
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <optional>
+
 QT_BEGIN_NAMESPACE
 
 namespace {
 
+constexpr const char *chineseLanguage = "zh-CN";
+constexpr int defaultPersonTimbre = 0;
+
 class QTextToSpeechEngineOhos : public QTextToSpeechEngine
 {
 public:
-    QTextToSpeechEngineOhos(const QVariantMap &parameters, QObject *parent, QString *errorString);
+    QTextToSpeechEngineOhos(
+        const QVariantMap &parameters, QObject *parent,
+        std::function<std::shared_ptr<CoreSpeechKit::TextToSpeechProxy>(
+            std::shared_ptr<CoreSpeechKit::TextToSpeechProxy::EngineEventsListener>)> ttsProxyFactory);
 
     QList<QLocale> availableLocales() const override;
     QList<QVoice> availableVoices() const override;
@@ -41,11 +54,45 @@ public:
     QTextToSpeech::State state() const override;
     QTextToSpeech::ErrorReason errorReason() const override;
     QString errorString() const override;
+
+private:
+    class TextToSpeechEngineEventsListener
+        : public CoreSpeechKit::TextToSpeechProxy::EngineEventsListener
+    {
+    public:
+        void onStart(std::string utteranceId) override;
+        void onComplete(std::string utteranceId, std::optional<CoreSpeechKit::TtsCompletionType> optCompletionType) override;
+        void onStop(std::string utteranceId) override;
+        void onError(std::string utteranceId, std::uint32_t errorCode, std::string errorMsg) override;
+    };
+
+    std::shared_ptr<CoreSpeechKit::TextToSpeechProxy> m_ttsProxy;
 };
 
-QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(const QVariantMap &, QObject *parent, QString *)
+void QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::onStart(std::string)
+{
+}
+
+void QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::onComplete(
+    std::string, std::optional<CoreSpeechKit::TtsCompletionType>)
+{
+}
+
+void QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::onStop(std::string)
+{
+}
+
+void QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::onError(
+    std::string, std::uint32_t, std::string)
+{
+}
+
+QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
+    const QVariantMap &, QObject *parent,
+    std::function<std::shared_ptr<CoreSpeechKit::TextToSpeechProxy>(std::shared_ptr<CoreSpeechKit::TextToSpeechProxy::EngineEventsListener>)> ttsProxyFactory)
     : QTextToSpeechEngine(parent)
 {
+    m_ttsProxy = ttsProxyFactory(std::make_shared<TextToSpeechEngineEventsListener>());
 }
 
 QList<QLocale> QTextToSpeechEngineOhos::availableLocales() const
@@ -153,7 +200,16 @@ QString QTextToSpeechEngineOhos::errorString() const
 QTextToSpeechEngine *createQTextToSpeechEngineOhos(
     const QVariantMap &parameters, QObject *parent, QString *errorString)
 {
-    return new QTextToSpeechEngineOhos(parameters, parent, errorString);
+    auto ttsProxyFactoryOrError = CoreSpeechKit::tryMakeTextToSpeechProxyFactory(
+        chineseLanguage, defaultPersonTimbre);
+
+    if (!ttsProxyFactoryOrError) {
+        if (errorString != nullptr)
+            *errorString = QString::fromStdString(ttsProxyFactoryOrError.error());
+        return nullptr;
+    }
+    return new QTextToSpeechEngineOhos(
+        parameters, parent, std::move(ttsProxyFactoryOrError.value()));
 }
 
 QT_END_NAMESPACE
