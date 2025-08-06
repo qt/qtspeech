@@ -26,6 +26,21 @@ namespace {
 constexpr const char *chineseLanguage = "zh-CN";
 constexpr int defaultPersonTimbre = 0;
 
+QVoice::Gender mapVoiceGender(const std::string &gender)
+{
+    return gender == "male"   ? QVoice::Gender::Male   :
+           gender == "female" ? QVoice::Gender::Female :
+                                QVoice::Gender::Unknown;
+}
+
+QVariantMap mapVoiceExtraData(const CoreSpeechKit::VoiceInfo &info)
+{
+    return QVariantMap{
+        {QStringLiteral("style"), QString::fromStdString(info.style)},
+        {QStringLiteral("person"), info.personTimbre},
+    };
+}
+
 class QTextToSpeechEngineOhos : public QTextToSpeechEngine
 {
 public:
@@ -80,6 +95,7 @@ private:
     std::shared_ptr<CoreSpeechKit::TextToSpeechProxy> m_ttsProxy;
 
     QTextToSpeech::State m_state;
+    QList<QVoice> m_voices;
 };
 
 QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::TextToSpeechEngineEventsListener(
@@ -118,6 +134,14 @@ QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
     , m_state(QTextToSpeech::Ready)
 {
     m_ttsProxy = ttsProxyFactory(std::make_shared<TextToSpeechEngineEventsListener>(*this));
+    for (const auto &voiceInfo : m_ttsProxy->listVoices()) {
+        QLocale locale(QString::fromStdString(voiceInfo.language));
+        m_voices.append(
+            createVoice(
+                QString::fromStdString(voiceInfo.description), locale,
+                mapVoiceGender(voiceInfo.gender), QVoice::Other,
+                mapVoiceExtraData(voiceInfo)));
+    }
 }
 
 void QTextToSpeechEngineOhos::handleOnStart(const QString &)
@@ -166,7 +190,7 @@ QList<QLocale> QTextToSpeechEngineOhos::availableLocales() const
 
 QList<QVoice> QTextToSpeechEngineOhos::availableVoices() const
 {
-    return {};
+    return m_voices;
 }
 
 void QTextToSpeechEngineOhos::say(const QString &)
