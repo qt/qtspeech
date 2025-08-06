@@ -75,8 +75,11 @@ private:
     void handleOnStop(const QString &utteranceId);
     void handleOnError(
         const QString &utteranceId, std::uint32_t errorCode, const QString &errorMessage);
+    void setState(QTextToSpeech::State state);
 
     std::shared_ptr<CoreSpeechKit::TextToSpeechProxy> m_ttsProxy;
+
+    QTextToSpeech::State m_state;
 };
 
 QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::TextToSpeechEngineEventsListener(
@@ -112,26 +115,48 @@ QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
     const QVariantMap &, QObject *parent,
     std::function<std::shared_ptr<CoreSpeechKit::TextToSpeechProxy>(std::shared_ptr<CoreSpeechKit::TextToSpeechProxy::EngineEventsListener>)> ttsProxyFactory)
     : QTextToSpeechEngine(parent)
+    , m_state(QTextToSpeech::Ready)
 {
     m_ttsProxy = ttsProxyFactory(std::make_shared<TextToSpeechEngineEventsListener>(*this));
 }
 
 void QTextToSpeechEngineOhos::handleOnStart(const QString &)
 {
+    setState(QTextToSpeech::Speaking);
 }
 
 void QTextToSpeechEngineOhos::handleOnComplete(
-    const QString &, std::optional<CoreSpeechKit::TtsCompletionType>)
+    const QString &, std::optional<CoreSpeechKit::TtsCompletionType> optCompletionType)
 {
+    if (!optCompletionType) {
+        setState(QTextToSpeech::Error);
+        return;
+    }
+
+    if (*optCompletionType == CoreSpeechKit::TtsCompletionType::SpeechComplete)
+        setState(QTextToSpeech::Ready);
 }
 
 void QTextToSpeechEngineOhos::handleOnStop(const QString &)
 {
+    setState(QTextToSpeech::Ready);
 }
 
 void QTextToSpeechEngineOhos::handleOnError(
-    const QString &, std::uint32_t, const QString &)
+    const QString &utteranceId, std::uint32_t errorCode, const QString &errorMessage)
 {
+    setState(QTextToSpeech::Error);
+    qCWarning(lcSpeechTtsOhos)
+        << Q_FUNC_INFO << ": text to speech error: code" << errorCode
+        << errorMessage << ", utteranceId:" << utteranceId;
+}
+
+void QTextToSpeechEngineOhos::setState(QTextToSpeech::State state)
+{
+    if (state != m_state) {
+        m_state = state;
+        Q_EMIT stateChanged(m_state);
+    }
 }
 
 QList<QLocale> QTextToSpeechEngineOhos::availableLocales() const
@@ -219,7 +244,7 @@ bool QTextToSpeechEngineOhos::setVoice(const QVoice &)
 
 QTextToSpeech::State QTextToSpeechEngineOhos::state() const
 {
-    return QTextToSpeech::State::Error;
+    return m_state;
 }
 
 QTextToSpeech::ErrorReason QTextToSpeechEngineOhos::errorReason() const
