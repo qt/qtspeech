@@ -96,6 +96,8 @@ private:
 
     QTextToSpeech::State m_state;
     QList<QVoice> m_voices;
+    QList<QLocale> m_locales;
+    QLocale m_currentLocale;
 };
 
 QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::TextToSpeechEngineEventsListener(
@@ -141,7 +143,13 @@ QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
                 QString::fromStdString(voiceInfo.description), locale,
                 mapVoiceGender(voiceInfo.gender), QVoice::Other,
                 mapVoiceExtraData(voiceInfo)));
+
+        if (!m_locales.contains(locale))
+            m_locales.append(locale);
     }
+
+    if (!m_locales.isEmpty())
+        m_currentLocale = m_locales.first();
 }
 
 void QTextToSpeechEngineOhos::handleOnStart(const QString &)
@@ -185,12 +193,18 @@ void QTextToSpeechEngineOhos::setState(QTextToSpeech::State state)
 
 QList<QLocale> QTextToSpeechEngineOhos::availableLocales() const
 {
-    return {};
+    return m_locales;
 }
 
 QList<QVoice> QTextToSpeechEngineOhos::availableVoices() const
 {
-    return m_voices;
+    QList<QVoice> voices;
+    for (const auto &voice : m_voices) {
+        if (voice.locale() == m_currentLocale)
+            voices << voice;
+    }
+
+    return voices;
 }
 
 void QTextToSpeechEngineOhos::say(const QString &)
@@ -238,12 +252,16 @@ bool QTextToSpeechEngineOhos::setPitch(double)
 
 QLocale QTextToSpeechEngineOhos::locale() const
 {
-    return {};
+    return m_currentLocale;
 }
 
-bool QTextToSpeechEngineOhos::setLocale(const QLocale &)
+bool QTextToSpeechEngineOhos::setLocale(const QLocale &locale)
 {
-    return false;
+    if (!m_locales.contains(locale))
+        return false;
+
+    m_currentLocale = locale;
+    return true;
 }
 
 double QTextToSpeechEngineOhos::volume() const
