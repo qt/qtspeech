@@ -41,6 +41,12 @@ QVariantMap mapVoiceExtraData(const CoreSpeechKit::VoiceInfo &info)
     };
 }
 
+double mapVolumeToOhosVolume(double volume)
+{
+    constexpr double maxTtsVolume = 2.0;
+    return volume * maxTtsVolume;
+}
+
 class QTextToSpeechEngineOhos : public QTextToSpeechEngine
 {
 public:
@@ -98,6 +104,7 @@ private:
     QList<QVoice> m_voices;
     QList<QLocale> m_locales;
     QLocale m_currentLocale;
+    double m_volume;
 };
 
 QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::TextToSpeechEngineEventsListener(
@@ -134,6 +141,7 @@ QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
     std::function<std::shared_ptr<CoreSpeechKit::TextToSpeechProxy>(std::shared_ptr<CoreSpeechKit::TextToSpeechProxy::EngineEventsListener>)> ttsProxyFactory)
     : QTextToSpeechEngine(parent)
     , m_state(QTextToSpeech::Ready)
+    , m_volume(1.0)
 {
     m_ttsProxy = ttsProxyFactory(std::make_shared<TextToSpeechEngineEventsListener>(*this));
     for (const auto &voiceInfo : m_ttsProxy->listVoices()) {
@@ -266,12 +274,13 @@ bool QTextToSpeechEngineOhos::setLocale(const QLocale &locale)
 
 double QTextToSpeechEngineOhos::volume() const
 {
-    return 1.0;
+    return m_volume;
 }
 
-bool QTextToSpeechEngineOhos::setVolume(double)
+bool QTextToSpeechEngineOhos::setVolume(double volume)
 {
-    return false;
+    m_volume = volume;
+    return true;
 }
 
 QVoice QTextToSpeechEngineOhos::voice() const
