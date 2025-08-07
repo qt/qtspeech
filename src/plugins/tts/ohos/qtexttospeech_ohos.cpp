@@ -47,6 +47,16 @@ double mapVolumeToOhosVolume(double volume)
     return volume * maxTtsVolume;
 }
 
+double mapRateToOhosSpeed(double rate)
+{
+    constexpr double minTtsRate = 0.5;
+    constexpr double normalTtsRate = 1.0;
+
+    return rate < 0
+        ? minTtsRate * rate + normalTtsRate
+        : rate + normalTtsRate;
+}
+
 class QTextToSpeechEngineOhos : public QTextToSpeechEngine
 {
 public:
@@ -105,6 +115,7 @@ private:
     QList<QLocale> m_locales;
     QLocale m_currentLocale;
     double m_volume;
+    double m_rate;
 };
 
 QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::TextToSpeechEngineEventsListener(
@@ -142,6 +153,7 @@ QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
     : QTextToSpeechEngine(parent)
     , m_state(QTextToSpeech::Ready)
     , m_volume(1.0)
+    , m_rate(0.0)
 {
     m_ttsProxy = ttsProxyFactory(std::make_shared<TextToSpeechEngineEventsListener>(*this));
     for (const auto &voiceInfo : m_ttsProxy->listVoices()) {
@@ -240,12 +252,13 @@ void QTextToSpeechEngineOhos::resume()
 
 double QTextToSpeechEngineOhos::rate() const
 {
-    return 0.0;
+    return m_rate;
 }
 
-bool QTextToSpeechEngineOhos::setRate(double)
+bool QTextToSpeechEngineOhos::setRate(double rate)
 {
-    return false;
+    m_rate = rate;
+    return true;
 }
 
 double QTextToSpeechEngineOhos::pitch() const
