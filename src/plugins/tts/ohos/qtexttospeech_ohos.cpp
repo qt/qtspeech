@@ -60,31 +60,52 @@ private:
         : public CoreSpeechKit::TextToSpeechProxy::EngineEventsListener
     {
     public:
+        explicit TextToSpeechEngineEventsListener(QTextToSpeechEngineOhos &owner);
+
         void onStart(std::string utteranceId) override;
         void onComplete(std::string utteranceId, std::optional<CoreSpeechKit::TtsCompletionType> optCompletionType) override;
         void onStop(std::string utteranceId) override;
         void onError(std::string utteranceId, std::uint32_t errorCode, std::string errorMsg) override;
+
+        QTextToSpeechEngineOhos& m_owner;
     };
+
+    void handleOnStart(const QString &utteranceId);
+    void handleOnComplete(const QString &utteranceId, std::optional<CoreSpeechKit::TtsCompletionType> optCompletionType);
+    void handleOnStop(const QString &utteranceId);
+    void handleOnError(
+        const QString &utteranceId, std::uint32_t errorCode, const QString &errorMessage);
 
     std::shared_ptr<CoreSpeechKit::TextToSpeechProxy> m_ttsProxy;
 };
 
-void QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::onStart(std::string)
+QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::TextToSpeechEngineEventsListener(
+    QTextToSpeechEngineOhos &owner)
+    : m_owner(owner)
 {
+}
+
+void QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::onStart(std::string utteranceId)
+{
+    m_owner.handleOnStart(QString::fromStdString(utteranceId));
 }
 
 void QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::onComplete(
-    std::string, std::optional<CoreSpeechKit::TtsCompletionType>)
+    std::string utteranceId, std::optional<CoreSpeechKit::TtsCompletionType> optCompletionType)
 {
+    m_owner.handleOnComplete(QString::fromStdString(utteranceId), optCompletionType);
 }
 
-void QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::onStop(std::string)
+void QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::onStop(std::string utteranceId)
 {
+    m_owner.handleOnStop(QString::fromStdString(utteranceId));
 }
 
 void QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::onError(
-    std::string, std::uint32_t, std::string)
+    std::string utteranceId, std::uint32_t errorCode, std::string errorMessage)
 {
+    m_owner.handleOnError(
+         QString::fromStdString(utteranceId), errorCode, QString::fromStdString(errorMessage));
 }
 
 QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
@@ -92,7 +113,25 @@ QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
     std::function<std::shared_ptr<CoreSpeechKit::TextToSpeechProxy>(std::shared_ptr<CoreSpeechKit::TextToSpeechProxy::EngineEventsListener>)> ttsProxyFactory)
     : QTextToSpeechEngine(parent)
 {
-    m_ttsProxy = ttsProxyFactory(std::make_shared<TextToSpeechEngineEventsListener>());
+    m_ttsProxy = ttsProxyFactory(std::make_shared<TextToSpeechEngineEventsListener>(*this));
+}
+
+void QTextToSpeechEngineOhos::handleOnStart(const QString &)
+{
+}
+
+void QTextToSpeechEngineOhos::handleOnComplete(
+    const QString &, std::optional<CoreSpeechKit::TtsCompletionType>)
+{
+}
+
+void QTextToSpeechEngineOhos::handleOnStop(const QString &)
+{
+}
+
+void QTextToSpeechEngineOhos::handleOnError(
+    const QString &, std::uint32_t, const QString &)
+{
 }
 
 QList<QLocale> QTextToSpeechEngineOhos::availableLocales() const
