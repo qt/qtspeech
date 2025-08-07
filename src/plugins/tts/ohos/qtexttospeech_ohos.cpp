@@ -24,6 +24,7 @@ QT_BEGIN_NAMESPACE
 namespace {
 
 constexpr const char *chineseLanguage = "zh-CN";
+constexpr const char *chineseLanguageContext = "zh-CN";
 constexpr int defaultPersonTimbre = 0;
 
 QVoice::Gender mapVoiceGender(const std::string &gender)
@@ -239,8 +240,19 @@ QList<QVoice> QTextToSpeechEngineOhos::availableVoices() const
     return voices;
 }
 
-void QTextToSpeechEngineOhos::say(const QString &)
+void QTextToSpeechEngineOhos::say(const QString &text)
 {
+    if (text.isEmpty())
+        return;
+
+    m_ttsProxy->speak(
+        {
+            .text = text.toStdString(),
+            .speed = mapRateToOhosSpeed(m_rate),
+            .volume = mapVolumeToOhosVolume(m_volume),
+            .pitch = mapPitchToOhosPitch(m_pitch),
+            .languageContext = chineseLanguageContext,
+        });
 }
 
 void QTextToSpeechEngineOhos::synthesize(const QString &)
@@ -250,6 +262,7 @@ void QTextToSpeechEngineOhos::synthesize(const QString &)
 
 void QTextToSpeechEngineOhos::stop(QTextToSpeech::BoundaryHint)
 {
+    m_ttsProxy->stop();
 }
 
 void QTextToSpeechEngineOhos::pause(QTextToSpeech::BoundaryHint)
