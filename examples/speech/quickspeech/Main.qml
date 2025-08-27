@@ -69,14 +69,12 @@ ApplicationWindow {
                 text: qsTr("Speak")
                 enabled: [TextToSpeech.Paused, TextToSpeech.Ready].includes(tts.state)
                 onClicked: {
-//! [say0]
                     let voices = tts.availableVoices()
                     tts.voice = voices[voicesComboBox.currentIndex]
-//! [say1]
                     tts.say(input.text)
                 }
             }
-//! [say1]
+//! [say0]
 //! [pause]
             Button {
                 text: qsTr("Pause")
@@ -93,11 +91,13 @@ ApplicationWindow {
                 visible: tts.engineCapabilities & TextToSpeech.Capabilities.PauseResume
             }
 //! [resume]
+//! [stop]
             Button {
                 text: qsTr("Stop")
                 enabled: [TextToSpeech.Speaking, TextToSpeech.Paused].includes(tts.state)
                 onClicked: tts.stop()
             }
+//! [stop]
         }
 
         GridLayout {
