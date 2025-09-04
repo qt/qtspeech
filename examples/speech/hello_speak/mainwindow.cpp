@@ -182,3 +182,8 @@ void MainWindow::localeChanged(const QLocale &locale)
             ui.voice->setCurrentIndex(ui.voice->count() - 1);
     }
 }
+
+MainWindow::~MainWindow()
+{
+    m_speech->disconnect(this);
+}
