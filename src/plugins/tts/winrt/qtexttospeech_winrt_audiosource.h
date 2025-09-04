@@ -10,6 +10,7 @@
 #include <robuffer.h>
 #include <winrt/base.h>
 #include <QtCore/private/qfactorycacheregistration_p.h>
+#include <QtCore/private/qcomobject_p.h>
 #include <windows.foundation.h>
 #include <windows.media.speechsynthesis.h>
 #include <windows.storage.streams.h>
@@ -26,9 +27,7 @@ QT_BEGIN_NAMESPACE
 using StreamReadyHandler = IAsyncOperationCompletedHandler<SpeechSynthesisStream*>;
 using BytesReadyHandler = IAsyncOperationWithProgressCompletedHandler<IBuffer*, UINT32>;
 
-class AudioSource : public QIODevice,
-                    public StreamReadyHandler,
-                    public BytesReadyHandler
+class AudioSource final : public QIODevice, public QComObject<StreamReadyHandler, BytesReadyHandler>
 {
     Q_OBJECT
 public:
@@ -82,18 +81,6 @@ public:
         return boundaries;
     }
 
-    // IUnknown
-    ULONG STDMETHODCALLTYPE AddRef() override { return ++ref; }
-    ULONG STDMETHODCALLTYPE Release() override
-    {
-        if (!--ref) {
-            delete this;
-            return 0;
-        }
-        return ref;
-    }
-    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface) override;
-
     // completion handler for synthesising the stream
     HRESULT STDMETHODCALLTYPE Invoke(IAsyncOperation<SpeechSynthesisStream*> *operation,
                                      AsyncStatus status) override;
@@ -134,8 +121,6 @@ private:
 
     void populateBoundaries();
     QList<Boundary> boundaries;
-
-    ULONG ref = 1;
 };
 
 QT_END_NAMESPACE
