@@ -199,7 +199,7 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
 
     // We emptied the buffer, so schedule fetching more
     if (available <= maxlen)
-        QTimer::singleShot(0, this, &AudioSource::fetchMore);
+        fetchMore();
     else
         m_bufferOffset += maxlen;
 
