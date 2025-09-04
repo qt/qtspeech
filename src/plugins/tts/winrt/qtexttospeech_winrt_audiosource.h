@@ -131,6 +131,7 @@ private:
     bool m_riffHeaderChecked = false;
     quint64 m_bytesRead = 0;
     quint64 m_pauseRequestedAt = 0;
+    std::optional<qint64> m_pauseDetectionSilenceCount;
 
     void populateBoundaries();
     QList<Boundary> boundaries;
