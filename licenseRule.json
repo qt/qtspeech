@@ -47,7 +47,7 @@
             "": {
                 "comment": "Default",
                 "file type": "tools and utils",
-                "spdx": ["LicenseRef-Qt-Commercial"]
+                "spdx": ["LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0"]
             },
             "(.*)(examples/|snippets/)": {
                 "comment": "Example takes precedence",
