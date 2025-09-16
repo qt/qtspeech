@@ -723,7 +723,7 @@ void tst_QTextToSpeech::sayMultiple()
     QFETCH(const QStringList, textList);
     for (qsizetype i = 0; i < textList.count(); ++i) {
         const QString &text = textList.at(i);
-        tts.enqueue(text);
+        qDebug() << "Equeued utterance" << tts.enqueue(text);
         if (!i) // wait for the engine to start synthesizing
             QTRY_COMPARE_NE(tts.state(), QTextToSpeech::Ready);
     }
@@ -732,6 +732,7 @@ void tst_QTextToSpeech::sayMultiple()
     QCOMPARE(aboutToSynthesizeSpy.count(), textList.size());
     QCOMPARE(speakingCount, 1);
 
+    qDebug() << "Synthesized utterances" << aboutToSynthesizeSpy;
     logger.dismiss();
 }
 
