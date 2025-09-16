@@ -1,0 +1,9 @@
+{
+    "Keys": ["ohos"],
+    "Provider": "ohos",
+    "Version": 100,
+    "Priority": 100,
+    "Capabilities": [
+        "Speak"
+    ]
+}
