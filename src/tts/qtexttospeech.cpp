@@ -264,7 +264,6 @@ void QTextToSpeechPrivate::disconnectSynthesizeFunctor()
     \dots
     \codeline
     \snippet quickspeech/Main.qml say0
-    \snippet quickspeech/Main.qml say1
     \snippet quickspeech/Main.qml pause
     \snippet quickspeech/Main.qml resume
     \dots
@@ -742,7 +741,6 @@ QString QTextToSpeech::errorString() const
     default audio output device.
 
     \snippet quickspeech/Main.qml say0
-    \snippet quickspeech/Main.qml say1
 
     \note All in-progress readings are stopped before beginning to read the recently
     synthesized text.
