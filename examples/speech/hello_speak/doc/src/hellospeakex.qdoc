@@ -17,5 +17,7 @@
     volume, and rate of the speech. It also lets the user select an engine,
     the language, and a voice.
 
-    \image hellospeak-example.png
+    \image hellospeak-example.png {Screenshot showing a tool for text to speech
+           with options to change volume, rate, pitch, engine language and reader
+           voice}
 */

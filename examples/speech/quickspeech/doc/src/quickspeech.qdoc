@@ -9,7 +9,9 @@
     \brief The Quick Speech example reads out user-provided text.
     \meta tags {quick Android}
 
-    \image quickspeech-example.png
+    \image quickspeech-example.png {Screenshot showing a tool for text to speech
+           with options to change engine, locale, voice, volume, pitch, and
+           rate}
 
     The \e{Quick Speech} example demonstrates how the \l[QML]{TextToSpeech} type
     can be used in a \l{Qt Quick} application to read out text and to control
@@ -26,7 +28,7 @@
 
     \section1 Getting the status
 
-    \image status.gif
+    \image status.gif {Gif showing a status example of the tool}
 
     Switch cases are used to update the Label \c statusLabel in the footer.
 
