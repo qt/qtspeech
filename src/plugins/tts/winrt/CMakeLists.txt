@@ -17,8 +17,3 @@ qt_internal_add_plugin(QTextToSpeechWinRTPlugin
         shlwapi
         runtimeobject
 )
-
-qt_internal_extend_target(QTextToSpeechWinRTPlugin CONDITION MSVC
-    COMPILE_OPTIONS
-        /Zc:twoPhase-
-)
