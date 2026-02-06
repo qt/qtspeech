@@ -340,6 +340,9 @@ bool QTextToSpeechEngineWinRT::setVoice(const QVoice &voice)
     d->forEachVoice([&data, &foundVoice](const ComPtr<IVoiceInformation> &voiceInfo) {
         HString voiceId;
         HRESULT hr = voiceInfo->get_Id(voiceId.GetAddressOf());
+        if (FAILED(hr))
+            return false;
+
         if (data == QString::fromWCharArray(voiceId.GetRawBuffer(0))) {
             foundVoice = voiceInfo;
             return true;
