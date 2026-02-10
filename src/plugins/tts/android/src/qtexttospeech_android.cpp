@@ -122,7 +122,7 @@ static void notifyEndSynthesis(JNIEnv *env, jobject thiz, jlong id)
 Q_DECLARE_JNI_NATIVE_METHOD(notifyEndSynthesis)
 
 
-Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
+extern "C" Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void */*reserved*/)
 {
     static bool initialized = false;
     if (initialized)
