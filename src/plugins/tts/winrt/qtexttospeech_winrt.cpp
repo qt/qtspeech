@@ -412,8 +412,9 @@ void QTextToSpeechEngineWinRTPrivate::initializeAudioSink(const QAudioFormat &fo
 
     audioSink.reset(new QAudioSink(audioDevice, format));
     // LATER: use public API (compare QTBUG-138378)
-    QPlatformAudioSink::get(*audioSink)
-            ->setRole(QPlatformAudioSink::AudioEndpointRole::Accessibility);
+    QPlatformAudioSink *platformAudioSink = QPlatformAudioSink::get(*audioSink);
+    if (platformAudioSink)
+        platformAudioSink->setRole(QPlatformAudioSink::AudioEndpointRole::Accessibility);
 
     QObject::connect(audioSink.get(), &QAudioSink::stateChanged,
                      q, [this](QAudio::State sinkState) {
