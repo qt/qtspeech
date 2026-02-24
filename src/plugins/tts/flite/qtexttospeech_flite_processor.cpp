@@ -574,8 +574,9 @@ void QTextToSpeechProcessorFlite::prepareAudioSink(QAudioFormat format)
     m_audioSink->setBufferSize(format.bytesForDuration(std::chrono::microseconds(100ms).count()));
 
     // LATER: use public API (compare QTBUG-138378)
-    QPlatformAudioSink::get(*m_audioSink)
-            ->setRole(QPlatformAudioSink::AudioEndpointRole::Accessibility);
+    QPlatformAudioSink *platformAudioSink = QPlatformAudioSink::get(*m_audioSink);
+    if (platformAudioSink)
+        platformAudioSink->setRole(QPlatformAudioSink::AudioEndpointRole::Accessibility);
 
     QObject::connect(m_audioSink.get(), &QAudioSink::stateChanged, m_audioSink.get(),
                      [&](QAudio::State state) {
