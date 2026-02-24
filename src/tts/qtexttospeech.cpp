@@ -733,7 +733,7 @@ QString QTextToSpeech::errorString() const
 }
 
 /*!
-    \qmlmethod TextToSpeech::say(string text)
+    \qmlmethod void TextToSpeech::say(string text)
 
     Starts synthesizing the \a text.
 
@@ -781,7 +781,7 @@ void QTextToSpeech::say(const QString &text)
 }
 
 /*!
-    \qmlmethod TextToSpeech::enqueue(string utterance)
+    \qmlmethod int TextToSpeech::enqueue(string utterance)
     \since 6.6
 
     Adds \a utterance to the queue of text to be spoken, and starts speaking.
@@ -933,7 +933,7 @@ void QTextToSpeech::synthesizeImpl(const QString &text,
 }
 
 /*!
-    \qmlmethod TextToSpeech::stop(BoundaryHint boundaryHint)
+    \qmlmethod void TextToSpeech::stop(BoundaryHint boundaryHint)
 
     Stops the current reading at \a boundaryHint, and clears the
     queue of pending texts.
@@ -966,7 +966,7 @@ void QTextToSpeech::stop(BoundaryHint boundaryHint)
 }
 
 /*!
-    \qmlmethod TextToSpeech::pause(BoundaryHint boundaryHint)
+    \qmlmethod void TextToSpeech::pause(BoundaryHint boundaryHint)
 
     Pauses the current speech at \a boundaryHint.
 
@@ -1002,7 +1002,7 @@ void QTextToSpeech::pause(BoundaryHint boundaryHint)
 }
 
 /*!
-    \qmlmethod TextToSpeech::resume()
+    \qmlmethod void TextToSpeech::resume()
 
     Resume speaking after \l pause() has been called.
 
