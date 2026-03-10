@@ -73,7 +73,9 @@ class QtTextToSpeech
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public void onError(String utteranceId) {
+            // Needed for compilation even on 21+ (abstract)
             onError(utteranceId, TextToSpeech.ERROR);
         }
 
@@ -297,7 +299,7 @@ class QtTextToSpeech
     Locale getLocale()
     {
         //Log.d(TAG, "getLocale: " + mLocale);
-        final Locale language = mTts.getLanguage();
+        final Locale language = mTts.getVoice().getLocale();
         if (language == null)
             return null;
         String languageCode = language.getLanguage();
