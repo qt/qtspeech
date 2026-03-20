@@ -970,6 +970,17 @@ void tst_QTextToSpeech::synthesize()
         }
     });
 
+    // warm up to avoid that initializing audio hardware makes timing flaky
+    if (canCheckDuration) {
+        tts.say("Initializing");
+        QTRY_VERIFY(running);
+        QTRY_VERIFY(finished);
+        running = false;
+        finished = false;
+        speechTimer.invalidate();
+        speechTime = 0;
+    }
+
     // first, measure how long it takes to speak the text. We can't do that if we
     // can't play audio.
     if (canCheckDuration) {
