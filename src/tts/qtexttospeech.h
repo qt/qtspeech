@@ -11,6 +11,8 @@
 #include <QtTextToSpeech/qtexttospeech_global.h>
 #include <QtTextToSpeech/qvoice.h>
 
+#include <QtCore/qmap.h>
+
 #include <QtCore/q20type_traits.h>
 
 QT_BEGIN_NAMESPACE
