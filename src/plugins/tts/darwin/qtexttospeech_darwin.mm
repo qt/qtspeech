@@ -10,6 +10,8 @@
 #include <QtCore/QPointer>
 #include <QtMultimedia/QAudioFormat>
 
+#include <QtCore/qset.h>
+
 @interface QDarwinSpeechSynthesizerDelegate : NSObject <AVSpeechSynthesizerDelegate>
 @end
 
