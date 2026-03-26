@@ -20,6 +20,8 @@
 #include <QtQml/qqml.h>
 #include <QtTextToSpeech/qvoice.h>
 
+#include <QtCore/qmap.h>
+
 QT_BEGIN_NAMESPACE
 
 class QDeclarativeTextToSpeech;
