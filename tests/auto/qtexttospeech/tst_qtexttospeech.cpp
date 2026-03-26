@@ -517,8 +517,8 @@ void tst_QTextToSpeech::volume()
     QTRY_COMPARE(spy.size(), 1);
     QVERIFY(spy.value(0).first().toDouble() > 0.6);
 
-    QVERIFY2(tts.volume() > 0.65, QByteArray::number(tts.volume()));
-    QVERIFY2(tts.volume() < 0.75, QByteArray::number(tts.volume()));
+    QCOMPARE_GT(tts.volume(), 0.65);
+    QCOMPARE_LT(tts.volume(), 0.75);
 
     tts.setVolume(tts.volume());
     QCOMPARE(spy.size(), 1);
