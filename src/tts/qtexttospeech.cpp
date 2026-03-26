@@ -566,7 +566,7 @@ QTextToSpeech::Capabilities QTextToSpeech::engineCapabilities() const
     for (const auto capName : capNames) {
         const auto capString = capName.toString().toUtf8();
         bool ok = false;
-        const QTextToSpeech::Capability capFlag = QTextToSpeech::Capability(capEnum.keyToValue(capString, &ok));
+        const QTextToSpeech::Capability capFlag = QTextToSpeech::Capability(capEnum.keyToValue(capString.data(), &ok));
         if (!ok) {
             qWarning("Unknown capability: '%s' doesn't map to any QTextToSpeech::Capability value",
                      capString.constData());
