@@ -3,9 +3,11 @@
 // Qt-Security score:significant reason:default
 
 #include "qtexttospeech_mock.h"
+
 #include <QtCore/QTimerEvent>
 #include <QtCore/QTimer>
 #include <QtCore/qregularexpression.h>
+#include <QtCore/qset.h>
 
 QT_BEGIN_NAMESPACE
 
