@@ -13,6 +13,7 @@
 #include <QtCore/QBasicTimer>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QElapsedTimer>
+#include <QtCore/qset.h>
 #include <QtCore/private/qfunctions_winrt_p.h>
 
 #include <winrt/base.h>
