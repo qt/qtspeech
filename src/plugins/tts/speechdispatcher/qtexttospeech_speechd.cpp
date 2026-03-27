@@ -292,7 +292,7 @@ bool QTextToSpeechEngineSpeechd::setVoice(const QVoice &voice)
         return false;
 
     const QByteArray moduleName = voiceData(voice).value<QByteArray>();
-    const int result = spd_set_output_module(speechDispatcher, moduleName);
+    const int result = spd_set_output_module(speechDispatcher, moduleName.data());
     if (result != 0) {
         setError(QTextToSpeech::ErrorReason::Configuration,
                  QCoreApplication::translate("QTextToSpeech",
