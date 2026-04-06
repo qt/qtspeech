@@ -15,4 +15,4 @@ qt_internal_add_plugin(QTextToSpeechEngineAndroidPlugin
         Qt::Multimedia
 )
 
-add_dependencies(QTextToSpeechEngineAndroidPlugin QtAndroidTextToSpeech)
+add_dependencies(QTextToSpeechEngineAndroidPlugin Qt${QtSpeech_VERSION_MAJOR}AndroidTextToSpeech)
