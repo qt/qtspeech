@@ -29,7 +29,7 @@ endif()
 
 if(ANDROID)
     set_property(TARGET TextToSpeech APPEND PROPERTY QT_ANDROID_BUNDLED_JAR_DEPENDENCIES
-        jar/QtAndroidTextToSpeech.jar
+        jar/Qt${QtSpeech_VERSION_MAJOR}AndroidTextToSpeech.jar
     )
     set_property(TARGET TextToSpeech APPEND PROPERTY QT_ANDROID_LIB_DEPENDENCIES
         ${INSTALL_PLUGINSDIR}/texttospeech/libplugins_texttospeech_qttexttospeech_android.so
