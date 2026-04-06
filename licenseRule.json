@@ -103,6 +103,11 @@
                 "comment": "Default",
                 "file type": "documentation",
                 "spdx": ["LicenseRef-Qt-Commercial OR GFDL-1.3-no-invariants-only"]
+            },
+            ".*(\\.gradle|gradle\\.properties|libs\\.versions\\.toml)$": {
+                "comment": "Android Gradle build files",
+                "file type": "build system",
+                "spdx": ["BSD-3-Clause"]
             }
         }
     }
