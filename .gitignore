@@ -18,3 +18,14 @@ moc_*
 /lib/
 /mkspecs/
 
+# cmake related artifacts
+/build*
+build/
+CMakeFiles
+CTestTestfile.cmake
+CMakeUserPresets.json
+cmake_install.cmake
+*_autogen
+tst_*.xml
+CMakeLists.txt.user*
+.xdp_CMakeLists.txt.*
