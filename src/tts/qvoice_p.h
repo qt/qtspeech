@@ -29,10 +29,9 @@ class QVoicePrivate : public QSharedData
 {
 public:
     QVoicePrivate() = default;
-    QVoicePrivate(const QVoicePrivate &other);
     QVoicePrivate(const QString &n, const QLocale &l, QVoice::Gender g,
                   QVoice::Age a, const QVariant &d);
-    ~QVoicePrivate() = default;
+    // Rule Of Zero applies!
 
     QString name;
     QLocale locale;
@@ -43,12 +42,6 @@ public:
     // On unix the synthesizer (output module) is stored.
     QVariant data;
 };
-
-QVoicePrivate::QVoicePrivate(const QVoicePrivate &other)
-    : QSharedData(other), name(other.name), locale(other.locale)
-    , gender(other.gender), age(other.age), data(other.data)
-{
-}
 
 QVoicePrivate::QVoicePrivate(const QString &n, const QLocale &l, QVoice::Gender g,
                              QVoice::Age a, const QVariant &d)
