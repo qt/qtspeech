@@ -7,11 +7,10 @@
 
 #include <QtCore/qlocale.h>
 #include <QtCore/qobject.h>
+#include <QtCore/qmap.h>
 #include <QtCore/qshareddata.h>
 #include <QtTextToSpeech/qtexttospeech_global.h>
 #include <QtTextToSpeech/qvoice.h>
-
-#include <QtCore/qmap.h>
 
 #include <QtCore/q20type_traits.h>
 
