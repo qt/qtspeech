@@ -312,7 +312,11 @@ void QTextToSpeechEngineAndroid::processNotifyRangeStart(int start, int end, int
 {
     Q_UNUSED(frame);
     const int length = end - start;
-    emit sayingWord(m_text.sliced(start, length), start,length);
+    if (start < 0 || length <= 0 || qsizetype(start) + length > m_text.size()) {
+        qDebug() << start << end << "are out of bounds of" << m_text;
+        return;
+    }
+    emit sayingWord(m_text.sliced(start, length), start, length);
 }
 
 void QTextToSpeechEngineAndroid::stop(QTextToSpeech::BoundaryHint boundaryHint)
