@@ -6,6 +6,7 @@
 #define QTEXTTOSPEECHENGINE_WINRT_AUDIOSOURCE_H
 
 #include <QtCore/QIODevice>
+#include <QtCore/qspan.h>
 #include <QtMultimedia/QAudioFormat>
 
 #include <robuffer.h>
@@ -98,7 +99,6 @@ private:
     // we don't destroy by accident, polymorphically, or via a QObject parent
     ~AudioSource() override;
 
-    qint64 bytesInBuffer() const;
     bool fetchMore();
 
     QAudioFormat audioFormat;
@@ -113,12 +113,11 @@ private:
     ComPtr<IBuffer> m_buffer;
     // access to the raw pcm bytes in the IBuffer; this took much reading of Windows header files...
     ComPtr<::Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
-    // The data in the IBuffer might be paritally consumed
-    UINT32 m_bufferOffset = 0;
-    // RIFF header has been checked at the beginning of the stream
-    bool m_riffHeaderChecked = false;
+    // Span into the current IBuffer, shrunk as data is consumed
+    QSpan<const char> m_bufferSpan;
     quint64 m_bytesRead = 0;
     quint64 m_pauseRequestedAt = 0;
+    bool m_headerConsumed{};
     std::optional<qint64> m_pauseDetectionSilenceCount;
 
     void populateBoundaries();

@@ -4,8 +4,9 @@
 
 #include "qtexttospeech_winrt_audiosource.h"
 
-#include <QtCore/QDebug>
-#include <QtCore/QTimer>
+#include <QtCore/qdebug.h>
+#include <QtCore/qspan.h>
+#include <QtCore/qtimer.h>
 
 #include <QtCore/private/qfunctions_winrt_p.h>
 #include <QtCore/private/qsystemerror_p.h>
@@ -91,7 +92,7 @@ void AudioSource::close()
 
 qint64 AudioSource::bytesAvailable() const
 {
-    return bytesInBuffer() + QIODevice::bytesAvailable();
+    return m_bufferSpan.size_bytes() + QIODevice::bytesAvailable();
 }
 
 /*
@@ -105,31 +106,18 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
     if (!maxlen)
         return 0;
 
-    Q_ASSERT(bufferByteAccess);
-
-    qint64 available = bytesInBuffer();
-    maxlen = qMin(available, maxlen);
-
-    if (!maxlen && atEnd())
+    if (m_bufferSpan.isEmpty() && atEnd())
         return -1;
 
-    byte *pbyte = nullptr;
-    bufferByteAccess->Buffer(&pbyte);
-    pbyte += m_bufferOffset;
+    auto take = [](auto span, qsizetype n) {
+        return span.first(std::min(span.size(), n));
+    };
 
-    // Check and skip the RIFF header if present to prevent an audible
-    // click at the start of playback.
-    if (!m_riffHeaderChecked) {
-        m_riffHeaderChecked = true;
-        static const int WaveHeaderLength = 44;
-        const char *descriptor = reinterpret_cast<const char*>(pbyte);
-        if (maxlen >= WaveHeaderLength && !qstrncmp(descriptor, "RIFF", 4)) {
-            pbyte += WaveHeaderLength;
-            m_bufferOffset += WaveHeaderLength;
-            maxlen -= WaveHeaderLength;
-            available -= WaveHeaderLength;
-        }
-    }
+    auto drop = [](auto span, qsizetype n) {
+        return span.subspan(std::min(span.size(), n));
+    };
+
+    QSpan source = take(m_bufferSpan, maxlen);
 
     switch (m_pause) {
     case NoPause:
@@ -140,12 +128,11 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
         if (m_pauseRequestedAt) {
             if (m_pauseRequestedAt <= m_bytesRead) {
                 // we missed the window, pause immediately
-                maxlen = 0;
-            } else if (m_pauseRequestedAt <= m_bytesRead + maxlen) {
-                maxlen = qMax(quint64(0), m_pauseRequestedAt - m_bytesRead) + 44;
+                source = {};
+            } else if (m_pauseRequestedAt <= m_bytesRead + quint64(source.size())) {
+                source = take(source, qsizetype(m_pauseRequestedAt - m_bytesRead));
             } else {
-                // wait for the next chunk
-                break;
+                break; // pause point is in a later chunk
             }
             m_pause = Paused;
             m_pauseRequestedAt = 0;
@@ -157,29 +144,26 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
         // look for a series (e.g. 1/50th of a second) of samples with low
         // absolute values.
         const int silenceDuration = audioFormat.sampleRate() / 50;
-        const short *sample = reinterpret_cast<short*>(pbyte);
-        const qsizetype sampleCount = maxlen / sizeof(short);
+        const auto samples = QSpan(reinterpret_cast<const short *>(source.data()),
+                                   source.size() / sizeof(short));
 
-        const bool isInitialPauseRequest = !m_pauseDetectionSilenceCount.has_value();
-        if (isInitialPauseRequest)
+        if (!m_pauseDetectionSilenceCount.has_value())
             m_pauseDetectionSilenceCount = 0;
 
-        for (qint64 index = 0; index < sampleCount; ++index) {
-            if (qAbs(sample[index]) < 10) {
+        for (qsizetype i = 0; i < samples.size(); ++i) {
+            if (qAbs(samples[i]) < 10)
                 *m_pauseDetectionSilenceCount += 1;
-            } else {
+            else {
                 *m_pauseDetectionSilenceCount = 0;
                 continue;
             }
-
             if (*m_pauseDetectionSilenceCount > silenceDuration) {
-                // long enough silence found, only provide the data until we are in the silence.
-
+                // long enough silence found, only provide data until we are in the silence.
                 // we will still try to play at least half of the silent part
-                const int silentSamplesToPlay = silenceDuration / 2;
-                maxlen = index > silentSamplesToPlay ? (index - silentSamplesToPlay) * sizeof(short)
-                                                     : index * sizeof(short);
-
+                const qsizetype silentSamplesToPlay = silenceDuration / 2;
+                source = take(source,
+                              (i > silentSamplesToPlay ? i - silentSamplesToPlay : i)
+                                      * sizeof(short));
                 m_pause = Paused;
                 m_pauseDetectionSilenceCount = std::nullopt;
                 break;
@@ -196,23 +180,20 @@ qint64 AudioSource::readData(char *data, qint64 maxlen)
     }
     case Paused:
         // starve the sink so that it goes idle
-        maxlen = 0;
-        break;
+        return 0;
     }
 
-    if (!maxlen)
+    if (source.isEmpty())
         return 0;
 
-    memcpy(data, pbyte, maxlen);
+    memcpy(data, source.data(), source.size());
+    m_bufferSpan = drop(m_bufferSpan, source.size());
 
-    // We emptied the buffer, so schedule fetching more
-    if (available <= maxlen)
+    if (m_bufferSpan.isEmpty())
         fetchMore();
-    else
-        m_bufferOffset += maxlen;
 
-    m_bytesRead += maxlen;
-    return maxlen;
+    m_bytesRead += source.size();
+    return source.size();
 }
 
 bool AudioSource::atEnd() const
@@ -401,7 +382,24 @@ HRESULT AudioSource::Invoke(IAsyncOperationWithProgress<IBuffer*, unsigned int> 
 
     HRESULT hr = read->GetResults(&m_buffer);
     RETURN_HR_IF_FAILED("Could not access buffer.");
-    m_bufferOffset = 0;
+
+    m_bufferSpan = [&] {
+        byte *ptr = nullptr;
+        bufferByteAccess->Buffer(&ptr);
+        UINT32 length = 0;
+        m_buffer->get_Length(&length);
+        return QSpan(reinterpret_cast<const char *>(ptr), qsizetype(length));
+    }();
+
+    // Skip the RIFF header in the first buffer to prevent an audible click.
+    constexpr qsizetype WaveHeaderLength = 44;
+    if (!m_headerConsumed) {
+        Q_ASSERT(m_bytesRead == 0);
+        Q_ASSERT(m_bufferSpan.size() >= WaveHeaderLength);
+        Q_ASSERT(QByteArrayView(m_bufferSpan).startsWith("RIFF"));
+        m_bufferSpan = m_bufferSpan.subspan(WaveHeaderLength);
+        m_headerConsumed = true;
+    }
 
     ComPtr<IAsyncInfo> asyncInfo;
     if (HRESULT hr = readOperation.As(&asyncInfo); SUCCEEDED(hr))
@@ -409,20 +407,10 @@ HRESULT AudioSource::Invoke(IAsyncOperationWithProgress<IBuffer*, unsigned int> 
     readOperation.Reset();
 
     // inform the sink that more data has arrived
-    if (m_pause == NoPause && bytesInBuffer())
+    if (m_pause == NoPause && !m_bufferSpan.isEmpty())
         emit readyRead();
 
     return S_OK;
-}
-
-qint64 AudioSource::bytesInBuffer() const
-{
-    if (!m_buffer)
-        return 0;
-
-    UINT32 bytes;
-    m_buffer->get_Length(&bytes);
-    return bytes - m_bufferOffset;
 }
 
 /*
