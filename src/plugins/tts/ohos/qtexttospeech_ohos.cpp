@@ -9,6 +9,7 @@
 
 #include <QtTextToSpeech/qvoice.h>
 
+#include <QtCore/qcoreapplication.h>
 #include <QtCore/qlist.h>
 #include <QtCore/qlocale.h>
 #include <QtCore/qloggingcategory.h>
@@ -40,6 +41,48 @@ QVariantMap mapVoiceExtraData(const CoreSpeechKit::VoiceInfo &info)
         {QStringLiteral("style"), QString::fromStdString(info.style)},
         {QStringLiteral("person"), info.personTimbre},
     };
+}
+
+struct EngineError
+{
+    QTextToSpeech::ErrorReason reason;
+    QString message;
+};
+
+// Source of the error codes can be found under section 'Error Codes':
+// https://developer.huawei.com/consumer/en/doc/harmonyos-references/errorcode-corespeech
+EngineError mapTtsError(std::uint32_t errorCode)
+{
+    static constexpr std::uint32_t ohosTextOutOfRangeOrEmptyValue = 1002300001;
+    static constexpr std::uint32_t ohosLanguageNotSupportedValue = 1002300002;
+    static constexpr std::uint32_t ohosPersonNotSupportedValue = 1002300003;
+    static constexpr std::uint32_t ohosCreateEngineFailedValue = 1002300005;
+    static constexpr std::uint32_t ohosParameterErrorValue = 1002300009;
+
+    switch (errorCode) {
+    case ohosTextOutOfRangeOrEmptyValue:
+        return {
+            QTextToSpeech::ErrorReason::Input,
+            QCoreApplication::translate("QTextToSpeech", "Speech synthesizing failure.")
+        };
+    case ohosLanguageNotSupportedValue:
+    case ohosPersonNotSupportedValue:
+    case ohosParameterErrorValue:
+        return {
+            QTextToSpeech::ErrorReason::Configuration,
+            QCoreApplication::translate("QTextToSpeech", "Could not apply text-to-speech parameters.")
+        };
+    case ohosCreateEngineFailedValue:
+        return {
+            QTextToSpeech::ErrorReason::Initialization,
+            QCoreApplication::translate("QTextToSpeech", "Failed to initialize text-to-speech engine.")
+        };
+    default:
+        return {
+            QTextToSpeech::ErrorReason::Playback,
+            QCoreApplication::translate("QTextToSpeech", "Unknown error: %1.").arg(errorCode)
+        };
+    }
 }
 
 double mapVolumeToOhosVolume(double volume)
@@ -118,10 +161,13 @@ private:
     void handleOnError(
         const QString &utteranceId, std::uint32_t errorCode, const QString &errorMessage);
     void setState(QTextToSpeech::State state);
+    void setError(const EngineError &error);
 
     std::shared_ptr<CoreSpeechKit::TextToSpeechProxy> m_ttsProxy;
 
     QTextToSpeech::State m_state;
+    QTextToSpeech::ErrorReason m_errorReason;
+    QString m_errorString;
     QList<QVoice> m_voices;
     QList<QLocale> m_locales;
     QLocale m_currentLocale;
@@ -164,6 +210,7 @@ QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
     std::function<std::shared_ptr<CoreSpeechKit::TextToSpeechProxy>(std::shared_ptr<CoreSpeechKit::TextToSpeechProxy::EngineEventsListener>)> ttsProxyFactory)
     : QTextToSpeechEngine(parent)
     , m_state(QTextToSpeech::Ready)
+    , m_errorReason(QTextToSpeech::ErrorReason::NoError)
     , m_volume(1.0)
     , m_rate(0.0)
     , m_pitch(0.0)
@@ -194,7 +241,10 @@ void QTextToSpeechEngineOhos::handleOnComplete(
     const QString &, std::optional<CoreSpeechKit::TtsCompletionType> optCompletionType)
 {
     if (!optCompletionType) {
-        setState(QTextToSpeech::Error);
+        setError({
+            QTextToSpeech::ErrorReason::Playback,
+            QCoreApplication::translate("QTextToSpeech", "Speech synthesizing failure.")
+        });
         return;
     }
 
@@ -210,18 +260,44 @@ void QTextToSpeechEngineOhos::handleOnStop(const QString &)
 void QTextToSpeechEngineOhos::handleOnError(
     const QString &utteranceId, std::uint32_t errorCode, const QString &errorMessage)
 {
-    setState(QTextToSpeech::Error);
     qCWarning(lcSpeechTtsOhos)
         << Q_FUNC_INFO << ": text to speech error: code" << errorCode
         << errorMessage << ", utteranceId:" << utteranceId;
+
+    setError(mapTtsError(errorCode));
 }
 
 void QTextToSpeechEngineOhos::setState(QTextToSpeech::State state)
 {
-    if (state != m_state) {
-        m_state = state;
+    if (m_state == state)
+        return;
+
+    m_state = state;
+    Q_EMIT stateChanged(m_state);
+
+    if (m_state == QTextToSpeech::Error) {
+        Q_EMIT errorOccurred(m_errorReason, m_errorString);
+    } else {
+        m_errorReason = QTextToSpeech::ErrorReason::NoError;
+        m_errorString.clear();
+    }
+}
+
+void QTextToSpeechEngineOhos::setError(const EngineError &error)
+{
+    m_errorReason = error.reason;
+    m_errorString = error.message;
+
+    if (error.reason == QTextToSpeech::ErrorReason::NoError) {
+        m_errorString.clear();
+        return;
+    }
+
+    if (m_state != QTextToSpeech::Error) {
+        m_state = QTextToSpeech::Error;
         Q_EMIT stateChanged(m_state);
     }
+    Q_EMIT errorOccurred(m_errorReason, m_errorString);
 }
 
 QList<QLocale> QTextToSpeechEngineOhos::availableLocales() const
@@ -339,14 +415,12 @@ QTextToSpeech::State QTextToSpeechEngineOhos::state() const
 
 QTextToSpeech::ErrorReason QTextToSpeechEngineOhos::errorReason() const
 {
-    qCWarning(lcSpeechTtsOhos) << Q_FUNC_INFO << ": errorReason feature is not supported";
-    return QTextToSpeech::ErrorReason::NoError;
+    return m_errorReason;
 }
 
 QString QTextToSpeechEngineOhos::errorString() const
 {
-    qCWarning(lcSpeechTtsOhos) << Q_FUNC_INFO << ": errorString feature is not supported";
-    return QString();
+    return m_errorString;
 }
 
 }
