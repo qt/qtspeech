@@ -9,6 +9,8 @@
 #include <QtCore/private/qnapi_p.h>
 #include <QtCore/private/qohoslogger_p.h>
 
+#include <functional>
+
 QT_BEGIN_NAMESPACE
 
 namespace CoreSpeechKit {
@@ -73,7 +75,7 @@ public:
     std::optional<std::vector<VoiceInfo>> listVoices() override;
 
     void setEngineEventsListener(
-        std::shared_ptr<TextToSpeechProxy::EngineEventsListener> engineEventsListener);
+        std::shared_ptr<TextToSpeechProxy::EngineEventsListener> engineEventsListener) override;
 
 private:
     struct JsScopeData
@@ -432,18 +434,14 @@ TextToSpeechProxy::EngineEventsListener::EngineEventsListener() = default;
 
 TextToSpeechProxy::EngineEventsListener::~EngineEventsListener() = default;
 
-q23::expected<std::function<std::shared_ptr<TextToSpeechProxy>(std::shared_ptr<TextToSpeechProxy::EngineEventsListener>)>, std::string> tryMakeTextToSpeechProxyFactory(
+q23::expected<std::shared_ptr<TextToSpeechProxy>, std::string> tryMakeTextToSpeechProxy(
     const std::string &language, int personTimbre)
 {
     auto proxyImplInstanceOrError = TextToSpeechProxyImpl::tryMakeInstance(language, personTimbre);
     if (!proxyImplInstanceOrError)
         return q23::unexpected(std::move(proxyImplInstanceOrError.error()));
 
-    return std::function<std::shared_ptr<TextToSpeechProxy>(std::shared_ptr<TextToSpeechProxy::EngineEventsListener>)>(
-        [proxyImplInstance = std::move(proxyImplInstanceOrError.value())](std::shared_ptr<TextToSpeechProxy::EngineEventsListener> engineEventsListener) {
-            proxyImplInstance->setEngineEventsListener(engineEventsListener);
-            return proxyImplInstance;
-        });
+    return std::move(proxyImplInstanceOrError.value());
 }
 
 }
