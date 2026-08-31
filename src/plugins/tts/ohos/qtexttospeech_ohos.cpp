@@ -16,7 +16,6 @@
 #include <QtCore/qstring.h>
 
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <optional>
 
@@ -116,8 +115,7 @@ class QTextToSpeechEngineOhos : public QTextToSpeechEngine
 public:
     QTextToSpeechEngineOhos(
         const QVariantMap &parameters, QObject *parent,
-        std::function<std::shared_ptr<CoreSpeechKit::TextToSpeechProxy>(
-            std::shared_ptr<CoreSpeechKit::TextToSpeechProxy::EngineEventsListener>)> ttsProxyFactory);
+        std::shared_ptr<CoreSpeechKit::TextToSpeechProxy> ttsProxy);
 
     QList<QLocale> availableLocales() const override;
     QList<QVoice> availableVoices() const override;
@@ -207,15 +205,16 @@ void QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::onError(
 
 QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
     const QVariantMap &, QObject *parent,
-    std::function<std::shared_ptr<CoreSpeechKit::TextToSpeechProxy>(std::shared_ptr<CoreSpeechKit::TextToSpeechProxy::EngineEventsListener>)> ttsProxyFactory)
+    std::shared_ptr<CoreSpeechKit::TextToSpeechProxy> ttsProxy)
     : QTextToSpeechEngine(parent)
+    , m_ttsProxy(std::move(ttsProxy))
     , m_state(QTextToSpeech::Ready)
     , m_errorReason(QTextToSpeech::ErrorReason::NoError)
     , m_volume(1.0)
     , m_rate(0.0)
     , m_pitch(0.0)
 {
-    m_ttsProxy = ttsProxyFactory(std::make_shared<TextToSpeechEngineEventsListener>(*this));
+    m_ttsProxy->setEngineEventsListener(std::make_shared<TextToSpeechEngineEventsListener>(*this));
 
     auto optVoices = m_ttsProxy->listVoices();
     if (!optVoices) {
@@ -438,16 +437,14 @@ QString QTextToSpeechEngineOhos::errorString() const
 QTextToSpeechEngine *createQTextToSpeechEngineOhos(
     const QVariantMap &parameters, QObject *parent, QString *errorString)
 {
-    auto ttsProxyFactoryOrError = CoreSpeechKit::tryMakeTextToSpeechProxyFactory(
-        chineseLanguage, defaultPersonTimbre);
+    auto ttsProxyOrError = CoreSpeechKit::tryMakeTextToSpeechProxy(chineseLanguage, defaultPersonTimbre);
 
-    if (!ttsProxyFactoryOrError) {
+    if (!ttsProxyOrError) {
         if (errorString != nullptr)
-            *errorString = QString::fromStdString(ttsProxyFactoryOrError.error());
+            *errorString = QString::fromStdString(ttsProxyOrError.error());
         return nullptr;
     }
-    return new QTextToSpeechEngineOhos(
-        parameters, parent, std::move(ttsProxyFactoryOrError.value()));
+    return new QTextToSpeechEngineOhos(parameters, parent, std::move(ttsProxyOrError.value()));
 }
 
 QT_END_NAMESPACE

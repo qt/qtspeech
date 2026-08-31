@@ -8,7 +8,6 @@
 #include <QtCore/private/qexpected_p.h>
 
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -67,12 +66,13 @@ public:
     virtual void speak(const SpeakParams &params) = 0;
     virtual void stop() = 0;
     virtual std::optional<std::vector<VoiceInfo>> listVoices() = 0;
+    virtual void setEngineEventsListener(std::shared_ptr<EngineEventsListener> engineEventsListener) = 0;
 
 protected:
     TextToSpeechProxy();
 };
 
-q23::expected<std::function<std::shared_ptr<TextToSpeechProxy>(std::shared_ptr<TextToSpeechProxy::EngineEventsListener>)>, std::string> tryMakeTextToSpeechProxyFactory(
+q23::expected<std::shared_ptr<TextToSpeechProxy>, std::string> tryMakeTextToSpeechProxy(
     const std::string &language, int personTimbre);
 
 }
