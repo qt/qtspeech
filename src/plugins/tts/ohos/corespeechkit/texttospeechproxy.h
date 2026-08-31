@@ -66,7 +66,7 @@ public:
 
     virtual void speak(const SpeakParams &params) = 0;
     virtual void stop() = 0;
-    virtual std::vector<VoiceInfo> listVoices() = 0;
+    virtual std::optional<std::vector<VoiceInfo>> listVoices() = 0;
 
 protected:
     TextToSpeechProxy();

@@ -70,7 +70,7 @@ public:
 
     void speak(const SpeakParams &params) override;
     void stop() override;
-    std::vector<VoiceInfo> listVoices() override;
+    std::optional<std::vector<VoiceInfo>> listVoices() override;
 
     void setEngineEventsListener(
         std::shared_ptr<TextToSpeechProxy::EngineEventsListener> engineEventsListener);
@@ -381,10 +381,10 @@ void TextToSpeechProxyImpl::stop()
         Q_FUNC_INFO);
 }
 
-std::vector<VoiceInfo> TextToSpeechProxyImpl::listVoices()
+std::optional<std::vector<VoiceInfo>> TextToSpeechProxyImpl::listVoices()
 {
-    return QOhosJsThreadGateway::evalWithPromise<std::vector<VoiceInfo>>(
-        [&](QOhosJsState &jsState, QOhosTaskPromise<std::vector<VoiceInfo>> evalPromise) {
+    return QOhosJsThreadGateway::evalWithPromise<std::optional<std::vector<VoiceInfo>>>(
+        [&](QOhosJsState &jsState, QOhosTaskPromise<std::optional<std::vector<VoiceInfo>>> evalPromise) {
             auto thenCatchPromises = std::move(evalPromise).makeThenCatchBranches(Q_FUNC_INFO);
             m_jsScopeData->textToSpeechEngineRef->evalToPromiseOrRejectOnThrow(
                 "listVoices(*)",
@@ -416,7 +416,7 @@ std::vector<VoiceInfo> TextToSpeechProxyImpl::listVoices()
             .onCatch(
                 [catchPromise = std::move(thenCatchPromises.second)](const QOhosCallbackInfo &cbInfo) {
                     QtOhos::logJsCallbackError(cbInfo, "listVoices() failed");
-                    catchPromise({});
+                    catchPromise(std::nullopt);
                 });
         },
         Q_FUNC_INFO);

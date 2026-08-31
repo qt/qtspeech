@@ -216,7 +216,17 @@ QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
     , m_pitch(0.0)
 {
     m_ttsProxy = ttsProxyFactory(std::make_shared<TextToSpeechEngineEventsListener>(*this));
-    for (const auto &voiceInfo : m_ttsProxy->listVoices()) {
+
+    auto optVoices = m_ttsProxy->listVoices();
+    if (!optVoices) {
+        setError({
+            QTextToSpeech::ErrorReason::Configuration,
+            QCoreApplication::translate("QTextToSpeech", "Failed to initialize default locale and voice.")
+        });
+        return;
+    }
+
+    for (const auto &voiceInfo : *optVoices) {
         QLocale locale(QString::fromStdString(voiceInfo.language));
         m_voices.append(
             createVoice(
