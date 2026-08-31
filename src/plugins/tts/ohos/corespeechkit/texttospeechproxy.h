@@ -39,6 +39,7 @@ struct VoiceInfo
     std::string gender;
     std::string description;
     int personTimbre;
+    std::optional<std::string> status;
 };
 
 class TextToSpeechProxy
