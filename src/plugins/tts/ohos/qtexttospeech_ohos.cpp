@@ -15,6 +15,7 @@
 #include <QtCore/qloggingcategory.h>
 #include <QtCore/qstring.h>
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -32,6 +33,32 @@ QVoice::Gender mapVoiceGender(const std::string &gender)
     return gender == "male"   ? QVoice::Gender::Male   :
            gender == "female" ? QVoice::Gender::Female :
                                 QVoice::Gender::Unknown;
+}
+
+// Source of values used for VoiceStatus can be found under section 'VoiceInfo.status':
+// https://developer.huawei.com/consumer/en/doc/harmonyos-references/hms-ai-texttospeech
+enum class VoiceStatus
+{
+    Downloadable,
+    Installed,
+    Unavailable,
+};
+
+std::optional<VoiceStatus> mapVoiceStatus(const std::string &status)
+{
+    static constexpr std::array<std::pair<VoiceStatus, const char *>, 3> voiceStatuses = {{
+        {VoiceStatus::Downloadable, "GA"},
+        {VoiceStatus::Installed, "INSTALLED"},
+        {VoiceStatus::Unavailable, "EOM"},
+    }};
+
+    for (const auto &[voiceStatus, ohosStatus] : voiceStatuses) {
+        if (status == ohosStatus)
+            return voiceStatus;
+    }
+
+    qCWarning(lcSpeechTtsOhos) << "unexpected voice status:" << QString::fromStdString(status);
+    return {};
 }
 
 QVariantMap mapVoiceExtraData(const CoreSpeechKit::VoiceInfo &info)
@@ -226,6 +253,12 @@ QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
     }
 
     for (const auto &voiceInfo : *optVoices) {
+        if (voiceInfo.status) {
+            const auto optStatus = mapVoiceStatus(*voiceInfo.status);
+            if (optStatus && *optStatus != VoiceStatus::Installed)
+                continue;
+        }
+
         QLocale locale(QString::fromStdString(voiceInfo.language));
         m_voices.append(
             createVoice(

@@ -36,6 +36,15 @@ std::optional<TtsCompletionType> tryParseTtsCompletionType(const QNapi::Object &
     }
 }
 
+std::optional<std::string> tryGetVoiceStatus(const QNapi::Object &jsVoice)
+{
+    auto optStatusValue = QNapi::getOptionalPropOrEmpty<QNapi::String>(jsVoice, "status");
+    if (optStatusValue.IsEmpty())
+        return {};
+
+    return optStatusValue.Utf8Value();
+}
+
 // Source of values used for EngineMode can be found under section 'online':
 // https://developer.huawei.com/consumer/en/doc/harmonyos-references/hms-ai-texttospeech#section1638144844811
 enum class EngineMode
@@ -421,6 +430,7 @@ std::optional<std::vector<VoiceInfo>> tryListVoices()
                                     .gender = jsVoice.get<QNapi::String>("gender"),
                                     .description = jsVoice.get<QNapi::String>("description"),
                                     .personTimbre = jsVoice.get<QNapi::Number>("person"),
+                                    .status = tryGetVoiceStatus(jsVoice),
                                 };
                             }));
                 })

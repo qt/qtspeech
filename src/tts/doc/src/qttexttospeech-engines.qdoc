@@ -90,6 +90,12 @@
     {createEngine() documentation}, only Chinese and English are supported, with
     \c {zh-CN} recommended for Chinese and \c {en-US} for English.
 
+    \l{QTextToSpeech::}{availableVoices()} reports only the voices whose timbre model
+    is installed on the device. An engine cannot be created for a voice that is not
+    installed, so such voices are not offered. Core Speech Kit can download a timbre
+    model, but there is no API in Qt to request that download; the voice has to be
+    installed outside the application.
+
     \note The HarmonyOS engine only has the \l{QTextToSpeech::Capabilities}{Speak}
     capability. It supports neither \l{QTextToSpeech::Capabilities}{PauseResume},
     \l{QTextToSpeech::Capabilities}{WordByWordProgress}, nor
