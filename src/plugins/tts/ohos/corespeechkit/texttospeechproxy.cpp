@@ -85,13 +85,17 @@ public:
     void setEngineEventsListener(
         std::shared_ptr<TextToSpeechProxy::EngineEventsListener> engineEventsListener) override;
 
+    std::string language() const override;
+    int personTimbre() const override;
+
 private:
     struct JsScopeData
     {
         std::shared_ptr<QNapi::Reference<QNapi::Object>> textToSpeechEngineRef;
     };
 
-    explicit TextToSpeechProxyImpl(const std::string &language, std::shared_ptr<JsScopeData> jsScopeData);
+    explicit TextToSpeechProxyImpl(
+        const std::string &language, int personTimbre, std::shared_ptr<JsScopeData> jsScopeData);
 
     static q23::expected<std::shared_ptr<JsScopeData>, std::string> tryMakeJsScopeData(
         const std::string &language, int personTimbre);
@@ -99,6 +103,7 @@ private:
     std::shared_ptr<JsScopeData> m_jsScopeData;
     std::shared_ptr<TextToSpeechProxy::EngineEventsListener> m_engineEventsListener;
     const std::string m_language;
+    const int m_personTimbre;
 };
 
 class QtThreadBasedEngineEventsListener : public TextToSpeechProxy::EngineEventsListener
@@ -300,7 +305,7 @@ q23::expected<std::shared_ptr<TextToSpeechProxyImpl>, std::string> TextToSpeechP
         return q23::unexpected(std::move(jsScopeDataOrError.error()));
 
     return std::shared_ptr<TextToSpeechProxyImpl>(
-        new TextToSpeechProxyImpl(language, std::move(jsScopeDataOrError.value())));
+        new TextToSpeechProxyImpl(language, personTimbre, std::move(jsScopeDataOrError.value())));
 }
 
 void TextToSpeechProxyImpl::setEngineEventsListener(
@@ -345,10 +350,21 @@ q23::expected<std::shared_ptr<TextToSpeechProxyImpl::JsScopeData>, std::string> 
 }
 
 TextToSpeechProxyImpl::TextToSpeechProxyImpl(
-    const std::string &language, std::shared_ptr<JsScopeData> jsScopeData)
+    const std::string &language, int personTimbre, std::shared_ptr<JsScopeData> jsScopeData)
     : m_jsScopeData(std::move(jsScopeData))
     , m_language(language)
+    , m_personTimbre(personTimbre)
 {
+}
+
+std::string TextToSpeechProxyImpl::language() const
+{
+    return m_language;
+}
+
+int TextToSpeechProxyImpl::personTimbre() const
+{
+    return m_personTimbre;
 }
 
 void TextToSpeechProxyImpl::speak(const SpeakParams &params)
