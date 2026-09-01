@@ -72,7 +72,6 @@ public:
 
     void speak(const SpeakParams &params) override;
     void stop() override;
-    std::optional<std::vector<VoiceInfo>> listVoices() override;
 
     void setEngineEventsListener(
         std::shared_ptr<TextToSpeechProxy::EngineEventsListener> engineEventsListener) override;
@@ -383,13 +382,23 @@ void TextToSpeechProxyImpl::stop()
         Q_FUNC_INFO);
 }
 
-std::optional<std::vector<VoiceInfo>> TextToSpeechProxyImpl::listVoices()
+}
+
+TextToSpeechProxy::TextToSpeechProxy() = default;
+
+TextToSpeechProxy::~TextToSpeechProxy() = default;
+
+TextToSpeechProxy::EngineEventsListener::EngineEventsListener() = default;
+
+TextToSpeechProxy::EngineEventsListener::~EngineEventsListener() = default;
+
+std::optional<std::vector<VoiceInfo>> tryListVoices()
 {
     return QOhosJsThreadGateway::evalWithPromise<std::optional<std::vector<VoiceInfo>>>(
-        [&](QOhosJsState &jsState, QOhosTaskPromise<std::optional<std::vector<VoiceInfo>>> evalPromise) {
+        [](QOhosJsState &jsState, QOhosTaskPromise<std::optional<std::vector<VoiceInfo>>> evalPromise) {
             auto thenCatchPromises = std::move(evalPromise).makeThenCatchBranches(Q_FUNC_INFO);
-            m_jsScopeData->textToSpeechEngineRef->evalToPromiseOrRejectOnThrow(
-                "listVoices(*)",
+            jsState.evalToPromiseOrRejectOnThrow(
+                "@kit.CoreSpeechKit.textToSpeech.listVoices(*)",
                 {
                     QNapi::makeObject(
                         jsState.env(),
@@ -423,16 +432,6 @@ std::optional<std::vector<VoiceInfo>> TextToSpeechProxyImpl::listVoices()
         },
         Q_FUNC_INFO);
 }
-
-}
-
-TextToSpeechProxy::TextToSpeechProxy() = default;
-
-TextToSpeechProxy::~TextToSpeechProxy() = default;
-
-TextToSpeechProxy::EngineEventsListener::EngineEventsListener() = default;
-
-TextToSpeechProxy::EngineEventsListener::~EngineEventsListener() = default;
 
 q23::expected<std::shared_ptr<TextToSpeechProxy>, std::string> tryMakeTextToSpeechProxy(
     const std::string &language, int personTimbre)
