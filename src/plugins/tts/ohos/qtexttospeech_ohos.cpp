@@ -168,7 +168,7 @@ private:
     QString m_errorString;
     QList<QVoice> m_voices;
     QList<QLocale> m_locales;
-    QLocale m_currentLocale;
+    QVoice m_currentVoice;
     double m_volume;
     double m_rate;
     double m_pitch;
@@ -237,8 +237,8 @@ QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
             m_locales.append(locale);
     }
 
-    if (!m_locales.isEmpty())
-        m_currentLocale = m_locales.first();
+    if (!m_voices.isEmpty())
+        m_currentVoice = m_voices.first();
 }
 
 void QTextToSpeechEngineOhos::handleOnStart(const QString &)
@@ -318,7 +318,7 @@ QList<QVoice> QTextToSpeechEngineOhos::availableVoices() const
 {
     QList<QVoice> voices;
     for (const auto &voice : m_voices) {
-        if (voice.locale() == m_currentLocale)
+        if (voice.locale() == m_currentVoice.locale())
             voices << voice;
     }
 
@@ -384,7 +384,7 @@ bool QTextToSpeechEngineOhos::setPitch(double pitch)
 
 QLocale QTextToSpeechEngineOhos::locale() const
 {
-    return m_currentLocale;
+    return m_currentVoice.locale();
 }
 
 bool QTextToSpeechEngineOhos::setLocale(const QLocale &locale)
@@ -392,8 +392,17 @@ bool QTextToSpeechEngineOhos::setLocale(const QLocale &locale)
     if (!m_locales.contains(locale))
         return false;
 
-    m_currentLocale = locale;
-    return true;
+    if (m_currentVoice.locale() == locale)
+        return true;
+
+    for (const auto &voice : m_voices) {
+        if (voice.locale() == locale) {
+            m_currentVoice = voice;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 double QTextToSpeechEngineOhos::volume() const
@@ -409,12 +418,18 @@ bool QTextToSpeechEngineOhos::setVolume(double volume)
 
 QVoice QTextToSpeechEngineOhos::voice() const
 {
-    return {};
+    return m_currentVoice;
 }
 
-bool QTextToSpeechEngineOhos::setVoice(const QVoice &)
+bool QTextToSpeechEngineOhos::setVoice(const QVoice &voice)
 {
-    return false;
+    if (!m_voices.contains(voice)) {
+        qCWarning(lcSpeechTtsOhos) << "voice" << voice.name() << "is not available in this engine";
+        return false;
+    }
+
+    m_currentVoice = voice;
+    return true;
 }
 
 QTextToSpeech::State QTextToSpeechEngineOhos::state() const
