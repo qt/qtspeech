@@ -24,9 +24,7 @@ QT_BEGIN_NAMESPACE
 
 namespace {
 
-constexpr const char *chineseLanguage = "zh-CN";
 constexpr const char *chineseLanguageContext = "zh-CN";
-constexpr int defaultPersonTimbre = 0;
 
 QVoice::Gender mapVoiceGender(const std::string &gender)
 {
@@ -140,9 +138,7 @@ double mapPitchToOhosPitch(double pitch)
 class QTextToSpeechEngineOhos : public QTextToSpeechEngine
 {
 public:
-    QTextToSpeechEngineOhos(
-        const QVariantMap &parameters, QObject *parent,
-        std::shared_ptr<CoreSpeechKit::TextToSpeechProxy> ttsProxy);
+    QTextToSpeechEngineOhos(const QVariantMap &parameters, QObject *parent);
 
     QList<QLocale> availableLocales() const override;
     QList<QVoice> availableVoices() const override;
@@ -187,6 +183,7 @@ private:
         const QString &utteranceId, std::uint32_t errorCode, const QString &errorMessage);
     void setState(QTextToSpeech::State state);
     void setError(const EngineError &error);
+    bool prepareTextToSpeechProxyForCurrentVoice();
 
     std::shared_ptr<CoreSpeechKit::TextToSpeechProxy> m_ttsProxy;
 
@@ -230,19 +227,14 @@ void QTextToSpeechEngineOhos::TextToSpeechEngineEventsListener::onError(
          QString::fromStdString(utteranceId), errorCode, QString::fromStdString(errorMessage));
 }
 
-QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
-    const QVariantMap &, QObject *parent,
-    std::shared_ptr<CoreSpeechKit::TextToSpeechProxy> ttsProxy)
+QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(const QVariantMap &, QObject *parent)
     : QTextToSpeechEngine(parent)
-    , m_ttsProxy(std::move(ttsProxy))
     , m_state(QTextToSpeech::Ready)
     , m_errorReason(QTextToSpeech::ErrorReason::NoError)
     , m_volume(1.0)
     , m_rate(0.0)
     , m_pitch(0.0)
 {
-    m_ttsProxy->setEngineEventsListener(std::make_shared<TextToSpeechEngineEventsListener>(*this));
-
     auto optVoices = CoreSpeechKit::tryListVoices();
     if (!optVoices) {
         setError({
@@ -358,9 +350,49 @@ QList<QVoice> QTextToSpeechEngineOhos::availableVoices() const
     return voices;
 }
 
+bool QTextToSpeechEngineOhos::prepareTextToSpeechProxyForCurrentVoice()
+{
+    if (m_currentVoice == QVoice()) {
+        setError({
+            QTextToSpeech::ErrorReason::Configuration,
+            QCoreApplication::translate("QTextToSpeech", "Failed to initialize default locale and voice.")
+        });
+        return false;
+    }
+
+    const auto language = m_currentVoice.locale().name(QLocale::TagSeparator::Dash).toStdString();
+    const auto personTimbre = voiceData(m_currentVoice).toMap()[QStringLiteral("person")].toInt();
+
+    if (m_ttsProxy && m_ttsProxy->language() == language
+        && m_ttsProxy->personTimbre() == personTimbre) {
+        return true;
+    }
+
+    m_ttsProxy.reset();
+    auto ttsProxyOrError = CoreSpeechKit::tryMakeTextToSpeechProxy(language, personTimbre);
+
+    if (!ttsProxyOrError) {
+        qCWarning(lcSpeechTtsOhos)
+            << Q_FUNC_INFO << ": could not create an engine for voice" << m_currentVoice.name()
+            << "TTS error:" << QString::fromStdString(ttsProxyOrError.error());
+        setError({
+            QTextToSpeech::ErrorReason::Initialization,
+            QCoreApplication::translate("QTextToSpeech", "Failed to initialize text-to-speech engine.")
+        });
+        return false;
+    }
+
+    m_ttsProxy = std::move(ttsProxyOrError.value());
+    m_ttsProxy->setEngineEventsListener(std::make_shared<TextToSpeechEngineEventsListener>(*this));
+    return true;
+}
+
 void QTextToSpeechEngineOhos::say(const QString &text)
 {
     if (text.isEmpty())
+        return;
+
+    if (!prepareTextToSpeechProxyForCurrentVoice())
         return;
 
     m_ttsProxy->speak(
@@ -380,6 +412,9 @@ void QTextToSpeechEngineOhos::synthesize(const QString &)
 
 void QTextToSpeechEngineOhos::stop(QTextToSpeech::BoundaryHint)
 {
+    if (!m_ttsProxy)
+        return;
+
     m_ttsProxy->stop();
 }
 
@@ -485,14 +520,8 @@ QString QTextToSpeechEngineOhos::errorString() const
 QTextToSpeechEngine *createQTextToSpeechEngineOhos(
     const QVariantMap &parameters, QObject *parent, QString *errorString)
 {
-    auto ttsProxyOrError = CoreSpeechKit::tryMakeTextToSpeechProxy(chineseLanguage, defaultPersonTimbre);
-
-    if (!ttsProxyOrError) {
-        if (errorString != nullptr)
-            *errorString = QString::fromStdString(ttsProxyOrError.error());
-        return nullptr;
-    }
-    return new QTextToSpeechEngineOhos(parameters, parent, std::move(ttsProxyOrError.value()));
+    Q_UNUSED(errorString);
+    return new QTextToSpeechEngineOhos(parameters, parent);
 }
 
 QT_END_NAMESPACE

@@ -68,6 +68,9 @@ public:
     virtual void stop() = 0;
     virtual void setEngineEventsListener(std::shared_ptr<EngineEventsListener> engineEventsListener) = 0;
 
+    virtual std::string language() const = 0;
+    virtual int personTimbre() const = 0;
+
 protected:
     TextToSpeechProxy();
 };

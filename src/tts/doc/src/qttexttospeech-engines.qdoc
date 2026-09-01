@@ -85,8 +85,9 @@
     {Core Speech Kit} text-to-speech APIs.
     The system engine synthesizes and plays back the speech.
 
-    The Core Speech Kit engine is created for a fixed language, which the plugin sets to
-    \c {zh-CN}. As stated in the \l{https://developer.huawei.com/consumer/en/doc/harmonyos-references/hms-ai-texttospeech#createengineparams}
+    A Core Speech Kit engine is created for one language and one timbre, so the plugin
+    creates it for the currently selected voice, and replaces it when the voice changes.
+    As stated in the \l{https://developer.huawei.com/consumer/en/doc/harmonyos-references/hms-ai-texttospeech#createengineparams}
     {createEngine() documentation}, only Chinese and English are supported, with
     \c {zh-CN} recommended for Chinese and \c {en-US} for English.
 
