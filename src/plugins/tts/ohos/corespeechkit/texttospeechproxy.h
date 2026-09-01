@@ -65,12 +65,13 @@ public:
 
     virtual void speak(const SpeakParams &params) = 0;
     virtual void stop() = 0;
-    virtual std::optional<std::vector<VoiceInfo>> listVoices() = 0;
     virtual void setEngineEventsListener(std::shared_ptr<EngineEventsListener> engineEventsListener) = 0;
 
 protected:
     TextToSpeechProxy();
 };
+
+std::optional<std::vector<VoiceInfo>> tryListVoices();
 
 q23::expected<std::shared_ptr<TextToSpeechProxy>, std::string> tryMakeTextToSpeechProxy(
     const std::string &language, int personTimbre);

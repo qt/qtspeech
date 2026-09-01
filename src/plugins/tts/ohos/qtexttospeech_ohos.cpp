@@ -216,7 +216,7 @@ QTextToSpeechEngineOhos::QTextToSpeechEngineOhos(
 {
     m_ttsProxy->setEngineEventsListener(std::make_shared<TextToSpeechEngineEventsListener>(*this));
 
-    auto optVoices = m_ttsProxy->listVoices();
+    auto optVoices = CoreSpeechKit::tryListVoices();
     if (!optVoices) {
         setError({
             QTextToSpeech::ErrorReason::Configuration,
