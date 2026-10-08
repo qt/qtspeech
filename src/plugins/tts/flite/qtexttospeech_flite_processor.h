@@ -64,6 +64,8 @@ private:
     void processText(const QString &text, int voiceId, float pitch, float rate,
                      OutputHandler outputHandler);
     int audioOutput(const cst_wave *w, int start, int size, int last, cst_audio_streaming_info *asi);
+    void audioHandleNewToken(std::chrono::milliseconds tokenStartTime,
+                             cst_audio_streaming_info *asi);
     int dataOutput(const cst_wave *w, int start, int size, int last, cst_audio_streaming_info *asi);
 
     bool init();
@@ -85,20 +87,9 @@ Q_SIGNALS:
     void sayingWord(const QString &word, qsizetype begin, qsizetype length);
     void synthesized(const QAudioFormat &format, const QByteArray &array);
 
-protected:
-    void timerEvent(QTimerEvent *event) override;
-
 private:
-    struct TokenData {
-        qint64 startTime;
-        QString text;
-    };
     QString m_text;
     qsizetype m_index = -1;
-    QList<TokenData> m_tokens;
-    qsizetype m_currentToken = -1;
-    QBasicTimer m_tokenTimer;
-    void startTokenTimer();
 
     QAudioSink *m_audioSink = nullptr;
     QAudio::State m_state = QAudio::IdleState;
