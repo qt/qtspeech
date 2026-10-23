@@ -253,6 +253,7 @@ void QTextToSpeechPrivate::disconnectSynthesizeFunctor()
 
 /*!
     \qmltype TextToSpeech
+    \nativetype QTextToSpeech
     \inqmlmodule QtTextToSpeech
     \brief The TextToSpeech type provides access to text-to-speech engines.
 

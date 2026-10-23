@@ -21,6 +21,7 @@ QT_DEFINE_QESDP_SPECIALIZATION_DTOR(QVoicePrivate)
 
 /*!
     \qmlvaluetype voice
+    \nativetype QVoiceForeign
     \inqmlmodule QtTextToSpeech
     \brief The voice type represents a particular voice.
 
